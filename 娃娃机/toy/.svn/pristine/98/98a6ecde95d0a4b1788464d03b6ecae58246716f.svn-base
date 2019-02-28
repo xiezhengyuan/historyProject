@@ -1,0 +1,315 @@
+package com.hxy.isw.service.impl;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.hxy.isw.entity.Banner;
+import com.hxy.isw.entity.Employee;
+import com.hxy.isw.entity.FileInfo;
+import com.hxy.isw.entity.ToysInfo;
+import com.hxy.isw.entity.ToysPhotos;
+import com.hxy.isw.entity.ToysType;
+import com.hxy.isw.service.ToyService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.JsonUtil;
+
+@Repository
+public class ToyServiceImpl implements ToyService {
+
+	@Autowired
+	private DatabaseHelper databaseHelper;
+
+	@Override
+	public Map<String, Object> toysInfoList(Employee em, int start, int limit, String name, String ftoystypeid) {
+		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		StringBuffer sql = new StringBuffer("SELECT COUNT(1) FROM toysinfo ti WHERE ti.state=0 ");
+		StringBuffer hql = new StringBuffer(
+				"SELECT ti,tt FROM ToysInfo ti,ToysType tt WHERE ti.state=0 AND ti.ftoystypeid=tt.id");
+		if (!StringUtils.isEmpty(name)) {
+			sql.append(" AND ti.name LIKE '%").append(name).append("%'");
+			hql.append(" AND ti.name LIKE '%").append(name).append("%'");
+		}
+		if (!StringUtils.isEmpty(ftoystypeid) && !ftoystypeid.equals("0")) {
+			sql.append(" AND ti.ftoystypeid=").append(ftoystypeid);
+			hql.append(" AND ti.ftoystypeid=").append(ftoystypeid);
+		}
+
+		Integer count = databaseHelper.getSqlCount(sql.toString());
+		Integer pages = ConstantUtil.pages(count, limit);
+		resultMap.put("pages", pages);
+
+		List<Object[]> resultList = databaseHelper.getResultListByHql(hql.append(" ORDER BY ti.createtime DESC").toString(), start, limit);
+		for (Object[] object : resultList) {
+			Map<String, Object> map = new HashMap<String, Object>();
+			ToysInfo toysInfo = (ToysInfo) object[0];
+			ToysType toysType = (ToysType) object[1];
+			map = JsonUtil.obj2map(toysInfo);
+			map.put("toystype", toysType.getName());
+			list.add(map);
+		}
+		resultMap.put("rows", list);
+		return resultMap;
+	}
+
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void addToys(ToysInfo toysInfo, String imgarr) {
+
+		if (toysInfo.getId() == null) {
+			// 添加玩具表
+			databaseHelper.persistObject(toysInfo);
+
+			JsonArray arr = (JsonArray) JsonUtil.getJsonParser().parse(imgarr);
+			// 添加玩具图片表
+			for (JsonElement jsonElement : arr) {
+				JsonObject jsonObject = jsonElement.getAsJsonObject();
+				Long id = jsonObject.get("id").getAsLong();
+				String url = jsonObject.get("url").getAsString();
+				String name = jsonObject.get("name").getAsString();
+
+				ToysPhotos toysPhotos = new ToysPhotos();
+				toysPhotos.setFtoysid(toysInfo.getId());
+				toysPhotos.setFfileinfoid(id);
+				toysPhotos.setPhotourl(url);
+				toysPhotos.setState(0);
+				toysPhotos.setCreatetime(new Date());
+				databaseHelper.persistObject(toysPhotos);
+
+				// 修改图片表引用状态
+				FileInfo fileInfo = (FileInfo) databaseHelper.getObjectById(FileInfo.class, id);
+				fileInfo.setState(1);
+				databaseHelper.updateObject(fileInfo);
+
+			}
+
+		} else {
+			// 修改
+			databaseHelper.updateObject(toysInfo);
+			
+			JsonArray arr = (JsonArray) JsonUtil.getJsonParser().parse(imgarr);
+
+			StringBuffer hql = new StringBuffer("SELECT tp FROM ToysPhotos tp WHERE tp.state=0 AND tp.ftoysid=")
+					.append(toysInfo.getId());
+			// 失效
+			StringBuffer sqlfileinfo1 = new StringBuffer("UPDATE fileinfo fi SET fi.state=-1 WHERE 1=1");
+			StringBuffer sqltoysphotos1 = new StringBuffer("UPDATE toysphotos tp SET tp.state=-1 WHERE 1=1");
+			
+			//所有玩具图片集合
+			List<Object> resultList = databaseHelper.getResultListByHql(hql.toString());
+			for (Object object : resultList) {
+				ToysPhotos photos = (ToysPhotos) object;
+				/* 修改fileinfo表图片状态 为失效 */
+				databaseHelper.executeNativeSql(
+						sqlfileinfo1.append(" AND fi.id=").append(photos.getFfileinfoid()).toString());
+			}
+			/* 修改toysphotos表图片状态 为失效 */
+			databaseHelper
+					.executeNativeSql(sqltoysphotos1.append(" AND tp.ftoysid=").append(toysInfo.getId()).toString());
+
+			// 生效
+			StringBuffer sqlfileinfo2 = new StringBuffer("UPDATE fileinfo fi SET fi.state=1 WHERE 1=1");
+			StringBuffer sqltoysphotos2 = new StringBuffer("UPDATE toysphotos tp SET tp.state=0 WHERE 1=1");
+			// 是否存在
+			StringBuffer sqlexist = new StringBuffer("SELECT COUNT(1) FROM toysphotos tp WHERE 1=1");
+
+			for (JsonElement jsonElement : arr) {
+				JsonObject jsonObject = jsonElement.getAsJsonObject();
+				Long id = jsonObject.get("id").getAsLong();
+				String url = jsonObject.get("url").getAsString();
+				String name = jsonObject.get("name").getAsString();
+
+				int count = databaseHelper.getSqlCount(
+						sqlexist.append(" AND tp.ftoysid=").append(toysInfo.getId()).append(" AND tp.ffileinfoid=")
+								.append(id).append(" AND tp.photourl='").append(url).append("'").toString());
+				if(count>0){
+					//如果之前已经存在过  修改状态
+					databaseHelper.executeNativeSql(sqlfileinfo2.append(" AND fi.id=").append(id).toString());
+					databaseHelper.executeNativeSql(sqltoysphotos2.append(" AND tp.ffileinfoid=").append(id).toString());
+				}else{
+					//否则新增
+					ToysPhotos toysPhotos = new ToysPhotos();
+					toysPhotos.setFtoysid(toysInfo.getId());
+					toysPhotos.setFfileinfoid(id);
+					toysPhotos.setPhotourl(url);
+					toysPhotos.setState(0);
+					toysPhotos.setCreatetime(new Date());
+					databaseHelper.persistObject(toysPhotos);
+
+					// 修改图片表引用状态
+					FileInfo fileInfo = (FileInfo) databaseHelper.getObjectById(FileInfo.class, id);
+					fileInfo.setState(1);
+					databaseHelper.updateObject(fileInfo);
+				}
+			}
+		}
+
+	}
+
+	@Override
+	public Map<String, Object> toysTypeList(Employee em, int start, int limit, String name) {
+		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+
+		StringBuffer sql = new StringBuffer("SELECT COUNT(1) FROM toystype tt WHERE tt.state=0");
+		Integer count = databaseHelper.getSqlCount(sql.toString());
+		int pages = ConstantUtil.pages(count, limit);
+		resultMap.put("pages", pages);
+
+		StringBuffer hql = new StringBuffer("SELECT tt FROM ToysType tt WHERE tt.state=0 ");
+
+		List resultList = databaseHelper.getResultListByHql(StringUtils.isEmpty(name) ? hql.toString()
+				: hql.append("AND tt.name LIKE '%").append(name).append("%'").toString(), start, limit);
+		for (Object object : resultList) {
+			ToysType tt = (ToysType) object;
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("id", tt.getId());
+			map.put("name", tt.getName());
+			map.put("createtime", tt.getCreatetime());
+			map.put("state", tt.getState());
+			list.add(map);
+		}
+		resultMap.put("rows", list);
+		return resultMap;
+	}
+
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void addToysType(Employee em, ToysType tt) throws Exception {
+		StringBuffer sql;
+		if (tt.getId() == null) {
+			sql = new StringBuffer("SELECT COUNT(1) FROM toystype tt WHERE tt.name='").append(tt.getName())
+					.append("' AND tt.state=0");
+
+			Integer sqlCount = databaseHelper.getSqlCount(sql.toString());
+			if (sqlCount > 0) {
+				throw new NullPointerException("该分类已存在");
+			}
+
+			ToysType toysType = new ToysType();
+
+			toysType.setName(tt.getName());
+			toysType.setCreatetime(new Date());
+			toysType.setState(0);
+			databaseHelper.persistObject(toysType);
+		} else {
+			sql = new StringBuffer("SELECT COUNT(1) FROM toystype tt WHERE tt.name='").append(tt.getName())
+					.append("' AND tt.state=0 AND tt.id!= ").append(tt.getId());
+			Integer sqlCount = databaseHelper.getSqlCount(sql.toString());
+			if (sqlCount > 0) {
+				throw new NullPointerException("该分类已存在");
+			}
+
+			ToysType toysType = (ToysType) databaseHelper.getObjectById(ToysType.class, tt.getId());
+			toysType.setName(tt.getName());
+			databaseHelper.updateObject(toysType);
+		}
+
+	}
+
+	@Override
+	public void delToysType(Employee em, String id) {
+		ToysType toysType = (ToysType) databaseHelper.getObjectById(ToysType.class, Long.parseLong(id));
+		toysType.setState(1);
+		databaseHelper.updateObject(toysType);
+	}
+
+	@Override
+	public Map<String, Object> findToysTypeById(Employee em, String id) {
+		Map<String, Object> map = new HashMap<String, Object>();
+		ToysType toysType = (ToysType) databaseHelper.getObjectById(ToysType.class, Long.parseLong(id));
+		map.put("id", toysType.getId());
+		map.put("name", toysType.getName());
+		return map;
+	}
+
+	@Override
+	public Map<String, Object> findAlltoysType(Employee em) {
+		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+		Map<String, Object> map = new HashMap<String, Object>();
+		StringBuffer hql = new StringBuffer("SELECT tt FROM ToysType tt WHERE tt.state=0");
+		List<Object> resultList = databaseHelper.getResultListByHql(hql.toString());
+		for (Object object : resultList) {
+			ToysType tt = (ToysType) object;
+			list.add(JsonUtil.obj2map(tt));
+		}
+		map.put("rows", list);
+		map.put("op", "success");
+		map.put("msg", "");
+		return map;
+	}
+
+	@Override
+	public JsonArray findToysPhotos(Employee em, String toysid) {
+		StringBuffer findtoysphotos = new StringBuffer("SELECT tp FROM ToysPhotos tp WHERE tp.state=0 AND tp.ftoysid=")
+				.append(toysid);
+		List<Object> tplist = databaseHelper.getResultListByHql(findtoysphotos.toString());
+		return JsonUtil.castLst2Arr4Single(tplist);
+	}
+
+	@Override
+	public List<Map<String, Object>> querybannerimg() {
+		String hql=" select b from Banner b where b.state=0 ";
+		List<Object> lst=databaseHelper.getResultListByHql(hql);
+		List<Map<String, Object>> lstmap=new ArrayList<Map<String,Object>>();
+		if(lst.size()>0){
+			for (Object obj : lst) {
+				Map<String,Object> map =new  HashMap<String, Object>();
+				Banner ban=(Banner) obj;
+				map.put("id", ban.getId());
+				map.put("url", ban.getUrl());
+				map.put("fileinfoid", ban.getFfileinfoid());
+				lstmap.add(map);
+			}
+			return lstmap;
+		}
+		else{
+			return null;
+		}
+		
+	}
+
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void updatebannerimgs(String imgs) {
+		//删除以前的图片
+		String sql1="  update banner set  state=-1  ";
+		databaseHelper.executeNativeSql(sql1);
+		Date date=new Date();
+		String arr[]=imgs.split(",");
+		//保持提交的图片
+		for(int i=0; i<arr.length;i++){
+			Banner ban=new Banner();
+			ban.setFfileinfoid(Long.parseLong(arr[i].split("-")[0]));
+			ban.setUrl(arr[i].split("-")[1]);
+			ban.setType(Integer.parseInt(arr[i].split("-")[2]));
+			ban.setChangeurl(arr[i].split("-")[3]);
+			ban.setState(0);
+			ban.setCreatetime(date);
+			databaseHelper.persistObject(ban);
+		}
+		
+		//删除无用图片
+		String sql2=" update fileinfo set state= -1  where id in  ";
+		sql2+=" (select  ffileinfoid from banner where state =-1 and  ffileinfoid not in (select  ffileinfoid from banner where state =0))  ";
+		
+		databaseHelper.executeNativeSql(sql2);
+		
+		
+		
+	}
+
+}

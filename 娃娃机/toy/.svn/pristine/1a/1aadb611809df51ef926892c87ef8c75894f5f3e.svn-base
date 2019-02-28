@@ -1,0 +1,215 @@
+/*
+Navicat MySQL Data Transfer
+
+Source Server         : localhost
+Source Server Version : 50540
+Source Host           : localhost:3306
+Source Database       : template
+
+Target Server Type    : MYSQL
+Target Server Version : 50540
+File Encoding         : 65001
+
+Date: 2017-06-28 16:25:10
+*/
+
+SET FOREIGN_KEY_CHECKS=0;
+
+-- ----------------------------
+-- Table structure for businessinfo
+-- ----------------------------
+DROP TABLE IF EXISTS `businessinfo`;
+CREATE TABLE `businessinfo` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `businessname` varchar(32) DEFAULT NULL,
+  `account` varchar(16) DEFAULT NULL,
+  `password` varchar(32) DEFAULT NULL,
+  `mobile` varchar(16) DEFAULT NULL,
+  `state` int(11) NOT NULL,
+  `createtime` datetime NOT NULL,
+  `role` int(11) DEFAULT NULL COMMENT '0 虚拟商家 （系统管理员） 1普通商家',
+  `appid` varchar(64) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------
+-- Records of businessinfo
+-- ----------------------------
+INSERT INTO `businessinfo` VALUES ('1', '鞋融宝', 'admin', 'runfeng168168', '15071438685', '0', '2017-05-04 11:16:38', '1', null);
+
+-- ----------------------------
+-- Table structure for department
+-- ----------------------------
+DROP TABLE IF EXISTS `department`;
+CREATE TABLE `department` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `fbusinessid` bigint(20) NOT NULL,
+  `departmentname` varchar(32) NOT NULL,
+  `state` int(11) NOT NULL,
+  `createtime` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------
+-- Records of department
+-- ----------------------------
+INSERT INTO `department` VALUES ('1', '1', '销售部', '0', '2017-05-05 09:58:17');
+INSERT INTO `department` VALUES ('2', '1', '财务部', '0', '2017-05-05 09:58:20');
+INSERT INTO `department` VALUES ('3', '1', '采购部', '0', '2017-05-05 10:00:09');
+INSERT INTO `department` VALUES ('4', '1', '人事部', '0', '2017-05-05 10:00:11');
+INSERT INTO `department` VALUES ('5', '1', '生产部', '0', '2017-05-05 10:01:36');
+
+-- ----------------------------
+-- Table structure for expressage
+-- ----------------------------
+DROP TABLE IF EXISTS `expressage`;
+CREATE TABLE `expressage` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `expressagecompany` varchar(16) DEFAULT NULL,
+  `expressagecode` varchar(16) DEFAULT NULL,
+  `state` int(11) NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=17 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of expressage
+-- ----------------------------
+INSERT INTO `expressage` VALUES ('1', '顺丰快递', 'SF', '0');
+INSERT INTO `expressage` VALUES ('2', '申通快递', 'STO', '0');
+INSERT INTO `expressage` VALUES ('3', '韵达快递', 'YD', '0');
+INSERT INTO `expressage` VALUES ('4', '圆通速递', 'YTO', '0');
+INSERT INTO `expressage` VALUES ('5', '中通速递', 'ZTO', '0');
+INSERT INTO `expressage` VALUES ('6', '百世快递', 'HTKY', '0');
+INSERT INTO `expressage` VALUES ('7', '百世快运', 'BTWL', '0');
+INSERT INTO `expressage` VALUES ('8', '德邦', 'DBL', '0');
+INSERT INTO `expressage` VALUES ('9', 'EMS', 'EMS', '0');
+INSERT INTO `expressage` VALUES ('10', '邮政平邮/小包', 'YZPY', '0');
+INSERT INTO `expressage` VALUES ('11', '城市100', 'CITY100', '0');
+INSERT INTO `expressage` VALUES ('12', '快捷速递', 'FAST', '0');
+INSERT INTO `expressage` VALUES ('13', '天天快递', 'HHTT', '0');
+INSERT INTO `expressage` VALUES ('14', '龙邦快递', 'LB', '0');
+INSERT INTO `expressage` VALUES ('15', '速腾快递', 'STWL', '0');
+INSERT INTO `expressage` VALUES ('16', '宅急送', 'ZJS', '0');
+
+-- ----------------------------
+-- Table structure for expressageinfo
+-- ----------------------------
+DROP TABLE IF EXISTS `expressageinfo`;
+CREATE TABLE `expressageinfo` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `forderinfoid` bigint(20) NOT NULL,
+  `type` int(11) NOT NULL COMMENT '物流类型  1快递 2物流',
+  `expressagecompany` varchar(32) DEFAULT NULL COMMENT '快递公司',
+  `expressagecode` varchar(16) DEFAULT NULL COMMENT '快递公司编码',
+  `expressageno` varchar(32) DEFAULT NULL COMMENT '快递单号',
+  `remark` varchar(64) DEFAULT NULL COMMENT '物流备注',
+  `state` int(11) NOT NULL,
+  `createtime` datetime NOT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=6 DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of expressageinfo
+-- ----------------------------
+INSERT INTO `expressageinfo` VALUES ('4', '1', '2', '申通快递', 'STO', '3329384927291', null, '0', '2017-05-15 15:17:49');
+INSERT INTO `expressageinfo` VALUES ('5', '2', '2', '申通快递', 'STO', '3329384927291', null, '0', '2017-05-15 15:17:49');
+
+-- ----------------------------
+-- Table structure for fileinfo
+-- ----------------------------
+DROP TABLE IF EXISTS `fileinfo`;
+CREATE TABLE `fileinfo` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `url` varchar(64) DEFAULT NULL,
+  `state` int(11) NOT NULL COMMENT '-1已删除  0新上传未被引用 1已引用 ',
+  `time` datetime NOT NULL,
+  `filename` varchar(64) DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------
+-- Records of fileinfo
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for payinfo
+-- ----------------------------
+DROP TABLE IF EXISTS `payinfo`;
+CREATE TABLE `payinfo` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `issubscribe` varchar(4) DEFAULT NULL,
+  `appid` varchar(32) DEFAULT NULL,
+  `feetype` varchar(8) DEFAULT NULL,
+  `noncestr` varchar(64) DEFAULT NULL,
+  `outtradeno` varchar(64) DEFAULT NULL,
+  `transactionid` varchar(64) DEFAULT NULL,
+  `tradetype` varchar(16) DEFAULT NULL,
+  `sign` varchar(64) DEFAULT NULL,
+  `resultcode` varchar(16) DEFAULT NULL,
+  `mchid` varchar(32) DEFAULT NULL,
+  `totalfee` int(11) DEFAULT NULL COMMENT '单位  分',
+  `attach` varchar(32) DEFAULT NULL,
+  `timeend` varchar(16) DEFAULT NULL,
+  `openid` varchar(32) DEFAULT NULL,
+  `banktype` varchar(16) DEFAULT NULL,
+  `returncode` varchar(16) DEFAULT NULL,
+  `cashfee` int(11) DEFAULT NULL,
+  `time` datetime DEFAULT NULL,
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+-- ----------------------------
+-- Records of payinfo
+-- ----------------------------
+
+-- ----------------------------
+-- Table structure for userinfo
+-- ----------------------------
+DROP TABLE IF EXISTS `userinfo`;
+CREATE TABLE `userinfo` (
+  `id` bigint(20) NOT NULL AUTO_INCREMENT,
+  `fbusinessid` bigint(20) NOT NULL,
+  `fdepartmentid` bigint(20) DEFAULT NULL COMMENT '部门ID  可空',
+  `username` varchar(16) NOT NULL COMMENT '用户名',
+  `mobile` varchar(16) DEFAULT NULL COMMENT '手机',
+  `name` varchar(16) DEFAULT NULL,
+  `sex` varchar(2) DEFAULT NULL,
+  `nickname` varchar(16) DEFAULT NULL,
+  `headerimg` varchar(256) DEFAULT NULL,
+  `role` int(11) NOT NULL COMMENT '用户角色  0员工 1用户',
+  `fparentid` bigint(20) NOT NULL COMMENT '上级用户id',
+  `createtime` datetime NOT NULL,
+  `cardno` varchar(32) DEFAULT NULL,
+  `bank` varchar(32) DEFAULT NULL,
+  `proxylevel` int(11) NOT NULL COMMENT '0非代理 1特殊代理 2银牌代理 3 金牌代理',
+  `amountpay` double NOT NULL COMMENT '帐户余额 （融金宝）',
+  `state` int(11) NOT NULL,
+  `fsuperiorid` bigint(20) DEFAULT NULL COMMENT '上上级用户id',
+  `level` int(11) DEFAULT NULL COMMENT '等级',
+  `openid` varchar(32) DEFAULT NULL,
+  `proxydiscount` double DEFAULT NULL COMMENT '代理折扣',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=23 DEFAULT CHARSET=utf8mb4;
+
+-- ----------------------------
+-- Records of userinfo
+-- ----------------------------
+INSERT INTO `userinfo` VALUES ('1', '1', '1', 'huangyi', '13309080801', '黄奕', '男', '黄奕', null, '0', '0', '2017-05-05 10:45:08', '6220102910393957155', '建行', '3', '1219.5699999999997', '0', '0', null, null, null);
+INSERT INTO `userinfo` VALUES ('2', '1', '4', 'tianshan', '13309080802', '田珊', '女', '田珊', null, '0', '0', '2017-05-05 11:03:07', '6220102910393957156', '建行', '3', '0', '0', '0', null, null, null);
+INSERT INTO `userinfo` VALUES ('3', '1', '5', 'shepeng', '13252152141', '佘鹏', '男', '佘鹏', null, '0', '0', '2017-05-05 11:32:49', '6223521456985656211', '工行', '2', '0', '0', '0', null, null, null);
+INSERT INTO `userinfo` VALUES ('4', '1', '5', 'tangtao', '15252632121', '汤涛', '男', '汤涛', null, '0', '0', '2017-05-05 11:57:28', '6525523654521447114', '建行', '2', '0', '0', '0', null, null, null);
+INSERT INTO `userinfo` VALUES ('5', '1', '5', 'zsx', '13437223043', '朱时勋', '男', '朱时勋', null, '1', '1', '2017-05-05 16:17:01', '6228480058377204175', '农行', '1', '0', '0', '0', null, null, null);
+INSERT INTO `userinfo` VALUES ('6', '1', '5', 'ddk', '15141256325', '顿德奎', '男', '顿德奎', null, '0', '0', '2017-05-05 17:58:31', '6223526321254521362155', '建行', '1', '0', '0', '0', null, null, null);
+INSERT INTO `userinfo` VALUES ('7', '1', '5', 'wzw', '15232356321', '小五', '男', '小五', null, '0', '0', '2017-05-05 17:58:32', '6235215458545125452134', '工行', '3', '0', '0', '0', null, null, null);
+INSERT INTO `userinfo` VALUES ('10', '1', null, '朝军', '12222222222', '朝军', '男', null, null, '1', '0', '2017-05-09 15:57:16', '6666666666666666666', '农行', '1', '0', '0', '0', null, null, null);
+INSERT INTO `userinfo` VALUES ('12', '1', null, 'test', '15098989798', '测试', '男', null, null, '1', '0', '2017-05-09 16:07:41', '6532325632155254123', '建行', '1', '0', '0', '0', null, null, null);
+INSERT INTO `userinfo` VALUES ('13', '1', null, 'wukai', '12345678910', '吴凯', '男', '吴凯', null, '1', '0', '2017-05-25 17:56:28', '1111111111111111111', '工行', '0', '0', '0', '0', null, null, null);
+INSERT INTO `userinfo` VALUES ('14', '1', '5', 'jiachang', '13437223048', '嘉昌', '男', '嘉昌', null, '0', '0', '2017-06-09 15:46:20', '6228480058377204666', '农行', '0', '0', '0', '0', null, null, null);
+INSERT INTO `userinfo` VALUES ('15', '1', null, '15071438685', '15071438685', '我弄弯了月亮', '', '我弄弯了月亮', 'http://wx.qlogo.cn/mmopen/Eegn3iboXU2vfe9u6nCte2qiakibMibvqUKEpZxjCtr7YeXkNjcDic54NY95iauB0WujphN6lVtY0kZFRmDdf3M59rwHNHUv2wGUKe/0', '1', '0', '2017-06-19 11:33:34', '', '', '0', '0', '0', '0', '0', 'oavR0wozOXxQUvzQkerL7T91FWGE', null);
+INSERT INTO `userinfo` VALUES ('16', '1', null, '18694047036', '18694047036', '你', '男', '你', 'http://wx.qlogo.cn/mmopen/jHtOvHJFlXl1LLsicshYwkCAPvias1fcQcbbPmiaQ0uZWNdEibg89orUDvhk0iavCkRk6oa0xk8iaz04xnzcUhJGR7K2wr8YKUibKts/0', '1', '0', '2017-06-19 11:54:59', '', '', '0', '0', '0', '0', '0', 'oavR0wntleHEYcUAS_b9BQHT0yyg', null);
+INSERT INTO `userinfo` VALUES ('17', '1', null, '13437223843', '13437223843', '咸鱼', '男', '咸鱼', 'http://wx.qlogo.cn/mmopen/tPP9Ha2tsmf9G5jJH5MLAAhja9ZDSYpoSoeqZyCjBJcyupicUklmf65oSiajmSUCHonSYxVbkB8CRy0lGKGUhZAouj6bxFZ523/0', '1', '0', '2017-06-19 11:56:53', '', '', '0', '0', '0', '0', '0', 'oavR0wqLbj_6sUDf2QDLUIunBUkY', null);
+INSERT INTO `userinfo` VALUES ('18', '1', null, '18771052489', '18771052489', 'shepen', '', 'shepen', 'http://wx.qlogo.cn/mmopen/Eegn3iboXU2uD7X8CPsn3WQBiblG6n9qmxgz1VK6LK33uLtaGf7oKVNPsBj1zFJTUib46c8OOzDNV7EpSk4P7xlxD2KNPmNJKOM/0', '1', '0', '2017-06-21 09:52:50', '', '', '0', '0', '0', '0', '0', 'oavR0ws_0MuTK0JQci8uSw_YgQ7I', null);
+INSERT INTO `userinfo` VALUES ('19', '1', null, '15629184618', '15629184618', '壳子hy', '男', '壳子hy', 'http://wx.qlogo.cn/mmopen/Eegn3iboXU2vfe9u6nCte2o4Iaj839Dl9iaeSgeK2XpMsyMShUe6HKQZtUL2LCyVKCqrBkKuItuL4iaq36dtt2Kl1hDEWqMH6LP/0', '1', '0', '2017-06-21 11:04:05', '', '', '0', '0', '0', '0', '0', 'oavR0wi5HfIawJczdvIPr08TwVTw', null);
+INSERT INTO `userinfo` VALUES ('20', '1', null, '18627918663', '18627918663', '润   丰', '男', '润   丰', 'http://wx.qlogo.cn/mmopen/NbBjwFd7r1JOtbjia5oic7w5QVmSsjbZQx0067iaiclw8Ar8SQFdiaD6mxzTLfs3DJnzYuCtDREn3U1AEJslAdJRuPmMOKrE1gtwr/0', '1', '0', '2017-06-22 08:58:38', '', '', '0', '0', '0', '0', '0', 'oavR0whwOJMBZ1oB-1WI35iuVr-E', null);
+INSERT INTO `userinfo` VALUES ('21', '1', null, '18672971216', '18672971216', '李', '男', '李', 'http://wx.qlogo.cn/mmopen/NbBjwFd7r1JOT5TyLibobhG2tArWibypF9tsrSfe4jkyrsrGfZ7r6dQMU4hibicgqRoAXzQib9VbfqbPrROTeEK3DsOjzdSj5X6uia/0', '1', '0', '2017-06-23 15:23:16', '', '', '0', '0', '0', '0', '0', 'oavR0wshosATP31Pb4ZP7xetFyrc', null);
+INSERT INTO `userinfo` VALUES ('22', '1', null, '17607192720', '17607192720', '。', '男', '。', 'http://wx.qlogo.cn/mmopen/PiajxSqBRaEIQkLnJu0JJAfo1kPendtc3bHpIdENK49UKBiciaiciafyZGicmaOxd1tMjT480WiaW2TtqXnibxMNOShFibg/0', '1', '0', '2017-06-23 17:34:00', '', '', '0', '0', '0', '0', '0', 'oavR0wrX23krYS16WEhhF4TJDSx4', null);

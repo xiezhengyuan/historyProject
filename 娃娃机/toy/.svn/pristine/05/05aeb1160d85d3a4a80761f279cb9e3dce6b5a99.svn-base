@@ -1,0 +1,368 @@
+package com.hxy.isw.service.impl;
+
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.poi.hssf.usermodel.HSSFCell;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.google.gson.JsonArray;
+import com.hxy.isw.entity.BusinessInfo;
+import com.hxy.isw.entity.Department;
+import com.hxy.isw.entity.UserInfo;
+import com.hxy.isw.service.EmployeeService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.JsonUtil;
+import com.hxy.isw.util.Sys;
+
+/**
+* @author lcc
+* @date 2017年5月4日 下午3:22:15
+* @describe
+*/
+@Repository
+public class EmployeeServiceImpl implements EmployeeService{
+
+	@Autowired
+	DatabaseHelper databaseHelper;
+
+	@Override
+	public List<Map<String,Object>> queryemployee(BusinessInfo bi,String name, String mobile, String department, int start, int limit)
+			throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select u,d from UserInfo u,Department d where d.id = u.fdepartmentid and u.role = 0 and  u.state = 0");
+		hql = conditionemployee(hql,bi, name,mobile,department);
+		hql = hql.append(" order by u.createtime desc");
+		List<Object[]> lst = databaseHelper.getResultListByHql(hql.toString(),start,limit);
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		for (Object[] objects : lst) {
+			UserInfo u = (UserInfo)objects[0];
+			Department d = (Department)objects[1];
+			
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("id", u.getId());
+			map.put("name", u.getName());
+			map.put("mobile", u.getMobile());
+			map.put("departmentname", d.getDepartmentname());
+			map.put("time", u.getCreatetime().toString());
+			map.put("amountpay", u.getAmountpay());
+			//查看一级代理和二级代理
+			StringBuffer queryteam = new StringBuffer("select u from UserInfo u where u.state = 0 and (u.fparentid =")
+					.append(u.getId()).append(" or u.fsuperiorid =").append(u.getId()).append(")");
+			List<Object> teamlst = databaseHelper.getResultListByHql(queryteam.toString());
+			
+			map.put("teamnums", teamlst.size());
+			
+			lstMap.add(map);
+		}
+		
+		return lstMap;
+	}
+
+	@Override
+	public int countemployee(BusinessInfo bi,String name, String mobile, String department) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select count(u.id) from UserInfo u,Department d where d.id = u.fdepartmentid and  u.role = 0 and  u.state = 0");
+		hql = conditionemployee(hql, bi,name,mobile,department);
+		List lst = databaseHelper.getResultListByHql(hql.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+	
+	private StringBuffer conditionemployee(StringBuffer hql,BusinessInfo bi,String name,String mobile,String department){
+		if(bi.getRole()>0)
+			hql = hql.append(" and u.fbusinessid =").append(bi.getId());
+		if(name!=null&&name.length()>0)
+			hql = hql.append(" and u.name like '%").append(name).append("%'");
+		
+		if(mobile!=null&&mobile.length()>0)
+			hql = hql.append(" and u.mobile like '%").append(mobile).append("%'");
+		
+		if(department!=null&&department.length()>0&&Long.parseLong(department)>0l)
+			hql = hql.append(" and u.fdepartmentid =").append(Long.parseLong(department));
+		
+		return hql;
+	}
+
+	@Override
+	public JsonArray querydepartment(BusinessInfo bi) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer querydepartment = new StringBuffer("select d from Department d where d.fbusinessid = ").append(bi.getId()).append(" and d.state = 0");
+		List<Object> lst = databaseHelper.getResultListByHql(querydepartment.toString());
+		
+		return JsonUtil.castLst2Arr4SingleTime(lst);
+	}
+
+	@Override
+	public void addemployee(UserInfo userinfo) throws Exception {
+		// TODO Auto-generated method stub
+		//检查用户名是否存在
+		StringBuffer queryexit = new StringBuffer("select u from UserInfo u where u.state = 0 and u.username = '").append(userinfo.getUsername()).append("'");
+		List<Object> lst = databaseHelper.getResultListByHql(queryexit.toString());
+		
+		if(lst.size()>0)throw new Exception("用户名已存在");
+		
+		//检查手机号是否存在
+		queryexit = new StringBuffer("select u from UserInfo u where u.state = 0 and u.mobile = '").append(userinfo.getMobile()).append("'");
+		lst = databaseHelper.getResultListByHql(queryexit.toString());
+		
+		if(lst.size()>0)throw new Exception("手机号已存在");
+		
+		//检查银行卡号是否存在
+		queryexit = new StringBuffer("select u from UserInfo u where u.state = 0 and u.cardno = '").append(userinfo.getCardno()).append("'");
+		lst = databaseHelper.getResultListByHql(queryexit.toString());
+		
+		if(lst.size()>0)throw new Exception("银行卡号已存在");
+		
+		//给用户其它信息设置初始值
+		userinfo.setAmountpay(0.0);
+		userinfo.setCreatetime(new Date());
+		userinfo.setFparentid(0l);
+		userinfo.setFsuperiorid(0l);
+		userinfo.setHeaderimg(null);
+		userinfo.setNickname(userinfo.getName());
+		userinfo.setProxylevel(0);
+		userinfo.setRole(0);//角色为员工
+		userinfo.setState(0);
+		databaseHelper.persistObject(userinfo);
+	}
+
+	@Override
+	public void modifyemployee(UserInfo userinfo) throws Exception {
+		// TODO Auto-generated method stub
+		//检查用户名是否存在
+		StringBuffer queryexit = new StringBuffer("select u from UserInfo u where u.state = 0 and u.username = '").append(userinfo.getUsername()).append("'");
+		List<Object> lst = databaseHelper.getResultListByHql(queryexit.toString());
+		
+		if(lst.size()>0){
+			UserInfo u = (UserInfo)lst.get(0);
+			if(!u.getId().equals(userinfo.getId()))
+				throw new Exception("用户名已存在");
+		}
+		
+		//检查手机号是否存在
+		queryexit = new StringBuffer("select u from UserInfo u where u.state = 0 and u.mobile = '").append(userinfo.getMobile()).append("'");
+		lst = databaseHelper.getResultListByHql(queryexit.toString());
+		
+		if(lst.size()>0){
+			UserInfo u = (UserInfo)lst.get(0);
+			if(!u.getId().equals(userinfo.getId()))
+				throw new Exception("手机号已存在");
+		}
+		
+		//检查银行卡号是否存在
+		queryexit = new StringBuffer("select u from UserInfo u where u.state = 0 and u.cardno = '").append(userinfo.getCardno()).append("'");
+		lst = databaseHelper.getResultListByHql(queryexit.toString());
+		
+		if(lst.size()>0){
+			UserInfo u = (UserInfo)lst.get(0);
+			if(!u.getId().equals(userinfo.getId()))
+				throw new Exception("银行卡号已存在");
+		}
+		
+		UserInfo oldu = (UserInfo)databaseHelper.getObjectById(UserInfo.class, userinfo.getId());
+		
+		oldu.setBank(userinfo.getBank());
+		oldu.setCardno(userinfo.getCardno());
+		oldu.setFdepartmentid(userinfo.getFdepartmentid());
+		oldu.setMobile(userinfo.getMobile());
+		oldu.setName(userinfo.getName());
+		oldu.setNickname(userinfo.getName());
+		oldu.setSex(userinfo.getSex());
+		oldu.setUsername(userinfo.getUsername());
+		databaseHelper.updateObject(oldu);
+	}
+
+	@Override
+	public List<Map<String, Object>> querylower(BusinessInfo bi, String name, String mobile, String proxylevel,
+			String userinfoid, int start, int limit) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select u from UserInfo u where  u.state = 0");
+		hql = conditionlower(hql,bi, name,mobile,proxylevel,userinfoid);
+		hql = hql.append(" order by u.createtime desc");
+		List<Object> lst = databaseHelper.getResultListByHql(hql.toString(),start,limit);
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		for (Object objects : lst) {
+			UserInfo u = (UserInfo)objects;
+			
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("id", u.getId());
+			map.put("name", u.getName());
+			map.put("mobile", u.getMobile());
+			map.put("level", Integer.parseInt(proxylevel)==1?"一级":Integer.parseInt(proxylevel)==2?"二级":"");
+			map.put("time", u.getCreatetime().toString());
+			
+			lstMap.add(map);
+		}
+		
+		return lstMap;
+	}
+
+	@Override
+	public int countlower(BusinessInfo bi, String name, String mobile, String proxylevel, String userinfoid)
+			throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select count(u.id) from UserInfo u where  u.state = 0");
+		hql = conditionlower(hql,bi, name,mobile,proxylevel,userinfoid);
+		
+		List lst = databaseHelper.getResultListByHql(hql.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+	
+	private StringBuffer conditionlower(StringBuffer hql,BusinessInfo bi,String name,String mobile,String proxylevel,String userinfoid){
+		if(Integer.parseInt(proxylevel)==1)
+			hql = hql.append(" and u.fparentid =").append(Long.parseLong(userinfoid));
+		else if(Integer.parseInt(proxylevel)==2)
+			hql = hql.append(" and u.fsuperiorid =").append(Long.parseLong(userinfoid));
+		
+		if(name!=null&&name.length()>0)
+			hql = hql.append(" and u.name like '%").append(name).append("%'");
+		
+		if(mobile!=null&&mobile.length()>0)
+			hql = hql.append(" and u.mobile like '%").append(mobile).append("%'");
+		
+		
+		return hql;
+	}
+
+	@Override
+	public String castFile2Lst(InputStream is, BusinessInfo bi) throws Exception {
+		// TODO Auto-generated method stub
+		Workbook wb = null;
+		Sheet sheet = null;
+		try {
+			wb =new HSSFWorkbook(is);
+			sheet = wb.getSheetAt(0);
+		} catch (Exception e) {
+
+			//wb = new XSSFWorkbook(is);
+			e.printStackTrace();
+		}
+		
+		//match head
+		Row row = sheet.getRow(0);
+		int len =sheet.getLastRowNum();
+		HSSFCell c = null;
+		String value  = "";
+		String hql  = "";
+		//姓名	性别	用户名	手机号	部门	开户行  	银行卡号
+		String result = "";
+		StringBuffer querydeptid = null;
+		
+		int x = 0;
+		for (int i = 1; i <= len; i++) {
+			querydeptid = new StringBuffer();
+			
+			StringBuffer s = new StringBuffer("");
+			row = sheet.getRow(i);
+			UserInfo userinfo = new UserInfo();
+			c = (HSSFCell) row.getCell(0);
+			value = ConstantUtil.getCellFormatValue(c);
+			if(value!=null&&value.length()>0){
+				userinfo.setName(value);
+				s.append("\t").append(value);
+			}
+			
+			c = (HSSFCell) row.getCell(1);
+			 value =  ConstantUtil.getCellFormatValue(c);
+			 if(value!=null&&value.length()>0){
+				 userinfo.setSex(value);
+				 s.append("\t").append(value);
+			  }
+			
+			c = (HSSFCell) row.getCell(2);
+			 value =  ConstantUtil.getCellFormatValue(c);
+			 if(value!=null&&value.length()>0){
+				 userinfo.setUsername(value);
+				 s.append("\t").append(value);
+			}
+			 
+			c = (HSSFCell) row.getCell(3);
+			 value =  ConstantUtil.getCellFormatValue(c);
+			 if(value!=null&&value.length()>0){
+				 userinfo.setMobile(value);
+				 s.append("\t").append(value);
+			}
+			
+			 c = (HSSFCell) row.getCell(4);
+			 value =  ConstantUtil.getCellFormatValue(c);
+			 if(value!=null&&value.length()>0){
+				 
+				 querydeptid.append("select d from Department d where d.state = 0 and d.fbusinessid = ").append(bi.getId()).append(" and d.departmentname = '").append(value).append("'");
+				 
+				 List<Object> lst = databaseHelper.getResultListByHql(querydeptid.toString());
+				 
+				 Long fdepartmentid = 0l;
+				 
+				 if(lst.size()>0)fdepartmentid = ((Department)lst.get(0)).getId();
+				 
+				 userinfo.setFdepartmentid(fdepartmentid);
+				 s.append("\t").append(value);
+			}
+			 
+			 c = (HSSFCell) row.getCell(5);
+			 value =  ConstantUtil.getCellFormatValue(c);
+			 if(value!=null&&value.length()>0){
+				 userinfo.setBank(value);
+				 s.append("\t").append(value);
+			}
+			 
+			 c = (HSSFCell) row.getCell(6);
+			 value =  ConstantUtil.getCellFormatValue(c);
+			 if(value!=null&&value.length()>0){
+				 userinfo.setCardno(value);
+				 s.append("\t").append(value);
+			}
+			 
+			
+			 
+			Sys.out("import..emp..info..."+s.toString());
+			
+			//检查用户名是否存在
+			StringBuffer queryexit = new StringBuffer("select u from UserInfo u where u.state = 0 and u.username = '").append(userinfo.getUsername()).append("'");
+			List<Object> lst = databaseHelper.getResultListByHql(queryexit.toString());
+			
+			if(lst.size()>0)continue;
+			
+			//检查手机号是否存在
+			queryexit = new StringBuffer("select u from UserInfo u where u.state = 0 and u.mobile = '").append(userinfo.getMobile()).append("'");
+			lst = databaseHelper.getResultListByHql(queryexit.toString());
+			
+			if(lst.size()>0)continue;
+			
+			//检查银行卡号是否存在
+			queryexit = new StringBuffer("select u from UserInfo u where u.state = 0 and u.cardno = '").append(userinfo.getCardno()).append("'");
+			lst = databaseHelper.getResultListByHql(queryexit.toString());
+			
+			if(lst.size()>0)continue;
+			
+			//给用户其它信息设置初始值
+			userinfo.setAmountpay(0.0);
+			userinfo.setCreatetime(new Date());
+			userinfo.setFparentid(0l);
+			userinfo.setFsuperiorid(0l);
+			userinfo.setHeaderimg(null);
+			userinfo.setNickname(userinfo.getName());
+			userinfo.setProxylevel(0);
+			userinfo.setRole(0);//角色为员工
+			userinfo.setState(0);
+			userinfo.setFbusinessid(bi.getId());
+			databaseHelper.persistObject(userinfo);
+			x++;
+		}
+		result = "{\"op\":\"success\",\"msg\":\"导入完成。共"+len+"条数据，成功导入"+x+"条。\"}";
+		return result;
+		
+	}
+}

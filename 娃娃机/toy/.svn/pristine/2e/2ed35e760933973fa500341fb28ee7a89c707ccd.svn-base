@@ -1,0 +1,118 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+<div class="tab-content">
+<!-- panel1 start -->
+  <div role="tabpanel" class="tab-pane active" id="tab_orderinfo_state1">
+  		<!-- jqgrid 用户列表-->
+							<table id="orderstate1_grid_table"></table>
+							<!-- jqgrid 页码栏-->
+							<div id="orderstate1_grid_pager"></div>
+  	</div>
+  	
+</div>		
+
+<!-- 物流详情（Modal） -->
+<div id="div_expressagedetail" ></div>
+<script>
+
+//加载部门下拉框
+/* Q.getProxylevel("#proxylevel"); */
+
+Q.grid_selector = "orderstate1_grid_table";
+Q.pager_selector = "orderstate1_grid_pager";
+
+var url = Q.url+"/ServiceDeliveryapplyControl/queryexpressageinfo.action";
+
+var colModel = [
+                { label: 'ID', name: 'id',align :'center',hidden:true,sortable : false,key:true },
+                { label: '订单号', name: 'orderno',align :'center', sortable : false },
+                { label: '玩具名称', name: 'toysname',align :'center', sortable : false },
+                { label: '收货人名称', name: 'consigneename',align :'center', sortable : false },
+                { label: '收货人电话', name: 'consigneemobile',align :'center', sortable : false },
+                
+                {  
+                    name: '操作' ,align :'center', fixed: true, sortable: false, resize: false,  
+                    //formatter:'actions',  
+                    formatter: function (value, grid, rows, state) { 
+                    	
+                    	var btn = "";
+                    	//btn += Q.gridbtn_modify(Q.grid_selector,rows.id) ;
+                    	//btn += Q.gridbtn_del(Q.grid_selector,rows.id) ;
+                    	btn += Q.gridbtn_yifahuo(Q.grid_selector,rows.id) ;
+                    	return  btn;
+                    }  
+                }
+            	];
+
+var caption = "订单列表11123";
+
+var postData = {};
+postData = getcondition();
+/**
+ * Q.grid_selector  tableid
+ * Q.pager_selector 页码栏id
+ * url 请求地址
+ * postData 请求参数
+ * colModel 表头
+ * caption 表名 
+ */
+/* Q.extJqGrid(Q.grid_selector,Q.pager_selector,url,postData,colModel,caption,null,function(d){
+	}); */
+	
+Q.ExtJqGrid({
+	"grid":Q.grid_selector,
+	"pager":Q.pager_selector,
+	"url":url,
+	"param":postData,
+	"model":colModel,
+	"caption":caption
+});
+
+//Q.pageNavbutton(grid_selector,pager_selector);
+function getcondition(){
+	var o = {};
+	o.keyword= $('#keyword').val();
+	o.state = 1;
+	return o;
+}
+
+
+function queryorderbycondition(){
+	postData = getcondition();
+	$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+	//Q.extJqGrid(grid_selector,pager_selector,url,postData,colModel,caption);
+}
+
+function getSelectedRows() {
+    var grid = $(Q.grid_selector);
+    var rowKey = grid.getGridParam("selrow");
+
+    if (!rowKey) {
+        alert("No rows are selected");
+    } else {
+        var selectedIDs = grid.getGridParam("selarrrow");
+        //var result = "";
+        //for (var i = 0; i < selectedIDs.length; i++) {
+        //    result += selectedIDs[i] + ",";
+        //}
+        var result = selectedIDs.join(",");
+        alert(result);
+    }
+}
+
+
+
+
+
+function filemanager(){
+	var _url= 'zyUpload/uploadimg.jsp';
+	
+	Q.viewJsp('#div_img',_url);
+}
+
+function yifahuo_orderstate1_grid_table(id){
+	var _url= 'deliveryapply/expressagedetail.jsp?expressageinfoid='+id;
+	
+	Q.viewJsp('#div_expressagedetail',_url);
+}
+</script>

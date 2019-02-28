@@ -1,0 +1,26 @@
+package com.hxy.isw.service;
+
+import java.util.List;
+import java.util.Map;
+
+import com.hxy.isw.entity.Employee;
+import com.hxy.isw.entity.ToysInfo;
+import com.hxy.isw.entity.ToysType;
+
+public interface ToyService {
+	
+	Map<String, Object> toysInfoList(Employee em, int start, int limit,String name,String ftoystypeid);
+
+	Map<String, Object> toysTypeList(Employee em, int start, int limit, String name);
+
+	void addToysType(Employee em, ToysType tt) throws Exception;
+
+	void delToysType(Employee em, String id);
+
+	Map<String, Object> findToysTypeById(Employee em, String id);
+	
+	Map<String, Object> findAlltoysType(Employee em);
+	
+	void addToys(ToysInfo toysInfo,String imgarr);
+
+}

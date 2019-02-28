@@ -1,0 +1,18 @@
+<urlrewrite default-match-type="wildcard">
+	<rule>
+		<from>/*</from>
+		<to last="true">/isw/login.action</to>
+	</rule>
+	<rule>
+		<from>/wealth/*</from>
+		<to last="true">/isw/wlogin.action</to>
+	</rule>
+	<rule>
+		<from>/msd/*</from>
+		<to last="true">/isw/msd.action</to>
+	</rule>
+	<rule>
+		<from>/notify/url</from>
+		<to last="true">/appServicePay/notifyurl.action</to>
+	</rule>
+</urlrewrite>

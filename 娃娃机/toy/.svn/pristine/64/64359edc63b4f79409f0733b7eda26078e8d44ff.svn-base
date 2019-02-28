@@ -1,0 +1,240 @@
+package com.hxy.isw.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="userinfo")
+public class UserInfo {
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="id")
+	private Long id;
+	
+	@Column(name="fbusinessid")
+	private Long fbusinessid;
+	
+	@Column(name="fdepartmentid")
+	private Long fdepartmentid;
+	
+	@Column(name="username")
+	private String username;
+	
+	@Column(name="mobile")
+	private String mobile;
+	
+	@Column(name="name")
+	private String name;
+	
+	@Column(name="sex")
+	private String sex;
+	
+	@Column(name="nickname")
+	private String nickname;
+	
+	@Column(name="headerimg")
+	private String headerimg;
+	
+	@Column(name="role")
+	private int role;//用户角色  0员工 1用户
+	
+	@Column(name="fparentid")
+	private Long fparentid;//上级用户id
+	
+	
+	@Column(name="fsuperiorid")
+	private Long fsuperiorid;//上上级用户id
+	
+	@Column(name="createtime")
+	private Date createtime;
+
+	@Column(name="cardno")
+	private String cardno;
+	
+	@Column(name="bank")
+	private String bank;
+	
+	@Column(name="proxylevel")
+	private int proxylevel; //0非代理 1代理
+	
+	@Column(name="amountpay")
+	private Double amountpay;
+	
+	@Column(name="state")
+	private int state;
+
+	
+	@Column(name="level")
+	private Integer level;
+	
+	@Column(name="openid")
+	private String openid;
+	
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Long getFbusinessid() {
+		return fbusinessid;
+	}
+
+	public void setFbusinessid(Long fbusinessid) {
+		this.fbusinessid = fbusinessid;
+	}
+
+	public Long getFdepartmentid() {
+		return fdepartmentid;
+	}
+
+	public void setFdepartmentid(Long fdepartmentid) {
+		this.fdepartmentid = fdepartmentid;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public String getMobile() {
+		return mobile;
+	}
+
+	public void setMobile(String mobile) {
+		this.mobile = mobile;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getSex() {
+		return sex;
+	}
+
+	public void setSex(String sex) {
+		this.sex = sex;
+	}
+
+	public String getNickname() {
+		return nickname;
+	}
+
+	public void setNickname(String nickname) {
+		this.nickname = nickname;
+	}
+
+	public String getHeaderimg() {
+		return headerimg;
+	}
+
+	public void setHeaderimg(String headerimg) {
+		this.headerimg = headerimg;
+	}
+
+	public int getRole() {
+		return role;
+	}
+
+	public void setRole(int role) {
+		this.role = role;
+	}
+
+	public Long getFparentid() {
+		return fparentid;
+	}
+
+	public void setFparentid(Long fparentid) {
+		this.fparentid = fparentid;
+	}
+
+	public Date getCreatetime() {
+		return createtime;
+	}
+
+	public void setCreatetime(Date createtime) {
+		this.createtime = createtime;
+	}
+
+	public String getCardno() {
+		return cardno;
+	}
+
+	public void setCardno(String cardno) {
+		this.cardno = cardno;
+	}
+
+	public String getBank() {
+		return bank;
+	}
+
+	public void setBank(String bank) {
+		this.bank = bank;
+	}
+
+	public int getProxylevel() {
+		return proxylevel;
+	}
+
+	public void setProxylevel(int proxylevel) {
+		this.proxylevel = proxylevel;
+	}
+
+	public Double getAmountpay() {
+		return amountpay;
+	}
+
+	public void setAmountpay(Double amountpay) {
+		this.amountpay = amountpay;
+	}
+
+	public int getState() {
+		return state;
+	}
+
+	public void setState(int state) {
+		this.state = state;
+	}
+
+	public Long getFsuperiorid() {
+		return fsuperiorid;
+	}
+
+	public void setFsuperiorid(Long fsuperiorid) {
+		this.fsuperiorid = fsuperiorid;
+	}
+
+	public Integer getLevel() {
+		return level;
+	}
+
+	public void setLevel(Integer level) {
+		this.level = level;
+	}
+
+	public String getOpenid() {
+		return openid;
+	}
+
+	public void setOpenid(String openid) {
+		this.openid = openid;
+	}
+	
+	
+}

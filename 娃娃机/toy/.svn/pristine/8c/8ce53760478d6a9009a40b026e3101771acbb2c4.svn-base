@@ -1,0 +1,20 @@
+package com.hxy.isw.service;
+
+import java.util.Map;
+
+import com.hxy.isw.entity.Employee;
+import com.hxy.isw.entity.MachineInfo;
+import com.hxy.isw.entity.ToysInfo;
+import com.hxy.isw.entity.ToysType;
+
+public interface DeviceService {
+	Map<String, Object> findMachineList(Employee em, String machineno, String ftoysid, Integer start, Integer limit)throws Exception;
+	void bindToys(Employee em, MachineInfo machineInfo) throws Exception;
+	void addmachine(Employee em,String addmachineid) throws Exception;
+	Map<String, Object> findAlltoys(Employee em)throws Exception;
+	Map<String, Object> findAlltoysType(Employee em)throws Exception;
+	Map<String, Object> toysInfoList(Employee em, int start, int limit,String name,String ftoystypeid)throws Exception;
+	Map<String, Object> toysTypeList(Employee em, int start, int limit, String name)throws Exception;
+	void addToys(ToysInfo toysInfo,String imgarr,Employee em);
+	void addToysType(Employee em, ToysType tt) throws Exception;
+}

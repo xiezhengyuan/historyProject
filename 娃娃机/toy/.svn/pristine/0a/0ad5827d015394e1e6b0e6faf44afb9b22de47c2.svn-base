@@ -1,0 +1,216 @@
+package com.hxy.isw.control;
+
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.hxy.isw.entity.Employee;
+import com.hxy.isw.entity.MachineInfo;
+import com.hxy.isw.entity.ToysInfo;
+import com.hxy.isw.entity.ToysType;
+import com.hxy.isw.service.DeviceService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.JsonUtil;
+
+@Controller
+@RequestMapping("/device")
+public class DeviceControl {
+
+	@Autowired
+	DeviceService deviceService;
+	
+	@RequestMapping(method = RequestMethod.POST, value = "/machineList")
+	public void machineList(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		try {
+			String machineno = request.getParameter("machineno");
+			String ftoysid = request.getParameter("ftoysid");
+
+			int start = request.getParameter("page") == null ? 1 : Integer.parseInt(request.getParameter("page"));
+			int limit = request.getParameter("rows") == null ? ConstantUtil.LIMIT
+					: Integer.parseInt(request.getParameter("rows"));
+			Employee em = (Employee) session.getAttribute("loginEmp");
+
+			Map<String, Object> map = deviceService.findMachineList(em, machineno, ftoysid, start, limit);
+
+			JsonUtil.listToJson((List<Map<String, Object>>) map.get("list"), (Integer) map.get("pages"), response);
+
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"session失效，请重新登录\"}");
+		} catch (Exception e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"异常\"}");
+		}
+	}
+	
+	@RequestMapping(method = RequestMethod.POST, value = "/bindToys")
+	public void bindToys(HttpServletRequest request, HttpServletResponse response, HttpSession session,
+			MachineInfo machineInfo) {
+		try {
+			Employee em = (Employee) session.getAttribute("loginEmp");
+
+			deviceService.bindToys(em, machineInfo);
+
+			JsonUtil.success2page(response);
+
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"session失效，请重新登录\"}");
+		} catch (Exception e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"" + e.getMessage() + "\"}");
+		}
+
+	}
+	
+	@RequestMapping(method = RequestMethod.POST, value = "/addmachine")
+	public void addmachine(HttpServletRequest request, HttpServletResponse response, HttpSession session,
+			MachineInfo machineInfo) {
+		try {
+			Employee em = (Employee) session.getAttribute("loginEmp");
+			
+			String addmachineid=request.getParameter("machineno");
+			System.out.println(em.getId());
+			deviceService.addmachine(em,addmachineid);
+			JsonUtil.success2page(response);
+
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"session失效，请重新登录\"}");
+		} catch (Exception e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"" + e.getMessage() + "\"}");
+		}
+	}
+	
+	@RequestMapping(method = RequestMethod.POST, value = "/findAllToys")
+	public void findAlltoys(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		try {
+			Employee em = (Employee) session.getAttribute("loginEmp");
+
+			Map<String, Object> map = deviceService.findAlltoys(em);
+
+			JsonUtil.mapToJson(map, response);
+
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"session失效，请重新登录\"}");
+		} catch (Exception e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"" + e.getMessage() + "\"}");
+		}
+	}
+	
+	@RequestMapping(value = "findAllToysType", method = RequestMethod.POST)
+	public void findAlltoysType(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		try {
+			Employee em = (Employee) session.getAttribute("loginEmp");
+
+			Map<String, Object> map = deviceService.findAlltoysType(em);
+			JsonUtil.mapToJson(map, response);
+		} catch (NullPointerException e) {
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"" + e.getMessage() + "\"}");
+		} catch (Exception e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"异常\"}");
+		}
+	}
+	
+	@RequestMapping(value = "toysinfoList", method = RequestMethod.POST)
+	public void toysinfoList(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		try {
+			String name = request.getParameter("name");
+			String ftoystypeid = request.getParameter("ftoystypeid");
+			int start = request.getParameter("page") == null ? 1 : Integer.parseInt(request.getParameter("page"));
+			int limit = request.getParameter("rows") == null ? ConstantUtil.LIMIT
+					: Integer.parseInt(request.getParameter("rows"));
+			Employee em = (Employee) session.getAttribute("loginEmp");
+
+			Map<String, Object> map = deviceService.toysInfoList(em, start, limit, name, ftoystypeid);
+			JsonUtil.listToJson((List<Map<String, Object>>) map.get("rows"), (Integer) map.get("pages"), response);
+
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"" + e.getMessage() + "\"}");
+		} catch (Exception e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"异常\"}");
+		}
+	}
+	
+	
+	@RequestMapping(value = "/toysTypeList", method = RequestMethod.POST)
+	public void toysTypeList(HttpServletRequest request, HttpServletResponse response, HttpSession session) {
+		try {
+			String name = request.getParameter("name");
+
+			int start = request.getParameter("page") == null ? 1 : Integer.parseInt(request.getParameter("page"));
+			int limit = request.getParameter("rows") == null ? ConstantUtil.LIMIT
+					: Integer.parseInt(request.getParameter("rows"));
+			Employee em = (Employee) session.getAttribute("loginEmp");
+
+			Map<String, Object> map = deviceService.toysTypeList(em, start, limit, name);
+
+			JsonUtil.listToJson((List<Map<String, Object>>) map.get("rows"), (Integer) map.get("pages"), response);
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"session失效，请重新登录\"}");
+		} catch (Exception e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"异常\"}");
+		}
+	}
+	
+	
+	@RequestMapping(value = "/addToys", method = RequestMethod.POST)
+	public void addToys(HttpServletRequest request, HttpServletResponse response, HttpSession session,
+			ToysInfo toysInfo) {
+		try {
+			Employee em = (Employee) session.getAttribute("loginEmp");
+			String photo = request.getParameter("thumbnail");
+			String ffileinfoid = request.getParameter("ffileinfoid");
+			toysInfo.setPhoto(photo);// 缩略图地址
+			toysInfo.setFfileinfoid(Long.parseLong(ffileinfoid));// 缩略图id
+			toysInfo.setState(0);
+			toysInfo.setCreatetime(new Date());
+			toysInfo.setEmpid(em.getId());
+			String imgarr = request.getParameter("imgarr");// 图片列表
+			deviceService.addToys(toysInfo, imgarr,em);
+			JsonUtil.success2page(response);
+
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"session失效，请重新登录\"}");
+		} catch (Exception e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"异常\"}");
+		}
+}
+	
+	@RequestMapping(value = "addToysType", method = RequestMethod.POST)
+	public void addToysType(HttpServletRequest request, HttpServletResponse response, HttpSession session,
+			ToysType toysType) {
+		try {
+			Employee em = (Employee) session.getAttribute("loginEmp");
+			deviceService.addToysType(em, toysType);
+			JsonUtil.success2page(response, "{\"op\":\"success\",\"msg\":\"\"}");
+
+		} catch (NullPointerException e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"" + e.getMessage() + "\"}");
+		} catch (Exception e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\"异常\"}");
+		}
+
+	}
+}

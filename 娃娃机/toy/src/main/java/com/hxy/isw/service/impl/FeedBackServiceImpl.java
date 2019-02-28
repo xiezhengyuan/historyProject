@@ -1,0 +1,53 @@
+package com.hxy.isw.service.impl;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.hxy.isw.entity.FeedBack;
+import com.hxy.isw.service.FeedBackService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.Sys;
+@Repository
+public class FeedBackServiceImpl implements FeedBackService {
+	@Autowired
+	DatabaseHelper databaseHelper;
+	@Override
+	public Map<String, Object> searchFeedback(Integer start, Integer limit) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		List<Map<String, Object>> rowList = new ArrayList<Map<String, Object>>();
+		
+		StringBuffer buffer = new StringBuffer("select count(f.id) from FeedBack f");
+				
+		int records =Integer.parseInt(databaseHelper.getResultListByHql(buffer.toString()).get(0).toString());
+		
+		int total = ConstantUtil.pages(records, limit);
+		
+		if(records>0){
+			StringBuffer hql = new StringBuffer("select f from FeedBack f");
+					
+			List<Object> relult = databaseHelper.getResultListByHql(hql.toString(), start, limit);	
+			Sys.out(relult.get(0));
+			for (Object objects : relult){
+				FeedBack feedback=(FeedBack) objects;
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("title", feedback.getTitle());
+				map.put("content", feedback.getContent());
+				map.put("createtime", feedback.getCreatetime().toString());
+				map.put("replayto", feedback.getReplayto());
+				rowList.add(map);
+			}
+			
+		}
+		resultMap.put("total", total);
+		resultMap.put("records", records);
+		resultMap.put("rows", rowList);
+		return resultMap;
+	}
+
+}

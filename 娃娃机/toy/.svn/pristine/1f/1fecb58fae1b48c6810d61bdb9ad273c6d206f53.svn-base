@@ -1,0 +1,140 @@
+package com.hxy.isw.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name="giftbox")
+public class Giftbox {
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="id")
+	private Long id;
+	
+	@Column(name="fuserinfoid")
+	private Long fuserinfoid;
+	
+	@Column(name="toysname")
+	private String toysname;
+	
+	@Column(name="ftoysid")
+	private Long ftoysid;
+	
+	@Column(name="photo")
+	private String photo;
+	
+	@Column(name="fmachineid")
+	private Long fmachineid;
+	
+	@Column(name="machineno")
+	private String machineno;
+	
+	@Column(name="getphoto")
+	private String getphoto;
+	
+	@Column(name="createtime")
+	private Date createtime;
+	
+	@Column(name="state")
+	private int state; //-1 失效 0 新获得 1配货中 2已发货
+	
+	
+	@Column(name="applystate")
+	private int applystate;//申请发货状态 -1 未通过 0 新  1申请待审核  2已通过
+	
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Long getFuserinfoid() {
+		return fuserinfoid;
+	}
+
+	public void setFuserinfoid(Long fuserinfoid) {
+		this.fuserinfoid = fuserinfoid;
+	}
+
+	public String getToysname() {
+		return toysname;
+	}
+
+	public void setToysname(String toysname) {
+		this.toysname = toysname;
+	}
+
+	public Long getFtoysid() {
+		return ftoysid;
+	}
+
+	public void setFtoysid(Long ftoysid) {
+		this.ftoysid = ftoysid;
+	}
+
+	public String getPhoto() {
+		return photo;
+	}
+
+	public void setPhoto(String photo) {
+		this.photo = photo;
+	}
+
+	public Long getFmachineid() {
+		return fmachineid;
+	}
+
+	public void setFmachineid(Long fmachineid) {
+		this.fmachineid = fmachineid;
+	}
+
+	public String getMachineno() {
+		return machineno;
+	}
+
+	public void setMachineno(String machineno) {
+		this.machineno = machineno;
+	}
+
+	public String getGetphoto() {
+		return getphoto;
+	}
+
+	public void setGetphoto(String getphoto) {
+		this.getphoto = getphoto;
+	}
+
+	public Date getCreatetime() {
+		return createtime;
+	}
+
+	public void setCreatetime(Date createtime) {
+		this.createtime = createtime;
+	}
+
+	public int getState() {
+		return state;
+	}
+
+	public void setState(int state) {
+		this.state = state;
+	}
+
+	public int getApplystate() {
+		return applystate;
+	}
+
+	public void setApplystate(int applystate) {
+		this.applystate = applystate;
+	}
+
+	
+}

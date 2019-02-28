@@ -1,0 +1,117 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<div class="modal fade" id="addemp" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="myModalLabel">
+					新增设备
+				</h4>
+			</div>
+			<div class="modal-body" >
+			<div class="form-horizontal" role="form" id="form_addemp">
+				<div class="form-group">
+					<label for="name" class="col-sm-2 control-label">设备编号</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="machineInfo.machineno" msg="请输入姓名" id="machineno"  placeholder="">
+					</div>
+					</div>
+			
+				  <div class="form-group">
+				    <label for="sex" class="col-sm-2 control-label">娃娃</label>
+				    <div class="col-sm-10">
+				      <select  class="form-control" id="sex" name="machineInfo.ftoysid">
+				      <option value="男" selected>男</option>
+				      <option value="女" >女</option>
+				      </select>
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+					<label for="username" class="col-sm-2 control-label">价格</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="machineInfo.price" msg="请输入价格" id="price"  placeholder="">
+					</div>
+					</div>
+				  
+				  <div class="form-group">
+					<label for="mobile" class="col-sm-2 control-label">人气</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="machineInfo.popularity" msg="请输入人气" id="popularity" placeholder="">
+					</div>
+					</div>
+					
+					<div class="form-group">
+				    <label for="sex" class="col-sm-2 control-label">是否上新</label>
+				    <div class="col-sm-10">
+				      <select  class="form-control" id="fdepartmentid" name="machineInfo.isnew" msg="" vtype="combo">
+				      	<option value="1" selected="selected">是</option>
+				      	<option value="0">否</option>
+				      </select>
+				    </div>
+				  </div>
+				  <div class="form-group">
+					<label for="bank" class="col-sm-2 control-label">正面直播流地址</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="machineInfo.facevideo" msg="请输入正面直播流地址" id="facevideo"  placeholder="">
+					</div>
+					</div>
+					
+					<div class="form-group">
+					<label for="cardno" class="col-sm-2 control-label">侧面直播流地址</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="machineInfo.sidevideo" msg="请输入侧面直播流地址" id="sidevideo"  placeholder="">
+					</div>
+					</div>
+					
+					<div class="form-group">
+					<label for="cardno" class="col-sm-2 control-label">玩具数量</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="machineInfo.stock" msg="请输入数量" id="stock"  placeholder="">
+					</div>
+					</div>
+			</div>
+			</div>
+		<div class="modal-footer">
+				<button type="button" class="btn btn-default btn-sm" data-dismiss="modal">关闭</button>
+				<button type="button" class="btn btn-primary btn-sm" id="saveemp">提交</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<script>
+$('#addemp').modal('show');
+
+//加载部门下拉框
+/* Q.getDepartment("#fdepartmentid"); */
+
+$('#saveemp').click(function(){
+	if(!$('#form_addemp').checkForm())return;
+	
+	var o = $('#form_addemp').serializeObject();
+	
+	$._ajax({
+		url: Q.url+"/employee/addemployee.action",
+		data:o,
+		success: function(data){
+			if( typeof(data) == 'object'){
+				if( data.op == 'success' ){
+					Q.toastr("提示","操作成功",'success');
+					//reloadgrid
+					$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+				}else if(data.op == 'fail')
+					Q.toastr("提示",data.msg,'error');
+				else
+					Q.toastr("提示","操作失败",'error');
+			}else {
+				Q.toastr("提示","操作失败",'error');
+			}
+		}
+	});
+	
+	
+})
+</script>

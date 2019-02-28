@@ -1,0 +1,156 @@
+
+<!doctype html>
+
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <script type="text/javascript" src="../js/jquery-1.8.3.min.js"></script>
+    <title>下载</title>
+    <style>
+        *{
+            margin: 0;
+            padding: 0;
+        }
+        body,html{
+            width: 100%;
+            height: 100%;
+        }
+        .top img{
+            width: 100%;
+           
+        }
+        .center{
+            margin-top: 10px;
+            text-align: center;
+        }
+        .center h5{
+            color: #555;
+            margin-top: 5px;
+        }
+        .center h4 span{
+            font-size: 10px;
+            background: #ffd57a;
+            color: #ca824a;
+            padding: 0 5px;
+            border: 1px solid #ca824a;
+            margin-bottom: 1px;
+            margin-left: 5px;
+        }
+        .center p{
+            color: #666;
+            font-size: 13px;
+            margin-top: 20px;
+        }
+        .bot{
+            margin-top: 30px;
+        }
+        .bot p{
+            width: 60%;
+            margin: 15px auto;
+        }
+        .bot p img{
+            width: 100%;
+        }
+        .footer img{
+            margin: 0 auto;
+            width: 50%;
+            display: block;
+        }
+        #modal{
+            display: none;
+            position: fixed;
+            width: 100%;
+            height: 100%;
+            top:0;
+            left:0;
+        }
+        #modal img{
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div id="main">
+        <div class="top">
+            <img src="top.png" alt="">
+        </div>
+        <div class="center">
+            <h4>爱抓<span>官方</span></h4>
+            <h5>爱抓娃娃就上爱抓 </h5>
+            <p id="editionno">1.0.1</p> <span id="size">大小 33.87MB</span>
+        </div>
+        <div class="bot">
+            <p id="androiddownload"><img src="and.png" alt=""></p>
+            <p id="iosdownload"><img src="ios.png" alt=""></p>
+        </div>
+        <div class="footer"><img src="tip.png" alt=""></div>
+    </div>
+    <div id="modal">
+        <img src="bu.png" alt="">
+    </div>
+    <script>
+    
+    var androidurl = '';
+    var appleurl = '';
+    
+    $.ajax({
+		url: "http://zzl.runfkj.com/edition/queryloadurl.action",
+		data:{},
+		type:'post',
+		dataType:'json',
+		success: function(data){
+			if( typeof(data) == 'object'){
+					androidurl=data.androidurl
+					appleurl=data.androidurl
+					
+					$("#editionno").html("版本"+data.editionno);
+					$("#size").html("大小"+data.size+"MB");
+				
+		    }
+			
+		}	
+	  });	
+   
+    $('#iosdownload').click(function () {
+   	 if(isWeiXin()){
+   		 $('#zhebu').show().click(function () {
+                $('#zhebu').hide();
+            })
+   	 }else{
+   		 alert('iOS版上架中');
+   		//document.location.href = "https://itunes.apple.com/us/app/快挖/id1193417545?l=zh&ls=1&mt=8";
+   	 }
+        
+    });
+
+    $('#androiddownload').click(function () {
+   	 if(isWeiXin()){
+            $('#zhebu').show().click(function () {
+                $('#zhebu').hide();
+            })
+   	 }else{
+   		 if(url==null){
+   			 alert('获取数据错误，请重新刷新页面');
+   			 return;
+   		 }
+   		 document.location.href = androidurl;
+   	 }
+    });
+   
+   function isWeiXin(){
+	    var ua = window.navigator.userAgent.toLowerCase();
+	    if(ua.match(/MicroMessenger/i) == 'micromessenger'){
+	        return true;
+	    }else{
+	        return false;
+	    }
+	}
+    
+    </script>
+</body>
+</html>

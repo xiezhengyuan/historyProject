@@ -1,0 +1,684 @@
+package com.hxy.isw.service.impl;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.hxy.isw.entity.Appeal;
+import com.hxy.isw.entity.AppealPhotos;
+import com.hxy.isw.entity.CodeLog;
+import com.hxy.isw.entity.Consumption;
+import com.hxy.isw.entity.FeedBack;
+import com.hxy.isw.entity.MessageInfo;
+import com.hxy.isw.entity.ProxyApply;
+import com.hxy.isw.entity.ShippingAddress;
+import com.hxy.isw.entity.SignInfo;
+import com.hxy.isw.entity.UserInfo;
+import com.hxy.isw.service.AppServiceUser;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.JsonUtil;
+@Repository
+public class AppServiceUserImpl implements AppServiceUser{
+	@Autowired
+  DatabaseHelper databaseHelper;
+	@Override
+	public String getcode(String userid, String mobile, String type) throws Exception {
+		// TODO Auto-generated method stub
+				if(type==null||type.length()==0)throw new Exception("参数type错误");
+				
+				int int_type = Integer.parseInt(type);
+				
+				UserInfo ui = null;
+				if(int_type == 2){//忘记密码 ，需要输入手机号
+					
+					if(mobile==null||mobile.length()==0)throw new Exception("请输入手机号码");
+					
+					StringBuffer querymobile = new StringBuffer("select ui from UserInfo ui where ui.mobile = '").append(mobile).append("'");
+					List<Object> lst = databaseHelper.getResultListByHql(querymobile.toString());
+					
+					if(lst.size()==0)throw new Exception("该手机号的用户不存在噢╮(╯_╰)╭");
+					
+					ui = (UserInfo)lst.get(0);
+					
+				}else {//其它情况需要用户id
+					
+					/*if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+					
+					ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+					
+					if(ui!=null)throw new Exception("id为"+userid+"的用户已存在");
+					*/
+					
+					/*if(int_type==2||int_type==3){//修改登录密码或支付密码时，手机号码从用户信息中取
+						
+						mobile = ui.getMobile();
+						
+					}else{//邀请下级或修改手机号   需要新的手机号
+						
+						if(mobile==null||mobile.length()==0)throw new Exception("请输入手机号码噢╮(╯_╰)╭");
+						
+					}*/
+				}
+				
+				
+				//检查1分钟之内是否已经发送过
+				StringBuffer check = new StringBuffer("select cl from CodeLog cl where cl.mobile ='")
+						.append(mobile).append("' and cl.type = ").append(int_type).append(" order by cl.createtime desc");
+				
+				List<Object> lst = databaseHelper.getResultListByHql(check.toString());
+				
+				if(lst.size()>0){
+					CodeLog cl = (CodeLog)lst.get(0);
+					Date last = cl.getCreatetime();
+					Date now = new Date();
+					long diff = now.getTime()-last.getTime();
+					//如果小于1分钟
+					if(diff<1000l*60)throw new Exception("1分钟内请不要重复发送验证码噢╮(╯_╰)╭");
+				}
+				
+				//检查今天该手机号一共接收了多少次短信
+				check = new StringBuffer("select cl from CodeLog cl where ")
+						.append(" cl.mobile ='").append(mobile).append("' and date(cl.createtime) = curdate()");
+				
+				lst = databaseHelper.getResultListByHql(check.toString());
+				
+				if(lst.size()>10)throw new Exception("同一个手机号一天最多只能接收10次短信噢╮(╯_╰)╭");
+				
+				String code = ConstantUtil.gencode();
+				
+				String content = "【抓抓乐】验证码为"+code+"。请勿泄露。";
+				
+				boolean flag = ConstantUtil.yunpian(content,mobile);
+				
+				
+				if(!flag)throw new Exception("短信服务器异常`(*>﹏<*)′");
+				
+				CodeLog cl = new CodeLog();
+				cl.setCode(code);
+				//cl.setFuserid(ui.getId());
+				cl.setMobile(mobile);
+				cl.setCreatetime(new Date());
+				cl.setType(Integer.parseInt(type));
+				
+				databaseHelper.persistObject(cl);
+				
+				Map<String,Object> map = new HashMap<String,Object>();
+				
+				map.put("msg", "success");
+				map.put("info", "验证码发送成功*^_^* ");
+				
+				String json = JsonUtil.getGson().toJson(map);
+				return json;
+			}
+	
+	
+	@Override
+	public String login(String mobile, String password) throws Exception {
+		// TODO Auto-generated method stub
+if(mobile==null||mobile.length()==0)throw new Exception("请输入手机号");
+		
+		if(!ConstantUtil.isPhoneLegal(mobile))throw new Exception("手机号码格式错误");
+		
+		if(password==null||password.length()==0)throw new Exception("请输入密码");
+		
+		StringBuffer querymobile = new StringBuffer("select ui from UserInfo ui where ui.state = 0 and ui.mobile = '").append(mobile).append("'");
+		List<Object> lst = databaseHelper.getResultListByHql(querymobile.toString());
+		
+		if(lst.size()==0)throw new Exception("该手机号的用户不存在噢╮(╯_╰)╭");
+		
+		UserInfo ui = (UserInfo)lst.get(0);
+		
+		if(ui.getState() < 0)throw new Exception("该手机号的用户已被禁用,请联系管理员o(︶︿︶)o");
+		
+		/*if(ui.getLoginstate() == 1){
+			
+			ui.setLoginstate(0);
+			databaseHelper.updateObject(ui);
+			
+			Map<String,Object> map = new HashMap<String,Object>();
+			
+			map.put("msg", "fail");
+			map.put("info", "该用户已在线，请不要重复登录(︶︿︶)o");
+			
+			String json = JsonUtil.getGson().toJson(map);
+			
+			return json;
+			
+		}*/
+		
+		String md5Password_real = ConstantUtil.getMD5Str(ui.getPassword()+ConstantUtil.TOKEN,null);
+		
+		if(!md5Password_real.equals(password))throw new Exception("密码不正确噢╮(╯_╰)╭");
+		
+		/*//登录成功，将用户在线状态置为1
+		if(ui.getLoginstate()!=1){
+			ui.setLoginstate(1);
+			databaseHelper.updateObject(ui);
+		}*/
+		
+		return getuserinfo(ui);
+	}
+	
+	//获取用户信息
+			private String getuserinfo(UserInfo ui){
+				Map<String,Object> map = new HashMap<String,Object>();
+				
+				map.put("msg", "success");
+				map.put("info", "登录成功");
+				map.put("userid", ui.getId());
+				map.put("nickname", ui.getNickname());
+			    map.put("headimg", ui.getHeadimg());
+			    map.put("sex", ui.getSex());
+			    map.put("mobile", ui.getMobile());
+			    map.put("birthday", ui.getBirthday());
+			    map.put("selfinfo", ui.getSelfinfo());
+			    map.put("balance", ui.getBalance());
+			    map.put("freevoucher", ui.getFreevoucher());
+				map.put("level", ui.getLevel());
+				
+				String json = JsonUtil.getGson().toJson(map);
+				return json;
+			}
+
+
+			@Override
+			public String registe(String mobile, String password, String code) throws Exception {
+				// TODO Auto-generated method stub
+				String hql = "select u from UserInfo u where u.mobile = '"+mobile+"'";
+				List<Object> lst =  databaseHelper.getResultListByHql(hql);
+				if(lst.size()>0)throw new Exception("该手机已注册");
+				int type = 1;
+				checkcode(mobile, type, code);
+				
+				UserInfo u = new UserInfo();
+				u.setMobile(mobile);
+				u.setPassword(password);
+				u.setCreatetime(new Date());
+				u.setUsername(mobile);
+				u.setInviter(Long.parseLong("0"));
+				databaseHelper.persistObject(u);
+                Map<String,Object> map = new HashMap<String,Object>();
+				
+				map.put("msg", "success");
+				map.put("info", "注册成功");
+				String json = JsonUtil.getGson().toJson(map);
+				return json;
+			}
+
+			//检查验证码
+			private void checkcode(String mobile,int type,String code) throws Exception {
+				
+				String msg1 = "",msg2 = "";
+				if(type==1){
+					msg1 = "注册的手机验证码未成功发送噢╮(╯_╰)╭";
+					msg2 = "注册的手机验证码不正确噢╮(╯_╰)╭";
+				}else if(type==2){
+					msg1 = "忘记密码的验证码未成功发送噢╮(╯_╰)╭";
+					msg2 = "忘记密码的验证码不正确噢╮(╯_╰)╭";
+				}
+				
+				StringBuffer queryloginpwdcode = new StringBuffer("select cl from CodeLog cl where cl.mobile =")
+						.append(Long.parseLong(mobile)).append(" and cl.type = ").append(type).append(" order by cl.createtime desc");
+				
+				List<Object> lst = databaseHelper.getResultListByHql(queryloginpwdcode.toString());
+				
+				if(lst.size()==0)throw new Exception(msg1);
+				
+				CodeLog cl = (CodeLog)lst.get(0);
+				
+				if(!cl.getCode().equals(code))throw new Exception(msg2);
+			}
+
+
+			@Override
+			public String forgotpassword(String mobile, String newpassword, String code) throws Exception {
+				// TODO Auto-generated method stub
+				if(mobile==null||mobile.length()==0)throw new Exception("请输入手机号");
+				if(newpassword==null||newpassword.length()==0)throw new Exception("请输入新密码");
+				if(newpassword.length()>16||newpassword.length()<6)throw new Exception("新密码必须为6到16位");
+				
+				if(!ConstantUtil.isPhoneLegal(mobile))throw new Exception("手机号码格式错误");
+				
+				StringBuffer querymobile = new StringBuffer("select ui from UserInfo ui where ui.state = 0 and ui.mobile = '").append(mobile).append("'");
+				List<Object> lst = databaseHelper.getResultListByHql(querymobile.toString());
+				
+				if(lst.size()==0)throw new Exception("该手机号的用户不存在噢╮(╯_╰)╭");
+				
+				UserInfo ui = (UserInfo)lst.get(0);
+				
+				if(ui.getState() < 0)throw new Exception("该手机号的用户已被禁用,请联系管理员噢╮(╯_╰)╭");
+				
+				checkcode(mobile, 2, code);
+				
+				ui.setPassword(newpassword);
+				
+				databaseHelper.updateObject(ui);
+				
+				Map<String,Object> map = new HashMap<String,Object>();
+				
+				map.put("msg", "success");
+				map.put("info", "密码修改成功*^_^* ");
+				
+				String json = JsonUtil.getGson().toJson(map);
+				
+				return json;
+
+			}
+
+			@Override
+			public String uploaduserphoto(String userid, String filename) throws Exception {
+				// TODO Auto-generated method stub
+				if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+				
+				UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+				
+				if(ui==null)throw new Exception("id为"+userid+"的用户不存在");
+				
+				ui.setHeadimg(filename);
+				
+				databaseHelper.updateObject(ui);
+				
+				 Map<String,Object> map = new HashMap<String,Object>();
+					
+				 map.put("msg", "success");
+				 map.put("info", "上传成功");
+				 map.put("url", filename);
+				 
+				 String json = JsonUtil.getGson().toJson(map);
+				return json;
+			}
+			
+			@Override
+			public String userinfo(String userid) throws Exception {
+				// TODO Auto-generated method stub
+				if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+				
+				UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+				
+				if(ui==null)throw new Exception("id为"+userid+"的用户不存在");
+				
+				return getuserinfo(ui);
+			}
+
+
+			@Override
+			public String modifyuserinfo(String userid, String nickname, String sex, String birthday, String selfinfo)
+					throws Exception {
+				// TODO Auto-generated method stub
+				if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+				
+				UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+				
+				if(ui==null)throw new Exception("id为"+userid+"的用户不存在");
+				
+				
+				if(nickname!=null&&nickname.length()>0)ui.setNickname(nickname);
+				
+				if(sex!=null&&sex.length()>0)ui.setSex(sex);
+				
+				if(birthday!=null&&birthday.length()>0)ui.setBirthday(birthday);
+
+				if(selfinfo!=null&&selfinfo.length()>0)ui.setSelfinfo(selfinfo);
+				
+				databaseHelper.updateObject(ui);
+				 Map<String,Object> map = new HashMap<String,Object>();
+				map.put("msg", "success");
+				map.put("info", "修改成功*^_^* ");
+				
+				String json = JsonUtil.getGson().toJson(map);
+				
+				return json;
+			}
+
+			@Override
+			public String getshippingaddress(String userid) throws Exception {
+				// TODO Auto-generated method stub
+                if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+				
+				UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+				
+				if(ui==null)throw new Exception("id为"+userid+"的用户不存在");
+				
+				int count = countorder(userid);
+				StringBuffer query = new StringBuffer("select sa,ui from ShippingAddress sa,UserInfo ui where sa.state = 0 and sa.fuserinfoid = ui.id and sa.fuserinfoid = ")
+						.append(Long.parseLong(userid));
+				List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+				
+				List<Object[]> lst = databaseHelper.getResultListByHql(query.toString());
+				for (Object[] object : lst) {
+					ShippingAddress s = (ShippingAddress)object[0];
+					UserInfo u = (UserInfo)object[1];
+					Map<String,Object> map = new HashMap<String,Object>();
+					map.put("addressid", s.getId());
+					map.put("consigneename", s.getConsigneename());
+					map.put("consigneemobile",s.getConsigneemobile());
+					map.put("province", s.getProvince());
+					map.put("city",s.getCity());
+					map.put("area", s.getArea());
+					map.put("address", s.getAddress());
+					map.put("common", s.getCommon());
+				
+					lstMap.add(map);
+				}
+				
+				String json = new Gson().toJson(lstMap);
+				JsonArray arr = (JsonArray) new JsonParser().parse(json);
+				JsonObject obj = new JsonObject();
+				obj.addProperty("total",count);
+				obj.add("rows", arr);
+				
+				return obj.toString();
+			}
+			
+			private int countorder(String userid){
+				StringBuffer count = new StringBuffer("select count(sa.id) from ShippingAddress sa,UserInfo ui where sa.state = 0 and sa.fuserinfoid = ui.id and sa.fuserinfoid = ")
+						.append(Long.parseLong(userid));
+				List lst = databaseHelper.getResultListByHql(count.toString());
+				return Integer.parseInt(lst.get(0).toString());
+			}
+
+
+			@Override
+			public String addnewaddress(String userid, String consigneename, String consigneemobile, String province,
+					String city, String area, String address) throws Exception {
+				// TODO Auto-generated method stub
+				 if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+					
+					UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+					
+					if(ui==null)throw new Exception("id为"+userid+"的用户不存在");
+					
+					StringBuffer queryexist = new StringBuffer("select sa from ShippingAddress sa where sa.state = 0 and sa.fuserinfoid = ")
+							.append(Long.parseLong(userid));
+					List<Object> lst = databaseHelper.getResultListByHql(queryexist.toString());
+					if(lst.size()>0){
+						for (Object object : lst) {
+							ShippingAddress s = (ShippingAddress) object;
+							if(s.getProvince().equals(province)&&s.getCity().equals(city)&&s.getArea().equals(area)&&s.getAddress().equals(address))throw new Exception("此地址已存在");
+						}
+					}
+					ShippingAddress sa = new ShippingAddress();
+					if(userid!=null&&userid.length()>0)sa.setFuserinfoid(Long.parseLong(userid));
+					if(consigneename!=null&&consigneename.length()>0)sa.setConsigneename(consigneename);
+					if(consigneemobile!=null&&consigneemobile.length()>0)sa.setConsigneemobile(consigneemobile);
+					if(province!=null&&province.length()>0)sa.setProvince(province);
+					if(city!=null&&city.length()>0)sa.setCity(city);
+					if(area!=null&&area.length()>0)sa.setArea(area);
+					if(address!=null&&address.length()>0)sa.setAddress(address);
+					sa.setCommon(0);
+					sa.setCreatetime(new Date());
+					sa.setState(0);
+					databaseHelper.persistObject(sa);
+					 Map<String,Object> map = new HashMap<String,Object>();
+					map.put("msg", "success");
+					map.put("info", "添加成功*^_^* ");
+					
+					String json = JsonUtil.getGson().toJson(map);
+					
+					return json;
+			}
+
+			@Override
+			public String setdefault(String userid, String addressid) throws Exception {
+				// TODO Auto-generated method stub
+				if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+				
+				UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+				
+				if(ui==null)throw new Exception("id为"+userid+"的用户不存在");
+				
+				ShippingAddress sa = (ShippingAddress) databaseHelper.getObjectById(ShippingAddress.class, Long.parseLong(addressid));
+				sa.setCommon(1);
+				databaseHelper.updateObject(sa);
+				Map<String,Object> map = new HashMap<String,Object>();
+				map.put("msg", "success");
+				map.put("info", "添加成功*^_^* ");
+				
+				String json = JsonUtil.getGson().toJson(map);
+				return json;
+			}
+
+
+			@Override
+			public String deladdress(String userid, String addressid) throws Exception {
+				// TODO Auto-generated method stub
+                if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+				
+				UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+				
+				if(ui==null)throw new Exception("id为"+userid+"的用户不存在");
+				
+				ShippingAddress sa = (ShippingAddress) databaseHelper.getObjectById(ShippingAddress.class, Long.parseLong(addressid));
+				sa.setState(-1);
+				databaseHelper.updateObject(sa);
+				Map<String,Object> map = new HashMap<String,Object>();
+				map.put("msg", "success");
+				map.put("info", "删除成功*^_^* ");
+				
+				String json = JsonUtil.getGson().toJson(map);
+				return json;
+			}
+
+
+			@Override
+			public String consumption(String userid, Integer start, Integer limit)throws Exception {
+				// TODO Auto-generated method stub
+                if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+				
+				UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+				
+				if(ui==null)throw new Exception("id为"+userid+"的用户不存在");
+				int count = countorder(userid);
+				int pages = ConstantUtil.pages(count, limit);
+				
+				List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+				StringBuffer queryconsumption = new StringBuffer("select cp from Consumption cp where cp.paystate>0 and cp.fuserinfoid = ")
+						.append(Long.parseLong(userid));
+				List<Object> lst = databaseHelper.getResultListByHql(queryconsumption.toString(), start, limit);
+				for (Object objects : lst) {
+					Consumption consumption = (Consumption) objects;
+					Map<String,Object> map = new HashMap<String,Object>();
+					map.put("consumptionid", consumption.getId());
+					map.put("type", consumption.getType());
+					map.put("golds", consumption.getGolds());
+					map.put("time", consumption.getCreatetime());
+					lstMap.add(map);
+				}
+				
+				String json = new Gson().toJson(lstMap);
+				JsonArray arr = (JsonArray) new JsonParser().parse(json);
+				JsonObject obj = new JsonObject();
+				obj.addProperty("total",count);
+				obj.addProperty("pages",pages);
+				obj.add("rows", arr);
+				
+				return obj.toString();
+			}
+
+
+			@Override
+			public String applyproxy(String userid, String name, String mobile, String province, String city,
+					String area) throws Exception {
+				if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+				
+				UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+				
+				if(ui==null)throw new Exception("id为"+userid+"的用户不存在");
+				
+				
+				ProxyApply pa = new ProxyApply();
+				if(userid!=null&&userid.length()>0)pa.setFuserinfoid(Long.parseLong(userid));
+				if(name!=null&&name.length()>0)pa.setName(name);
+				if(mobile!=null&&mobile.length()>0)pa.setMobile(mobile);
+				if(province!=null&&province.length()>0)pa.setProvince(province);
+				if(city!=null&&city.length()>0)pa.setCity(city);
+				if(area!=null&&area.length()>0)pa.setArea(area);
+				pa.setCreatetime(new Date());
+				pa.setState(0);
+				databaseHelper.persistObject(pa);
+				 Map<String,Object> map = new HashMap<String,Object>();
+				map.put("msg", "success");
+				map.put("info", "申请成功*^_^* ");
+				
+				String json = JsonUtil.getGson().toJson(map);
+				
+				return json;
+		}
+			
+			@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+			@Override
+			public String sign(String userid) throws Exception {
+				// TODO Auto-generated method stub
+				if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+				
+				//检查今天是否已签到
+				StringBuffer hql = new StringBuffer("select count(si.id) from SignInfo si where si.fuserinfoid = ").append(Long.parseLong(userid)).append(" and date(si.createtime) = curdate()");
+				List lst = databaseHelper.getResultListByHql(hql.toString());
+				if(Integer.parseInt(lst.get(0).toString())>0)throw new Exception("你今天已签到噢╮(╯_╰)╭");
+				
+				int signcount = 1;
+				int awardpoint = 0;//连续签到奖励
+
+				if(Integer.parseInt(lst.get(0).toString())==0){
+					StringBuffer queryold = new StringBuffer("select si from SignInfo si where si.fuserinfoid = ").append(Long.parseLong(userid))
+							.append(" and TO_DAYS(NOW())-TO_DAYS(si.createtime) = 1 ").append(" order by si.createtime desc");
+					
+					List<Object> yesterdaylst = databaseHelper.getResultListByHql(queryold.toString());
+					
+					if(yesterdaylst.size()==0)signcount = 1;//昨天没有签到，则认为断签，连续签到数重置
+					else{
+						SignInfo si = (SignInfo)yesterdaylst.get(0);
+						int yesterdaycount = si.getSigncount();
+						
+						//if(yesterdaycount>=7)signcount = 1;//超过7天 ，连续签到数重置
+						
+							signcount = yesterdaycount+1;
+							
+							if(signcount==2)awardpoint=2;//连续2天，奖励2喵币
+							else if(signcount==3)awardpoint=3;//连续3天，奖励3喵币
+							else if(signcount==4)awardpoint=5;//连续4天，奖励5喵币
+							else if(signcount==5)awardpoint=7;//连续5天，奖励7喵币
+							else if(signcount==6)awardpoint=8;//连续6天，奖励8喵币
+							else if(signcount==7)awardpoint=12;//连续7天，奖励12喵币
+							else awardpoint=1;
+						
+						
+					}
+					
+					SignInfo si = new SignInfo();
+					si.setCreatetime(new Date());
+					si.setFuserinfoid(Long.parseLong(userid));
+					si.setGolds(awardpoint);
+					si.setSigncount(signcount);
+					databaseHelper.persistObject(si);
+					
+					UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+					ui.setBalance(ui.getBalance()+awardpoint);
+					databaseHelper.updateObject(ui);
+				}
+				
+				
+				Map<String,Object> map = new HashMap<String,Object>();
+				
+				map.put("msg", "success");
+				map.put("info", "签到成功噢╮(╯_╰)╭");
+				
+				String json = JsonUtil.getGson().toJson(map);
+				return json;
+			}
+
+
+			@Override
+			public String appeal(String userid, String content, String photos) throws Exception {
+				// TODO Auto-generated method stub
+				if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+				
+				UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+				
+				if(ui==null)throw new Exception("id为"+userid+"的用户不存在");
+				
+				StringBuffer queryappealexcist = new StringBuffer("select ap from Appeal ap where ap.state = 0 and ap.fuserinfoid = ")
+						.append(userid);
+				List<Object>appeallist = databaseHelper.getResultListByHql(queryappealexcist.toString());
+				if(appeallist.size()>0)throw new Exception("请等待上次申诉处理后再发起申诉");
+				
+		       JsonArray arr	 = (JsonArray) JsonUtil.getJsonParser().parse(photos);
+		       Appeal appeal = new Appeal();
+			    if(content!=null&&content.length()>0)appeal.setContent(content);
+			    appeal.setFuserinfoid(Long.parseLong(userid));
+			    appeal.setState(0);
+			    appeal.setCreatetime(new Date());
+			    databaseHelper.persistObject(appeal);
+		       
+				for (JsonElement jsonElement : arr) {
+					JsonObject jsonObject = jsonElement.getAsJsonObject();
+					String url = jsonObject.get("url").getAsString();
+				    
+				    AppealPhotos appealPhotos = new AppealPhotos();
+				    appealPhotos.setCreatetime(new Date());
+				    appealPhotos.setFappealid(appeal.getId());
+				    appealPhotos.setPhotourl(url);
+				    appealPhotos.setState(0);
+				    databaseHelper.persistObject(appealPhotos);
+				}
+				Map<String,Object> map = new HashMap<String,Object>();
+				
+				map.put("msg", "success");
+				map.put("info", "申诉成功");
+				
+				String json = JsonUtil.getGson().toJson(map);
+				
+				return json;
+			}
+
+
+			@Override
+			public String leavemessage(String userid, String content, String title) throws Exception {
+				// TODO Auto-generated method stub
+				if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+				if(content==null||content.length()==0)throw new Exception("请填写意见内容噢╮(╯_╰)╭");
+				if(content.length()>=128)throw new Exception("意见内容不能超过64个字噢╮(╯_╰)╭");
+				if(title==null||title.length()==0)throw new Exception("请填写意见标题噢╮(╯_╰)╭");
+				if(title.length()>=8)throw new Exception("意见内容不能超过8个字噢╮(╯_╰)╭");
+				
+				//UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));
+				//if(ui==null)throw new Exception("id为"+userid+"的用户不存在");
+				
+				StringBuffer queryappealexcist = new StringBuffer("select fb from FeedBack fb where fb.state = 0 and fb.fuserinfoid = ")
+						.append(userid);
+				List<Object>appeallist = databaseHelper.getResultListByHql(queryappealexcist.toString());
+				if(appeallist.size()>0)throw new Exception("请等待上次反馈回复后再发起反馈");
+				
+				FeedBack feedBack = new FeedBack();
+				feedBack.setContent(content);
+				feedBack.setCreatetime(new Date());
+				feedBack.setFuserinfoid(Long.parseLong(userid));
+				feedBack.setState(0);
+				feedBack.setTitle(title);
+				
+				databaseHelper.persistObject(feedBack);
+				
+				Map<String,Object> map = new HashMap<String,Object>();
+				
+				map.put("msg", "success");
+				map.put("info", "意见反馈成功*^_^* ");
+				
+				String json = JsonUtil.getGson().toJson(map);
+				
+				return json;
+			}
+
+}

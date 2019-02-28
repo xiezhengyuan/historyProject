@@ -1,0 +1,104 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<div class="modal fade" id="addorder" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				
+			</div>
+			<div class="modal-body" >
+			<form class="form-horizontal" role="form" id="form_addorder">
+			     <input type="hidden" class="form-control" id="deliveryapplyid" name="id" placeholder="">
+			
+					
+					
+					<h4 class="modal-title" id="myModalLabel">
+					快递信息
+				</h4>
+					
+					<div class="form-group">
+					<label for="expressagecompany" class="col-sm-2 control-label">快递公司</label>
+					<div class="col-sm-10">
+					<select  class="form-control" id="expressagecompany" name="expressagecompany" >
+				      <option value="-1" selected>请选择</option>
+				      </select>
+					</div>
+					</div>
+					
+					<div class="form-group">
+					<label for="expressageno" class="col-sm-2 control-label">快递单号</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="expressageno" msg="请输入快递单号" id="expressageno"  placeholder="">
+					</div>
+					</div>
+					
+			</form>
+			</div>
+		<div class="modal-footer">
+				<button type="button" class="btn btn-default btn-sm" data-dismiss="modal">关闭</button>
+				<button type="button" class="btn btn-primary btn-sm" id="saveorder">提交</button>
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<script>
+var id = '<%=request.getParameter("id")%>';
+queryexpressage();
+
+$('#addorder').modal('show');
+
+
+
+function queryexpressage(){
+	$._ajax({
+		url: Q.url+"/device/queryexpressage.action",
+		data:{},
+		success: function(data){
+			if( typeof(data) == 'object' && data.op == 'timeout' ){
+				location.reload();
+			}
+			
+			var opts = $('#expressagecompany').html();
+			for(var i=0;i<data.rows.length;i++){
+				var expressage = data.rows[i].expressage;
+				opts+= '<option value="'+expressage.expressagecompany+'">'+expressage.expressagecompany+'</option>';
+			}
+			$('#expressagecompany').html(opts);
+			
+		}
+		
+	});
+	
+}
+
+
+
+$('#saveorder').click(function(){
+	if(!$('#form_addorder').checkForm())return;
+	$._ajax({
+		url: Q.url+"/device/addexpressageinfo.action",
+		data:{"expressagecompany":$("#expressagecompany").val(),"expressageno":$("#expressageno").val(),"id":id},
+		
+		success: function(data){
+			if( typeof(data) == 'object'){
+				if( data.op == 'success' ){
+					Q.toastr("提示","操作成功",'success');
+					$(".close").click();
+					
+					$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+				}else if(data.op == 'fail')
+					Q.toastr("提示",data.msg,'error');
+				else
+					Q.toastr("提示","操作失败",'error');
+			}else {
+				Q.toastr("提示","操作失败",'error');
+			}
+		}
+	});
+	
+	
+})
+</script>

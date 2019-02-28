@@ -1,0 +1,117 @@
+package com.hxy.isw.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+//收支明细表
+@Entity
+@Table(name = "paymentsdetail")
+public class PaymentsDetail {
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
+	private Long id;
+
+	@Column(name = "fuserinfoid")
+	private Long fuserinfoid;
+
+	@Column(name = "type")
+	private int type; // 1收入 -1支出
+
+	@Column(name = "classification")
+	private int classification;// 收支分类 1融金宝日利息2 佣金 3 工资 4 充值-1 提现 -2 购物
+
+	@Column(name = "datadescribe")
+	private String datadescribe;
+
+	@Column(name = "amount")
+	private Double amount;
+
+	@Column(name = "createtime")
+	private Date createtime;
+
+	@Column(name = "state")
+	private int state;
+
+	@Column(name = "balance")
+	private Double balance;
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Long getFuserinfoid() {
+		return fuserinfoid;
+	}
+
+	public void setFuserinfoid(Long fuserinfoid) {
+		this.fuserinfoid = fuserinfoid;
+	}
+
+	public int getType() {
+		return type;
+	}
+
+	public void setType(int type) {
+		this.type = type;
+	}
+
+	public int getClassification() {
+		return classification;
+	}
+
+	public void setClassification(int classification) {
+		this.classification = classification;
+	}
+
+	public String getDatadescribe() {
+		return datadescribe;
+	}
+
+	public void setDatadescribe(String datadescribe) {
+		this.datadescribe = datadescribe;
+	}
+
+	public Double getAmount() {
+		return amount;
+	}
+
+	public void setAmount(Double amount) {
+		this.amount = amount;
+	}
+
+	public Date getCreatetime() {
+		return createtime;
+	}
+
+	public void setCreatetime(Date createtime) {
+		this.createtime = createtime;
+	}
+
+	public int getState() {
+		return state;
+	}
+
+	public void setState(int state) {
+		this.state = state;
+	}
+
+	public Double getBalance() {
+		return balance;
+	}
+
+	public void setBalance(Double balance) {
+		this.balance = balance;
+	}
+
+}

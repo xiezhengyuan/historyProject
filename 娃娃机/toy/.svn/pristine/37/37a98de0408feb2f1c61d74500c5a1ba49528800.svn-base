@@ -1,0 +1,18 @@
+package com.hxy.isw.service;
+
+import java.util.Map;
+
+import com.google.gson.JsonArray;
+import com.hxy.isw.entity.Employee;
+import com.hxy.isw.entity.ExpressageInfo;
+
+
+public interface DeliveryapplyService {
+	public Map<String, Object> searchDeliveryapply(Integer start, Integer limit);
+	public JsonArray queryexpressage()throws Exception;
+	public void addexpressageinfo(ExpressageInfo expressageinfo,String expressageno,String deliveryapplyid)throws Exception;
+	Map<String, Object> queryexpressageinfo(Employee bi, String keyword, int start, int limit, int state);
+	public String queryexpressagedetail(String id)throws Exception;
+	
+	
+}

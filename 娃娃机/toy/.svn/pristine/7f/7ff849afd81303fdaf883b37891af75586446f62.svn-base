@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<sms>
+	
+	<!-- 旧项目部署ip  此配置待删除 -->
+	<oldip>192.168.0.55:8809</oldip>
+	
+	<imgPath>e:/sms_image/</imgPath>
+	
+	<test>
+		<use>true</use>
+		<password>84e12117488f048c7c791abf0a0094521838adc114119bab</password>
+		<!-- <url>jdbc:mysql://47.94.37.25:3306/toy?characterEncoding=UTF-8</url> -->
+		<url>jdbc:mysql://localhost:3306/toy?characterEncoding=UTF-8</url>
+		<username>root</username>
+		<driverClassName>com.mysql.jdbc.Driver</driverClassName>
+	</test>
+	
+	<real>
+		<use>false</use>
+		<password>604835985586f678f8046f6ad01a19ae2ec99d700f266993bff7a4e30e0493600871d024e75fb43c</password>
+		<url>jdbc:jtds:sqlserver://192.168.10.12:1433/hxy_ww_move_test</url>
+		<username>hxy</username>
+		<driverClassName>net.sourceforge.jtds.jdbc.Driver</driverClassName>
+	</real>
+	
+</sms>

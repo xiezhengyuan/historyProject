@@ -1,0 +1,148 @@
+package com.hxy.isw.control;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestMapping;
+//发货管理
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.google.gson.JsonArray;
+import com.hxy.isw.entity.Employee;
+import com.hxy.isw.entity.ExpressageInfo;
+import com.hxy.isw.service.DeliveryapplyService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.JsonUtil;
+import com.hxy.isw.util.Sys;
+@Controller
+@RequestMapping("/ServiceDeliveryapplyControl")
+public class DeliveryapplyControl {
+	
+	@Autowired
+	private DeliveryapplyService deliveryapplyService;
+	
+	@RequestMapping(method = RequestMethod.POST, value = "/searcInfo")
+	public void searcInfo(HttpServletRequest request, HttpServletResponse response){
+		try {
+
+			int start = request.getParameter("page") == null ? 1 : Integer.parseInt(request.getParameter("page"));
+			int limit = request.getParameter("rows") == null ? ConstantUtil.LIMIT
+					: Integer.parseInt(request.getParameter("rows"));
+			String keyword = request.getParameter("keyword");
+			Map<String, Object> map = deliveryapplyService.searchDeliveryapply(start, keyword,limit);
+			
+		//	JsonUtil.listToJson((List<Map<String, Object>>)map.get("rows"), (Integer)map.get("pages"), response);
+		JsonUtil.mapToJson(map, response);
+		} catch (Exception e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"msg\":\"fail\",\"info\":\"\"}");
+		}
+	}
+	
+	@RequestMapping(method = RequestMethod.POST, value = "/queryexpressage")
+	public void queryexpressage(HttpServletRequest request, HttpServletResponse response){
+		try {
+			JsonArray arr = deliveryapplyService.queryexpressage();
+			JsonUtil.listToJson(arr, arr.size(), response);
+		} catch (Exception e) {
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"msg\":\"fail\",\"info\":\"\"}");
+		}
+	}
+	
+	@RequestMapping(method = RequestMethod.POST, value = "/addexpressageinfo")
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	public void addexpressageinfo(HttpServletRequest request,HttpServletResponse response,HttpSession session
+			){
+		try {
+			String expressageno = request.getParameter("expressageno");
+			if(expressageno==null)throw new Exception("请输入物流编号");
+			String expressagecompany = request.getParameter("expressagecompany");
+			String id=request.getParameter("id");
+			deliveryapplyService.addexpressageinfo(id,expressageno, expressagecompany);
+			JsonUtil.success2page(response);
+		} catch (Exception e) {
+			// TODO: handle exception
+			String mess = e.getMessage();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+		
+	}
+	
+	@RequestMapping(method = RequestMethod.POST,value="/queryexpressageinfo")
+	public void  queryexpressageinfo(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		try {
+			int start = request.getParameter("page") == null ? 1 : Integer.parseInt(request.getParameter("page"));
+			int limit = request.getParameter("rows") == null ? ConstantUtil.LIMIT: Integer.parseInt(request.getParameter("rows"));
+			int state = request.getParameter("state")==null?0:Integer.parseInt(request.getParameter("state"));
+			String keyword = request.getParameter("keyword");
+			Employee bi = (Employee) session.getAttribute("loginEmp");
+			Map<String, Object> map =deliveryapplyService.queryexpressageinfo(bi, keyword, start, limit, state);
+			JsonUtil.mapToJson(map, response);
+		} catch (Exception e) {
+			String mess = e.getMessage();
+			e.printStackTrace();
+			JsonUtil.success2page(response, "{\"op\":\"fail\",\"msg\":\""+mess+"\"}");
+		}
+	
+	}
+	
+	//查看物流
+		@RequestMapping(method = RequestMethod.POST, value = "/queryexpressagedetail")
+		@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+		   public void queryexpressagedetail(HttpServletRequest request,HttpSession session,HttpServletResponse response){
+		   	try {
+		   		
+		   		String id = request.getParameter("expressageinfoid");
+		   		Sys.out(id+"xxxxx");
+				String result = deliveryapplyService.queryexpressagedetail(id);
+				JsonUtil.success2page(response, result);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				String mess = e.getMessage();
+				JsonUtil.success2page(response,"{\"msg\":\"fail\",\"msg\":\""+mess+"\"}");
+				e.printStackTrace();
+			}
+		   }
+		@RequestMapping(method = RequestMethod.POST, value = "/sendtouser")
+		@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+		   public void sendtouser(HttpServletRequest request,HttpSession session,HttpServletResponse response){
+		   	try {
+		   		
+		   		String id = request.getParameter("id");
+		   		String content=request.getParameter("content");
+				deliveryapplyService.sendtouser(id,content);
+				JsonUtil.success2page(response);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				String mess = e.getMessage();
+				JsonUtil.success2page(response,"{\"msg\":\"fail\",\"msg\":\""+mess+"\"}");
+				e.printStackTrace();
+			}
+		 }
+		
+		
+		
+		@RequestMapping(method = RequestMethod.POST, value = "/deleteapp")
+		   public void deleteapp(HttpServletRequest request,HttpSession session,HttpServletResponse response){
+		   	try {
+		   		
+		   		String id = request.getParameter("id");
+				deliveryapplyService.deleteapp(id);
+				JsonUtil.success2page(response);
+			} catch (Exception e) {
+				// TODO Auto-generated catch block
+				String mess = e.getMessage();
+				JsonUtil.success2page(response,"{\"msg\":\"fail\",\"msg\":\""+mess+"\"}");
+				e.printStackTrace();
+			}
+		 }
+}

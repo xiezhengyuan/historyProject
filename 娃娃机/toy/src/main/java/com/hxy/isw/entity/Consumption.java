@@ -1,0 +1,143 @@
+package com.hxy.isw.entity;
+
+
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+//消费明细表
+@Entity
+@Table(name="consumption")
+public class Consumption {
+	
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="id")
+	private Long id;
+	
+	@Column(name="fuserinfoid")
+	private Long fuserinfoid;
+	
+	@Column(name="type")
+	private int type;
+	
+	@Column(name="golds")
+	private int golds;
+	
+	@Column(name="createtime")
+	private Date createtime;
+	
+	@Column(name="balance")
+	private int balance;
+	
+	@Column(name="paymentway")
+	private int paymentway;
+	
+	@Column(name="orderno")
+	private String orderno;
+	
+	@Column(name="paystate")
+	private int paystate;
+	
+	@Column(name="fmachineid")
+	private Long fmachineid;
+
+	
+	@Column(name="fgearsid")
+	private Long fgearsid;
+	
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Long getFuserinfoid() {
+		return fuserinfoid;
+	}
+
+	public void setFuserinfoid(Long fuserinfoid) {
+		this.fuserinfoid = fuserinfoid;
+	}
+
+	public int getType() {
+		return type;
+	}
+
+	public void setType(int type) {
+		this.type = type;
+	}
+
+	public int getGolds() {
+		return golds;
+	}
+
+	public void setGolds(int golds) {
+		this.golds = golds;
+	}
+
+	public Date getCreatetime() {
+		return createtime;
+	}
+
+	public void setCreatetime(Date createtime) {
+		this.createtime = createtime;
+	}
+
+	public int getBalance() {
+		return balance;
+	}
+
+	public void setBalance(int balance) {
+		this.balance = balance;
+	}
+
+	public int getPaymentway() {
+		return paymentway;
+	}
+
+	public void setPaymentway(int paymentway) {
+		this.paymentway = paymentway;
+	}
+
+	public String getOrderno() {
+		return orderno;
+	}
+
+	public void setOrderno(String orderno) {
+		this.orderno = orderno;
+	}
+
+	public int getPaystate() {
+		return paystate;
+	}
+
+	public void setPaystate(int paystate) {
+		this.paystate = paystate;
+	}
+
+	public Long getFmachineid() {
+		return fmachineid;
+	}
+
+	public void setFmachineid(Long fmachineid) {
+		this.fmachineid = fmachineid;
+	}
+
+	public Long getFgearsid() {
+		return fgearsid;
+	}
+
+	public void setFgearsid(Long fgearsid) {
+		this.fgearsid = fgearsid;
+	}
+	
+	
+}

@@ -1,0 +1,191 @@
+package com.hxy.isw.service.impl;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.google.gson.JsonArray;
+import com.hxy.isw.entity.DeliveryApply;
+import com.hxy.isw.entity.Employee;
+import com.hxy.isw.entity.Expressage;
+import com.hxy.isw.entity.ExpressageInfo;
+
+import com.hxy.isw.entity.Giftbox;
+import com.hxy.isw.entity.NotifyInfo;
+import com.hxy.isw.service.DeliveryapplyService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.JsonUtil;
+import com.hxy.isw.util.KdniaoTrackQueryAPI;
+
+@Repository
+public class DeliveryapplyServiceImpl implements DeliveryapplyService {
+
+	@Autowired
+	DatabaseHelper databaseHelper;
+	@Override
+	public Map<String, Object> searchDeliveryapply(Integer start, String keyword,Integer limit) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		List<Map<String, Object>> rowList = new ArrayList<Map<String, Object>>();
+		
+		String countsql= " select count(d1.createtime) from (select count(createtime) createtime  from deliveryapply where state=0 and consigneename like '%"+keyword+"%' group by createtime)d1 ";
+		int records = databaseHelper.getSqlCount(countsql);
+		//System.out.println(count);
+		int total = ConstantUtil.pages(records, limit);
+		if(records>0){
+			StringBuffer sql = new StringBuffer("select id ,consigneename,consigneemobile,CONCAT(province,city,area,address)useraddress,createtime, count(createtime) toynum  ")
+					.append(" from deliveryapply where state=0 and consigneename like '%"+keyword+"%' group by createtime order by createtime desc ");
+			
+			List<Object[]> lst = databaseHelper.getResultListBySql(sql.toString(),start,limit);
+			
+			for (Object[] obj: lst){
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("id", obj[0]);
+				map.put("consigneename", obj[1]);
+				map.put("consigneemobile", obj[2]);
+				map.put("address", obj[3]);
+				map.put("createtime", obj[4]);
+				
+				StringBuffer sql1=new StringBuffer("select toysname,count(ftoysid)number  from giftbox where id in ");
+				sql1.append(" (select fgiftboxid from deliveryapply where createtime ='"+obj[4]+"') group by ftoysid  ");
+				List<Object[]> lst1=databaseHelper.getResultListBySql(sql1.toString());
+				String  toys="";
+				for (Object[] o: lst1){
+					toys+=o[0].toString()+"x"+o[1].toString()+"，";
+				}
+				map.put("toys", toys);
+				rowList.add(map);
+			}
+		}
+		resultMap.put("total", total);
+		resultMap.put("records", records);
+		resultMap.put("rows", rowList);
+		
+		return resultMap;
+	}
+	@Override
+	public JsonArray queryexpressage() throws Exception {
+		StringBuffer queryexpressage = new StringBuffer("select expr from Expressage expr where expr.state = 0");
+		List<Object>eList = databaseHelper.getResultListByHql(queryexpressage.toString());
+		return JsonUtil.castLst2Arr4SingleTime(eList);
+		
+	}
+	
+		
+	
+	@Override
+	public Map<String, Object> queryexpressageinfo(Employee bi, String keyword, int start, int limit, int state) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		List<Map<String, Object>> rowList = new ArrayList<Map<String, Object>>();
+		StringBuffer buffer = new StringBuffer("select count(e) from ExpressageInfo e,DeliveryApply d,Giftbox g where e.fdeliveryapplyid=d.id and e.fgiftboxid=g.id and d.state>0");
+		int count = Integer.parseInt(databaseHelper.getResultListByHql(buffer.toString()).get(0).toString());
+		
+		int pages = ConstantUtil.pages(count, limit);
+		
+		if(count>0){
+			StringBuffer hql = new StringBuffer("select e,d,g from ExpressageInfo e,DeliveryApply d,Giftbox g where e.fdeliveryapplyid=d.id and e.fgiftboxid=g.id and d.state>0")
+					.append(" and e.expressageno like '%").append(keyword).append("%'");
+					
+			
+			List<Object[]> lst=databaseHelper.getResultListByHql(hql.toString());
+			for (Object[] objects : lst){
+				ExpressageInfo expressageInfo=(ExpressageInfo) objects[0];
+				DeliveryApply deliveryApply=(DeliveryApply) objects[1];
+				Giftbox giftbox=(Giftbox) objects[2];
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("id", expressageInfo.getId());
+				map.put("orderno", expressageInfo.getExpressageno());
+				map.put("toysname", giftbox.getToysname());
+				map.put("consigneename", deliveryApply.getConsigneename());
+				map.put("consigneemobile", deliveryApply.getConsigneemobile());
+				rowList.add(map);
+			}
+		}
+		resultMap.put("total", count);
+		resultMap.put("pages", pages);
+		resultMap.put("rows", rowList);
+		
+		return resultMap;
+	}
+	@Override
+	public String queryexpressagedetail(String id) throws Exception {
+		// TODO Auto-generated method stub
+				//查看订单是否已发货
+		
+		ExpressageInfo oi = (ExpressageInfo)databaseHelper.getObjectById(ExpressageInfo.class, Long.parseLong(id));
+				if(oi==null)throw new Exception("订单信息错误");
+				
+				
+				//查看订单物流
+				String hql = "select expressageinfo from  ExpressageInfo expressageinfo where expressageinfo.state = 1 and expressageinfo.id="+Long.parseLong(id);
+				List<Object> lst = databaseHelper.getResultListByHql(hql);
+				if(lst.size()==0)throw new Exception("发货人未填写物流信息");
+				
+				ExpressageInfo expressageinfo = (ExpressageInfo)lst.get(0);
+				String result = "";
+				
+				KdniaoTrackQueryAPI api = new KdniaoTrackQueryAPI();
+				result = api.getOrderTracesByJson(expressageinfo.getExpressagecode(), expressageinfo.getExpressageno());
+				return result;
+	}
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	public void addexpressageinfo(String id, String expressageno, String expressagecompany) throws Exception {
+		
+		
+		//发货申请表
+		StringBuffer updsql1=new StringBuffer(" update deliveryapply set state =1 where createtime  =  ");
+		updsql1.append(" (select a1.createtime  from (select createtime from deliveryapply where id= "+id+" )a1 ) ");
+		databaseHelper.executeNativeSql(updsql1.toString());
+		
+		//礼物盒
+		StringBuffer updsql2=new StringBuffer(" update giftbox set state=2 where id in  ");
+		updsql2.append(" (select fgiftboxid from deliveryapply  where  createtime  = (select createtime from deliveryapply where id= "+id+" )) ");
+		
+		//物流表
+		DeliveryApply d=(DeliveryApply) databaseHelper.getObjectById(DeliveryApply.class, Long.parseLong(id));
+		
+		ExpressageInfo ex=new ExpressageInfo();
+		ex.setFdeliveryapplyid(d.getId());
+		ex.setFgiftboxid(d.getFgiftboxid());
+		ex.setExpressageno(expressageno);
+		ex.setExpressagecompany(expressagecompany);
+		ex.setExpressagecode(expressagecompany);
+		ex.setState(0);
+		ex.setCreatetime(new Date());
+		databaseHelper.persistObject(ex);
+		
+	}
+	@Override
+	public void sendtouser(String id, String content) throws Exception {
+		
+		DeliveryApply d=(DeliveryApply) databaseHelper.getObjectById(DeliveryApply.class, Long.parseLong(id));
+		long userid= d.getFuserinfoid();
+		NotifyInfo ni=new NotifyInfo();
+		ni.setType(0);
+		ni.setFuserinfoid(userid);
+		ni.setTitle("关于娃娃发货的反馈");
+		ni.setContent(content);
+		ni.setCreatetime(new Date());
+		ni.setState(0);
+		databaseHelper.persistObject(ni);
+		
+	}
+	@Override
+	public void deleteapp(String id) throws Exception {
+
+       StringBuffer sql= new StringBuffer("  update deliveryapply set state =-1 where createtime  =  ");
+       sql.append(" (select a1.createtime  from (select createtime from deliveryapply where id= "+id+" )a1 ) ");
+      int count = databaseHelper.executeNativeSql(sql.toString());
+       if(count==0)throw new Exception("参数错误");
+		
+	}
+	
+
+}

@@ -1,0 +1,121 @@
+package com.hxy.isw.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+//物流信息表
+@Entity
+@Table(name="expressageinfo")
+public class Expressageinfo {
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="id")
+	private Long id;
+	
+	
+	@Column(name="forderinfoid")
+	private Long forderinfoid;
+	
+	@Column(name="type")
+	private int type;
+	
+	
+	@Column(name="expressagecompany")
+	private String expressagecompany;
+	
+	@Column(name="expressagecode")
+	private String expressagecode;
+	
+	@Column(name="expressageno")
+	private String expressageno;
+	
+	
+	@Column(name="remark")
+	private String remark;
+	
+	@Column(name="state")
+	private int state;
+	
+	@Column(name="createtime")
+	private Date  createtime;
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Long getForderinfoid() {
+		return forderinfoid;
+	}
+
+	public void setForderinfoid(Long forderinfoid) {
+		this.forderinfoid = forderinfoid;
+	}
+
+	public int getType() {
+		return type;
+	}
+
+	public void setType(int type) {
+		this.type = type;
+	}
+
+	public String getExpressagecompany() {
+		return expressagecompany;
+	}
+
+	public void setExpressagecompany(String expressagecompany) {
+		this.expressagecompany = expressagecompany;
+	}
+
+	public String getExpressagecode() {
+		return expressagecode;
+	}
+
+	public void setExpressagecode(String expressagecode) {
+		this.expressagecode = expressagecode;
+	}
+
+	public String getExpressageno() {
+		return expressageno;
+	}
+
+	public void setExpressageno(String expressageno) {
+		this.expressageno = expressageno;
+	}
+
+	public String getRemark() {
+		return remark;
+	}
+
+	public void setRemark(String remark) {
+		this.remark = remark;
+	}
+
+	public int getState() {
+		return state;
+	}
+
+	public void setState(int state) {
+		this.state = state;
+	}
+
+	public Date getCreatetime() {
+		return createtime;
+	}
+
+	public void setCreatetime(Date createtime) {
+		this.createtime = createtime;
+	}
+
+	
+}

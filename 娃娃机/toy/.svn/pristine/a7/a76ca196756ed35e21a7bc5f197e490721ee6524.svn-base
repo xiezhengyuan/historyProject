@@ -1,0 +1,186 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<div class="modal  inmodal fade" id="edituser4" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+<div class="modal-dialog">
+		<div class="modal-content">
+			<div class="modal-header">
+				<button type="button" class="close" data-dismiss="modal" aria-hidden="true">
+					&times;
+				</button>
+				<h4 class="modal-title" id="myModalLabel">
+					申请人信息
+		        <small>
+			    <i class="ace-icon fa fa-angle-double-right"></i>
+			        查看
+		        </small>
+				</h4>
+			</div>
+			<div class="modal-body"  style="overflow-y: auto;">
+			 <form class="form-horizontal" role="form" id="form_edituser">
+            <input type="hidden" class="form-control" id="userinfoid" name="id" placeholder="">
+				<div class="form-group">
+					<label for="name" class="col-sm-2 control-label">登陆账号</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="login"  id="login"  readonly="readonly">
+					</div>
+					</div>
+			
+					<div class="form-group">
+					<label for="mobile" class="col-sm-2 control-label">昵称</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="nickname"  id="nickname"  readonly="readonly">
+					</div>
+					</div>
+			
+			         <div class="form-group">
+				    <label for="paparno" class="col-sm-2 control-label">性别</label>
+				    <div class="col-sm-10">
+				      <input type="text" class="form-control" name="sex" id="sex"  readonly="readonly">
+				    </div>
+				    </div>
+			
+					<div class="form-group">
+					<label for="loginpwd" class="col-sm-2 control-label">预留手机号</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="oldphonenum"  id="oldphonenum"  readonly="readonly">
+					</div>
+					</div>
+			
+					<div class="form-group">
+					<label for="paypwd" class="col-sm-2 control-label">注册时间</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="createtime"  id="createtime"  readonly="readonly">
+					</div>
+					</div>
+				  
+				  <div class="form-group">
+					<label for="wxid" class="col-sm-2 control-label">用户等级</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="level"  id="level"  readonly="readonly">
+					</div>
+					</div>
+				  
+					<div class="form-group">
+				    <label for="bank" class="col-sm-2 control-label">喵币数量</label>
+				    <div class="col-sm-10">
+				      <input type="text" class="form-control" name="balance"  id="balance"  readonly="readonly">
+				    </div>
+				    </div>
+				    
+				    <div class="form-group">
+					<label for="sesame" class="col-sm-2 control-label">抓取成功数</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="giftbox" id="giftbox"  readonly="readonly">
+					</div>
+					</div>
+					
+						
+					<div class="form-group">
+					<label for="alipayno" class="col-sm-2 control-label">总充值金额</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="money"  id="money"  readonly="readonly">
+					</div>
+					</div>
+					
+					
+					<div class="form-group">
+					<label for="cardno" class="col-sm-2 control-label">邀请次数</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="findfirend"  id="findfirend"  readonly="readonly">
+					</div>
+					</div>
+			</form>
+			</div>
+		<div class="modal-footer">
+				<!-- <button title="驳回申请" class="btn btn-danger btn-xs" style="color:#f60;margin-left:3px;width: 60PX; height:35 " onclick="del_tableid()">驳回</button>
+				<button title="同意申请" class="btn btn-success btn-xs" style="color:#f60;margin-left:3px; width: 60PX; height:35 " onclick="pass_tableid()">同意</button> -->
+			</div>
+		</div><!-- /.modal-content -->
+	</div><!-- /.modal -->
+</div>
+
+<script>
+$('#edituser4').modal('show');
+
+var userinfoid = '<%=request.getParameter("userinfoid")%>';
+
+$._ajax({
+	url: Q.url+"/agentinfo/queryapplyxq.action",
+	data:{"userinfoid":userinfoid},
+	dataType: "json",
+	success: function(json){	
+		$("#login").val(json.username);
+		$("#nickname").val(json.nickname);
+		$("#sex").val(json.sex);
+		$("#oldphonenum").val(json.mobile);
+		$("#createtime").val(json.createtime);
+		$("#level").val(json.level);
+		$("#balance").val(json.balance);
+		$("#giftbox").val(json.giftnum);
+		$("#money").val(json.money);
+		$("#findfirend").val(json.invitenum); 	
+	}
+});	
+
+//驳回
+function del_tableid(){
+	$._ajax({
+		url: Q.url+"/agentinfo/disagreeapply.action",
+		data:{"fuserinfoid":userinfoid},
+		success: function(data){
+			if( typeof(data) == 'object'){
+				if( data.op == 'success' ){
+					Q.toastr("提示","操作成功",'success');
+					postData = getcondition();
+					$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+					Q.ExtJqGrid({
+						"grid":Q.grid_selector,
+						"pager":Q.pager_selector,
+						"url":url,
+						"param":postData,
+						"model":colModel,
+						"caption":caption
+					}); 
+					$('#edituser4').modal('hide');
+				}else if(data.op == 'fail')
+					Q.toastr("提示",data.msg,'error');
+				else
+					Q.toastr("提示","操作失败",'error');
+			}else {
+				Q.toastr("提示","操作失败",'error');
+			}
+		}
+	});	
+}
+
+//同意
+function pass_tableid(){
+	$._ajax({
+		url: Q.url+"/agentinfo/agreeapply.action",
+		data:{"fuserinfoid":userinfoid},
+		success: function(data){
+			if( typeof(data) == 'object'){
+				if( data.op == 'success' ){
+					Q.toastr("提示","操作成功",'success');
+					postData = getcondition();
+					$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+					Q.ExtJqGrid({
+						"grid":Q.grid_selector,
+						"pager":Q.pager_selector,
+						"url":url,
+						"param":postData,
+						"model":colModel,
+						"caption":caption
+					}); 
+					$('#edituser4').modal('hide');
+				}else if(data.op == 'fail')
+					Q.toastr("提示",data.msg,'error');
+				else
+					Q.toastr("提示","操作失败",'error');
+			}else {
+				Q.toastr("提示","操作失败",'error');
+			}
+		}
+	});	
+}
+
+</script>

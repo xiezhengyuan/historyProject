@@ -1,0 +1,190 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<style>
+input{width:50%}
+/* input:nth-child(2){width:80%} */
+</style>
+<div class="page-header">
+	<h1 id="toystitle">
+		新增玩具
+		
+	</h1>
+</div><!-- /.page-header -->
+<ul class="nav nav-tabs" role="tablist">
+  <li style="position: relative;float: right;">
+	<button  class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="返回" id="returnbfbtn" onclick="returnbfbtn(this)">返回</button>
+  </li>
+</ul>
+<div class="tab-content">
+	<!-- panel1 start -->
+  <div role="tabpanel" class="tab-pane active" id="tab_userinfo">
+   <form class="form-horizontal" role="form" id="form_addtoys" style="">
+   <input type="hidden" class="form-control" id="toysid" name="id" placeholder="">
+				<div class="form-group">
+					<label for="name" class="col-sm-2 control-label">玩具名称</label>
+					<div class="col-sm-10">
+					<input type="text" class="form-control" name="name" msg="请输入玩具名称" id="name"  placeholder="">
+					</div>
+					</div>
+			
+				  <div class="form-group">
+				    <label for="specifications" class="col-sm-2 control-label">玩具规格</label>
+				    <div class="col-sm-10">
+				      <input type="text" class="form-control" name="specifications" msg="请输入玩具规格" id="specifications"  placeholder="">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <label for="size" class="col-sm-2 control-label">玩具尺寸</label>
+				    <div class="col-sm-10">
+				      <input type="text" class="form-control" name="size" msg="请输入玩具尺寸" id="size"  placeholder="">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <label for="material" class="col-sm-2 control-label">玩具材料</label>
+				    <div class="col-sm-10">
+				      <input type="text" class="form-control" name="material" msg="请输入玩具材料" id="material"  placeholder="">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <label for="weight" class="col-sm-2 control-label">玩具重量</label>
+				    <div class="col-sm-10">
+				      <input type="text" class="form-control" name="weight" msg="请输入玩具重量" id="weight"  placeholder="">
+				    </div>
+				  </div>
+				  
+				  <div class="form-group">
+				    <label for="price" class="col-sm-2 control-label">玩具价格</label>
+				    <div class="col-sm-10">
+				      <input type="text" class="form-control" name="price" msg="请输入玩具价格" id="price"  placeholder="">
+				    </div>
+				  </div>
+				  
+				  
+					
+					<div class="form-group">
+					<label for="ftoystypeid" class="col-sm-2 control-label">玩具类型</label>
+					<div class="col-sm-10" style="width: 20%">
+					  <select  class="form-control" id="ftoystypeid" name="ftoystypeid" msg="请选择类型" vtype="combo">
+				     
+				      </select> 
+				     
+					</div>
+					</div>
+					
+					<div class="form-group">
+					<label for="msgconent" class="col-sm-2 control-label">图片</label>
+					<div class="col-sm-10">
+					<div id="toysspreview" class="upload_preview" style="border:1px dashed  #bbb"></div>
+					</div>
+					</div>
+  
+  <div class="modal-footer" style="text-align: center;">
+		<button type="button" class="btn btn-primary btn-sm" id="addtoys">确认添加</button>
+	</div>
+	</form>
+  </div>
+  
+  <!-- panel2 start -->
+  <div role="tabpanel" class="tab-pane" id="tab_lower"></div>
+  
+   <!-- panel3 start -->
+  <div role="tabpanel" class="tab-pane" id="tab_transaction"></div>
+</div>
+<script>
+var myarr =  [];
+Q.logimgs = [];
+Q.viewlogimg("#toysspreview");
+
+//玩具类型
+Q.getToystype1("#ftoystypeid");
+
+var toysid = <%=request.getParameter("id")%>;
+
+$("#toysid").val(toysid);
+
+if(toysid!=null && toysid!='null'){
+	$("#toystitle").html("修改玩具");
+	$("#addtoys").html("确认修改");
+	Q.getObjById("ToysInfo",toysid,function(d){
+		$('#form_addtoys').resetObjectForm(d);
+		querygoodsphotos();
+	})
+}
+
+/* 查询图片 */
+function querygoodsphotos(){
+	$._ajax({
+		url:Q.url+"/toy/findToysPhotos.action",
+		data:{"toysid":toysid},
+		success:function(data){
+			if(typeof(data)=='object'){
+				$('#form_addtoys').resetObjectForm(data);
+				
+				var rows = data.rows;
+				for(var x= 0;x<rows.length;x++){
+					var o = {};
+					o.id = rows[x].toysPhotos.ffileinfoid;
+					var fileurl = rows[x].toysPhotos.photourl;
+					o.url = fileurl ;
+					o.name = fileurl.substr( fileurl.lastIndexOf("/")+1); 
+					
+					Q.logimgs[Q.logimgs.length] = o;
+					myarr[myarr.length] = o;
+				}
+				
+				Q.viewlogimg("#toysspreview");
+			}
+		}
+	})
+}
+
+
+//根据ID查询部门信息
+ /* Q.getObjById("UserInfo",userinfoid,function(d){
+	
+	$('#form_editemp').resetObjectForm(d);
+})  */
+
+function returnbfbtn(){
+	var from = "device/toy.jsp";
+	Q.viewJsp(Q.page_content,from);
+}
+
+
+$('#addtoys').click(function(){
+		/* 添加 */
+		if(!$('#form_addtoys').checkForm())return;
+		var o = $('#form_addtoys').serializeObject();
+		
+		if(Q.logimgs.length==0){
+			Q.toastr("提示","请至少上传一张图片",'warning');
+			return;
+		}
+		o.imgarr = $.toJSON(Q.logimgs);
+		o.thumbnail = Q.logimgs[0].url;
+		o.ffileinfoid = Q.logimgs[0].id; 
+		$._ajax({
+			url: Q.url+"/device/addToys.action",
+			data:o,
+			success: function(data){
+				if( typeof(data) == 'object'){
+					if( data.op == 'success' ){
+						Q.toastr("提示","操作成功",'success');
+						var from = "toy/toy.jsp";
+						Q.viewJsp(Q.page_content,from);
+					}else if(data.op == 'fail')
+						Q.toastr("提示",data.msg,'error');
+					else
+						Q.toastr("提示","操作失败",'error');
+				}else {
+					Q.toastr("提示","操作失败",'error');
+				}
+			}
+		});
+	
+	
+})
+
+</script>

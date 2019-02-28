@@ -1,0 +1,9 @@
+package com.hxy.isw.service;
+
+import java.util.Map;
+
+public interface AppServiceNtf {
+	public Map<String, Object> queryNotifyinfo(String userid,Integer limit, Integer start);
+	public Map<String, Object> queryMessage(String userid,Integer limit, Integer start);
+	public Map<String, Object> querySendmessage(String userid,String receiveid, String content);
+}

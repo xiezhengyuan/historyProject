@@ -1,0 +1,156 @@
+package com.hxy.isw.service.impl;
+
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.hxy.isw.entity.DeliveryApply;
+import com.hxy.isw.entity.ExpressageInfo;
+import com.hxy.isw.entity.Giftbox;
+import com.hxy.isw.entity.ShippingAddress;
+import com.hxy.isw.entity.ToysInfo;
+import com.hxy.isw.entity.ToysType;
+import com.hxy.isw.service.AppServiceToys;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.KdniaoTrackQueryAPI;
+@Repository
+public class AppServiceToysImpl implements AppServiceToys {
+
+	@Autowired
+	DatabaseHelper databaseHelper;
+	@Override
+	public Map<String, Object> queryGiftbox(String userid, Integer state, Integer limit, Integer start) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		List<Map<String, Object>> rowList = new ArrayList<Map<String, Object>>();
+		StringBuffer buffer = new StringBuffer("select count(1) from giftbox g where g.state=").append(state);
+		//int count = Integer.parseInt(databaseHelper.getResultListByHql(buffer.toString()).get(0).toString());
+		int count =databaseHelper.getSqlCount(buffer.toString());
+		
+		int pages = ConstantUtil.pages(count, limit);
+		if(count>0){
+			StringBuffer hql = new StringBuffer("select g from Giftbox g where g.state=").append(state);
+			List<Object> lst = databaseHelper.getResultListByHql(hql.toString(),start,limit);
+			for (Object objects : lst){
+				Giftbox g= (Giftbox) objects;
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("giftboxid", g.getId());
+				map.put("toysname", g.getToysname());
+				map.put("photo", g.getPhoto());
+				map.put("time", g.getCreatetime());
+				map.put("machineno", g.getMachineno());
+				map.put("state", g.getState());
+				rowList.add(map);
+				
+			}
+		}
+		resultMap.put("total", count);
+		resultMap.put("pages", pages);
+		resultMap.put("rows", rowList);
+		return resultMap;
+	}
+	@Override
+	public String queryexpressage(String giftboxid) throws Exception {
+		
+		StringBuffer buffer = new StringBuffer("select e from ExpressageInfo e where e.fgiftboxid=").append(Long.parseLong(giftboxid));
+		ExpressageInfo expressageinfo = new ExpressageInfo();
+		List<Object> lst1=databaseHelper.getResultListByHql(buffer.toString());
+		if(lst1.size()==0)throw new Exception("发货人未填写物流信息");
+		if(lst1.size()>0){
+			expressageinfo=(ExpressageInfo)lst1.get(0);
+		}
+		ExpressageInfo oi = (ExpressageInfo)databaseHelper.getObjectById(ExpressageInfo.class, expressageinfo.getId());
+		if(oi==null)throw new Exception("订单信息错误");
+		
+		
+		//查看订单物流
+//		String hql = "select expressageinfo from  ExpressageInfo expressageinfo where expressageinfo.id="+expressageinfo1.getId();
+//		List<Object> lst = databaseHelper.getResultListByHql(hql);
+//		if(lst.size()==0)throw new Exception("发货人未填写物流信息");
+//		
+//		ExpressageInfo expressageinfo = (ExpressageInfo)lst.get(0);
+		String result = "";
+		
+		KdniaoTrackQueryAPI api = new KdniaoTrackQueryAPI();
+		result = api.getOrderTracesByJson(expressageinfo.getExpressagecode(), expressageinfo.getExpressageno());
+		return result;
+		
+	}
+	@Override
+	public Map<String, Object> searchToystype(Integer start, Integer limit) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		List<Map<String, Object>> rowList = new ArrayList<Map<String, Object>>();
+		StringBuffer buffer = new StringBuffer("select count(1) from toystype t where t.state=0");
+		int count =databaseHelper.getSqlCount(buffer.toString());
+		int pages = ConstantUtil.pages(count, limit);
+		if(count>0){
+			StringBuffer hql = new StringBuffer("select t from ToysType t where t.state=0");
+			List<Object> lst = databaseHelper.getResultListByHql(hql.toString(),start,limit);
+			for(Object objects:lst){
+				ToysType t = (ToysType) objects;
+				Map<String, Object> map = new HashMap<String, Object>();
+				map.put("toystypeid", t.getId());
+				map.put("name", t.getName());
+				rowList.add(map);
+			}
+		}
+		resultMap.put("total", count);
+		resultMap.put("pages", pages);
+		resultMap.put("rows", rowList);
+		return resultMap;
+	}
+	@Override
+	public Map<String, Object> searchToysdetail(String mechinesid) {
+		StringBuffer hql = new StringBuffer("select t from ToysInfo t,MachineInfo m where t.id = m.ftoysid and m.id=").append(Long.parseLong(mechinesid))
+				.append(" and m.state<>-1 and t.state=0");
+				
+		List<Object> lst=databaseHelper.getResultListByHql(hql.toString());
+		ToysInfo t1 = (ToysInfo) lst.get(0);
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("msg","获取玩具详情成功");
+		map.put("info", "success");
+		map.put("toysname",t1.getName());
+		map.put("specifications", t1.getSpecifications());
+		map.put("size", t1.getSize());
+		map.put("material", t1.getMaterial());
+		map.put("weight", t1.getWeight());
+		map.put("price", t1.getPrice());
+		map.put("photourl", t1.getPhoto());
+		
+		
+		
+		return map;
+	}
+	@Override
+	public Map<String, Object> searchApplydelivery(String giftboxid,String userid) {
+		StringBuffer buffer = new StringBuffer("select d from ShippingAddress d where d.fuserinfoid=").append(Long.parseLong(userid));
+		List<Object> lst =databaseHelper.getResultListByHql(buffer.toString());
+		ShippingAddress adress =(ShippingAddress)lst.get(0);
+		DeliveryApply apply = new DeliveryApply();
+		apply.setFgiftboxid(Long.parseLong(giftboxid));
+		apply.setConsigneename(adress.getConsigneename());
+		apply.setConsigneemobile(adress.getConsigneemobile());
+		apply.setProvince(adress.getProvince());
+		apply.setCity(adress.getCity());
+		apply.setArea(adress.getArea());
+		apply.setAddress(adress.getAddress());
+		apply.setFuserinfoid(Long.parseLong(userid));
+		apply.setState(0);
+		apply.setCreatetime(new Date());
+		databaseHelper.persistObject(apply);
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("msg", "success");
+		map.put("info", "申请发货成功");
+		return map;
+		
+
+}
+
+}

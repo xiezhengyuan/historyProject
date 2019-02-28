@@ -1,0 +1,144 @@
+package com.hxy.isw.entity;
+
+
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+//发货申请表
+@Entity
+@Table(name="deliveryapply")
+public class DeliveryApply {
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="id")
+	private Long id;
+	
+	@Column(name="fgiftboxid")
+	private Long fgiftboxid;
+	
+	@Column(name="consigneename")
+	private String consigneename;
+	
+	@Column(name="consigneemobile")
+	private String consigneemobile;
+	
+	@Column(name="province")
+	private String province;
+	
+	@Column(name="city")
+	private String city;
+	
+	@Column(name="area")
+	private String area;
+	
+	@Column(name="address")
+	private String address;
+	
+	@Column(name="fuserinfoid")
+	private Long fuserinfoid;
+	
+	@Column(name="state")
+	private int state; 
+	
+	@Column(name="createtime")
+	private Date createtime;
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Long getFgiftboxid() {
+		return fgiftboxid;
+	}
+
+	public void setFgiftboxid(Long fgiftboxid) {
+		this.fgiftboxid = fgiftboxid;
+	}
+
+	public String getConsigneename() {
+		return consigneename;
+	}
+
+	public void setConsigneename(String consigneename) {
+		this.consigneename = consigneename;
+	}
+
+	public String getConsigneemobile() {
+		return consigneemobile;
+	}
+
+	public void setConsigneemobile(String consigneemobile) {
+		this.consigneemobile = consigneemobile;
+	}
+
+	public String getProvince() {
+		return province;
+	}
+
+	public void setProvince(String province) {
+		this.province = province;
+	}
+
+	public String getCity() {
+		return city;
+	}
+
+	public void setCity(String city) {
+		this.city = city;
+	}
+
+	public String getArea() {
+		return area;
+	}
+
+	public void setArea(String area) {
+		this.area = area;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public Long getFuserinfoid() {
+		return fuserinfoid;
+	}
+
+	public void setFuserinfoid(Long fuserinfoid) {
+		this.fuserinfoid = fuserinfoid;
+	}
+
+	public int getState() {
+		return state;
+	}
+
+	public void setState(int state) {
+		this.state = state;
+	}
+
+	public Date getCreatetime() {
+		return createtime;
+	}
+
+	public void setCreatetime(Date createtime) {
+		this.createtime = createtime;
+	}
+
+	
+	
+	
+	
+}

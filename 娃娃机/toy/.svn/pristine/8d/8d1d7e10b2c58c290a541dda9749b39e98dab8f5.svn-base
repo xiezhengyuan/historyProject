@@ -1,0 +1,153 @@
+#bgimg{
+			position:fixed;
+			top:0px;
+			left:0px;
+			z-index:1;
+			
+			width:100%;
+			height:100%; 
+			 
+			overflow:hidden;
+	}
+	#bgimg img{
+			position:absolute;
+			width:100%;
+			height:100%;
+	}
+	
+	.login, .register, .find-password{
+	  position:absolute; 
+	  top:30%;
+	  left:30%;
+	  z-index:5;
+	  
+	  padding: 30px;
+	  
+	  width:440px;
+	  height:auto; 
+	
+	  background-color:rgba(0, 25, 41, 0.2);
+	  
+	background:transparent\9\0;  
+	background:transparent\0;  
+	*background:transparent; 
+	_background:transparent; 
+	
+	  filter:progid:DXImageTransform.Microsoft.gradient(startColorstr=#7000101a,endColorstr=#7000101a); 
+	  zoom: 1;
+	  
+	  
+	  -webkit-border-radius: 15px;
+		 -moz-border-radius: 15px;
+			  border-radius: 15px;
+	}
+	
+	.login form ,.register form,.find-password form{ display:block; width:248px;}
+	.login input ,.register input,.find-password input{ 
+	  display:block;
+	  
+	  margin-bottom:15px;
+	  
+	  padding-top:10px;
+	  padding-bottom:10px; 
+	  padding-right:10px; 
+	  padding-left:40px; 
+	
+	  height:20px; 
+	  line-height:20px;
+	  
+	  border-style:solid;
+	  border-width:1px;
+	  border-color:#fff;
+	  
+	  background-repeat:no-repeat;
+	  background-position: 12px 8px;  
+	  
+	  -webkit-border-radius: 4px;
+		 -moz-border-radius: 4px;
+			  border-radius: 4px;
+		  
+	}
+	
+	.login input:-moz-placeholder,
+	.register input:-moz-placeholder,
+	.find-password input:-moz-placeholder {
+	  color: #515567; font-weight:bold;
+	}
+	.login input::-moz-placeholder,
+	.register input::-moz-placeholder,
+	.find-password input::-moz-placeholder {
+	  color: #515567; 
+	  font-weight:bold;
+	  opacity: 1;
+	}
+	.login input:-ms-input-placeholder,
+	.register input:-ms-input-placeholder,
+	.find-password input:-ms-input-placeholder
+	 {
+	  color: #515567;
+	  font-weight:bold;
+	}
+	.login input::-webkit-input-placeholder,
+	.register input::-webkit-input-placeholder,
+	.find-password input::-webkit-input-placeholder {
+	  color: #515567;
+	  font-weight:bold;
+	}
+	.login input.placeholder,
+	.register input.placeholder,
+	.find-password input.placeholder {
+	  color: #515567;
+	  font-weight:bold;
+	}
+	
+	input.error{
+	  border-color:#ff8900;
+	  -webkit-box-shadow: 0 0 5px #ff8900;
+		 -moz-box-shadow: 0 0 5px #ff8900;
+			  box-shadow: 0 0 5px #ff8900;
+	}
+	
+	.login input.verification-code ,
+	.register input.verification-code,
+	.find-password input.verification-code{
+		width:90px; padding-left:10px;
+	}
+	.verification-code-img{ 
+	 display:block;
+	 margin-left:10px;
+	 
+	 width:120px;
+	 height: 42px; 
+	 
+	 text-align:center;
+	 
+	 background-color:#FFF;
+	 
+	   -webkit-border-radius: 4px;
+		 -moz-border-radius: 4px;
+			  border-radius: 4px;
+	}
+	.user , .pwd01 ,.pwd02,.phone,.QQ { display:block;  width:190px; padding-left:10px;}
+	.user{ background-image:url(../image/ico01.png);}
+	.pwd01{  background-image:url(../image/ico02.png);}
+	.pwd02{  background-image:url(../image/ico03.png);}
+	.phone{  background-image:url(../image/ico04.png);}
+	.QQ{  background-image:url(../image/ico05.png);}
+	
+	
+	.prompt{ min-height:26px;}
+	.prompt-error{ color:#ff8900; padding-left:35px; min-height:30px; /* background:url(${app}/Public/images/land/ico100.png) no-repeat; */}
+	.prompt-success{ color:#27ae60; padding-left:35px; min-height:30px; background:url(../image/ico101.png) no-repeat;}
+	.prompt-success a{text-decoration:underline;color:white;}
+	
+	.login input.bntH40 ,.register input.bntH40, .find-password input.bntH40{ border:0px; padding:10px 0; width:248px; height:40px; line-height:20px;}
+	
+	.stat{ width:100%; text-align:center;}
+	.stat a{ color:#FFF; font-size:0.75em;}
+	.stat a:hover{ text-decoration:underline;}
+	
+	.verification-code-img img {border-radius:5px;}
+	
+	.promptInpt{display:block; width:200px; height:0; margin:0 auto; position:relative;  }
+	.promptInpt p{display:block; width:180px; height:14px; position:absolute; color:#858585; height:20px; margin-top:0; margin-bottom:0;  top:8px; left:14px;}
