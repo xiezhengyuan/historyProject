@@ -1,0 +1,75 @@
+package com.hxy.isw.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+@Entity
+@Table(name = "sharescollect")
+public class SharesCollect {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
+	private Long id;
+	
+	@Column(name = "foruserinfoid")
+	private Long foruserinfoid;
+
+	@Column(name = "code")
+	private String code;
+	
+	@Column(name = "createtime")
+	private Date createtime;
+	
+	@Column(name = "state")
+	private Integer state;
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Long getForuserinfoid() {
+		return foruserinfoid;
+	}
+
+	public void setForuserinfoid(Long foruserinfoid) {
+		this.foruserinfoid = foruserinfoid;
+	}
+
+	public String getCode() {
+		return code;
+	}
+
+	public void setCode(String code) {
+		this.code = code;
+	}
+
+	public Date getCreatetime() {
+		return createtime;
+	}
+
+	public void setCreatetime(Date createtime) {
+		this.createtime = createtime;
+	}
+
+	public Integer getState() {
+		return state;
+	}
+
+	public void setState(Integer state) {
+		this.state = state;
+	}
+	
+	
+	
+}

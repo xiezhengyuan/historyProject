@@ -1,0 +1,196 @@
+package com.hxy.isw.service.impl;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.hxy.isw.entity.AccountInfo;
+import com.hxy.isw.service.ReportformService;
+import com.hxy.isw.util.DatabaseHelper;
+
+@Service
+public class ReportfromServiceImp implements ReportformService{
+	
+	@Autowired
+	DatabaseHelper databaseHelper;
+
+	@Override
+	public int countmoneyreportforms(String companyid, String gengalid, String salesmanid, String starttime,
+			String endtime, String userinfo, AccountInfo acc) throws Exception {
+		StringBuffer sql=addcountsql(companyid, gengalid, salesmanid, userinfo, acc);
+		List<Object> lst=databaseHelper.getResultListBySql(sql.toString());
+		return lst.get(0)==null?0:Integer.parseInt(lst.get(0).toString());
+	}
+
+	@Override
+	public List<Map<String, Object>> moneyreportforms(String companyid, String gengalid, String salesmanid,
+			String starttime, String endtime, String userinfo, AccountInfo acc, int start, int limit) throws Exception {
+		StringBuffer sql=addsql(companyid, gengalid, salesmanid, starttime, endtime, userinfo, acc);
+		List<Object[]> lst=databaseHelper.getResultListBySql(sql.toString(), start, limit);
+		List<Map<String, Object>> lstmap=new ArrayList<Map<String,Object>>();
+		for(Object[] o:lst){
+			Map<String, Object> map=new HashMap<String, Object>();
+			map.put("id", o[0].toString());
+			map.put("whatwho", o[1].toString());
+			map.put("totalmoney", o[2].toString());
+			lstmap.add(map);
+		}
+		return lstmap;
+	}
+
+	private StringBuffer addcountsql(String companyid ,String gengalid 
+			,String salesmanid ,String userinfo ,AccountInfo acc){
+		int role=acc.getRole();
+		StringBuffer sql=new StringBuffer();
+		System.out.println(role);
+		if(role==0 || role==1){
+			
+		}else if(role==2||role==3){
+			companyid=acc.getFcompanyid().toString();
+		}else if(role==4){
+			gengalid=acc.getId().toString();
+		}else{
+			salesmanid=acc.getId().toString();
+		}
+		if(!userinfo.equals("")){
+			if(companyid.equals("0")){
+				sql.append("select count(id) from userinfo where nickname like '%"+userinfo+"%' and state != -2");
+				return sql;
+			}else if(gengalid.equals("0")){
+				sql.append("select count(id) from userinfo where nickname like '%"+userinfo+"%' and state != -2 and faccountid in (select id from accountinfo where fcompanyid="+companyid+")");
+				return sql;
+			}else if(salesmanid.equals("0")){
+				sql.append("select count(id) from userinfo where nickname like '%"+userinfo+"%' and state != -2 and faccountid in (select id from accountinfo where fparentid="+gengalid+")");
+				return sql;
+			}else{
+				sql.append("select count(id) from userinfo where nickname like '%"+userinfo+"%' and state != -2 and faccountid ="+salesmanid+"");
+				return sql;
+			}
+		}else{
+			if(companyid.equals("0")){
+				sql.append("select count(id) from company where state=0");
+				return sql;
+			}else if(gengalid.equals("0")){
+				sql.append("select count(id) from accountinfo where  fcompanyid = "+companyid+" and role =4 and state=0");
+				return sql;
+			}else if(salesmanid.equals("0")){
+				sql.append("select count(id) from accountinfo where  fparentid = "+gengalid+" and role =5 and state=0");
+				return sql;
+			}else{
+				sql.append("select count(id) from userinfo where  faccountid = "+salesmanid+" and state != -2");
+				return sql;
+			}
+		}
+	
+	}
+	
+	
+	private StringBuffer addsql(String companyid ,String gengalid ,String salesmanid,
+			String starttime ,String endtime ,String userinfo ,AccountInfo acc){
+		int role=acc.getRole();
+		StringBuffer sql=new StringBuffer();
+        if(role==0 || role==1){
+			
+		}else if(role==2||role==3){
+			companyid=acc.getFcompanyid().toString();
+		}else if(role==4){
+			gengalid=acc.getId().toString();
+		}else{
+			salesmanid=acc.getId().toString();
+		} 		
+		if(!userinfo.equals("")){
+			if(companyid.equals("0")){
+				sql.append("select u.id, u.nickname,IFNULL(ucc.sumamount,0) from userinfo u LEFT JOIN ");
+				sql.append("(select  uc.fuserinfoid,SUM(uc.amount) sumamount from  userrecharge uc  where  uc.paystate=1 ");
+				sql.append(addtime(starttime, endtime));
+				sql.append("GROUP BY  uc.fuserinfoid)ucc on u.id=fuserinfoid  ");
+				sql.append("where u.nickname like '%"+userinfo+"%' and u.state !=-2 ORDER BY IFNULL(ucc.sumamount,0) desc  ");
+				return sql;
+			}else if(gengalid.equals("0")){
+				sql.append("select u.id, u.nickname,IFNULL(ucc.sumamount,0) from userinfo u LEFT JOIN ");
+				sql.append("(select  uc.fuserinfoid,SUM(uc.amount) sumamount from  userrecharge uc  where  uc.paystate=1 ");
+				sql.append(addtime(starttime, endtime));
+				sql.append("GROUP BY  uc.fuserinfoid)ucc on u.id=fuserinfoid  ");
+				sql.append("where u.nickname like '%"+userinfo+"%' and u.state !=-2 ");
+				sql.append("and u.faccountid in ( select id from accountinfo where fcompanyid="+companyid+") ORDER BY IFNULL(ucc.sumamount,0) desc  ");
+				return sql;
+			}else if(salesmanid.equals("0")){
+				sql.append("select u.id, u.nickname,IFNULL(ucc.sumamount,0) from userinfo u LEFT JOIN ");
+				sql.append("(select  uc.fuserinfoid,SUM(uc.amount) sumamount from  userrecharge uc  where  uc.paystate=1 ");
+				sql.append(addtime(starttime, endtime));
+				sql.append("GROUP BY  uc.fuserinfoid)ucc on u.id=fuserinfoid  ");
+				sql.append("where u.nickname like '%"+userinfo+"%' and u.state !=-2 ");
+				sql.append("and u.faccountid in ( select id from accountinfo where fparentid="+gengalid+") ORDER BY IFNULL(ucc.sumamount,0) desc  ");
+				return sql;
+			}else{
+				sql.append("select u.id, u.nickname,IFNULL(ucc.sumamount,0) from userinfo u LEFT JOIN ");
+				sql.append("(select  uc.fuserinfoid,SUM(uc.amount) sumamount from  userrecharge uc  where  uc.paystate=1 ");
+				sql.append(addtime(starttime, endtime));
+				sql.append("GROUP BY  uc.fuserinfoid)ucc on u.id=fuserinfoid  ");
+				sql.append("where u.nickname like '%"+userinfo+"%' and u.state !=-2 ");
+				sql.append("and u.faccountid ="+salesmanid+" ORDER BY IFNULL(ucc.sumamount,0) desc  ");
+				return sql;
+			}
+		}else{
+			if(companyid.equals("0")){
+				sql.append("select cy.id,cy.company,IFNULL(fam.sumamount,0)  from  company cy  LEFT JOIN  ");
+				sql.append("(select SUM(am.amount) sumamount ,am.fcompanyid from  ");
+				sql.append("(select uc.amount,ua.fcompanyid from userrecharge  uc left join ");
+				sql.append("(select u.id ,a.fcompanyid from userinfo u , accountinfo a where u.faccountid = a.id and u.state !=-2) ua ");
+				sql.append("on  uc.fuserinfoid = ua.id where uc.paystate =1 ");
+				sql.append(addtime(starttime, endtime));
+				sql.append(")am GROUP by am.fcompanyid)fam on cy.id=fam.fcompanyid ORDER BY IFNULL(fam.sumamount,0) desc ");
+				return sql;
+			}else if(gengalid.equals("0")){
+				sql.append("select cy.id,cy.name,IFNULL(fam.sumamount,0)  from  accountinfo cy  LEFT JOIN  ");
+				sql.append("(select SUM(am.amount) sumamount ,am.fparentid from  ");
+				sql.append("(select uc.amount,ua.fparentid from userrecharge  uc left join ");
+				sql.append("(select u.id ,a.fparentid from userinfo u , accountinfo a where u.faccountid = a.id and u.state !=-2 ) ua ");
+				sql.append("on  uc.fuserinfoid = ua.id where uc.paystate =1  ");
+				sql.append(addtime(starttime, endtime));
+				sql.append(")am GROUP by am.fparentid)fam on cy.id=fam.fparentid where cy.role=4 and cy.fcompanyid="+companyid+" ORDER BY IFNULL(fam.sumamount,0) desc ");
+				return sql;
+			}else if(salesmanid.equals("0")){
+				sql.append("select cy.id,cy.name,IFNULL(fam.sumamount,0)  from  accountinfo cy  LEFT JOIN  ");
+				sql.append("(select SUM(am.amount) sumamount ,am.geid from  ");
+				sql.append("(select uc.amount,ua.geid from userrecharge  uc left join ");
+				sql.append("(select u.id ,a.id geid from userinfo u , accountinfo a where u.faccountid = a.id and u.state !=-2 ) ua ");
+				sql.append("on  uc.fuserinfoid = ua.id where uc.paystate =1 ");
+				sql.append(addtime(starttime, endtime));
+				sql.append(")am GROUP by am.geid)fam on cy.id=fam.geid where cy.role=5 and cy.fparentid="+gengalid+" ORDER BY IFNULL(fam.sumamount,0) desc ");
+				return sql;
+			}else{
+				sql.append("select u.id, u.nickname ,IFNULL(ucc.sumamount,0)  from userinfo u  LEFT JOIN ");
+				sql.append("(select uc.fuserinfoid, SUM( uc.amount) sumamount  from userrecharge uc  where uc.paystate=1 ");
+				sql.append(addtime(starttime, endtime));
+				sql.append("GROUP BY fuserinfoid ) ucc on u.id=ucc.fuserinfoid ");
+				sql.append("where u.faccountid="+salesmanid+" and u.state !=-2  ORDER BY IFNULL(ucc.sumamount,0) desc ");
+				return sql;
+			}
+		}
+		
+	}
+	
+	private StringBuffer addtime(String starttime,String endtime){
+    	StringBuffer timesql = new StringBuffer("");
+    	if(starttime==""&&endtime==""){
+    		
+    	}else if(starttime==""&&endtime!=""){
+    		timesql.append("and uc.createtime<='"+endtime+"' ");
+    		
+    	}else if(starttime!=""&&endtime==""){
+    		timesql.append("and uc.createtime>='"+starttime+"' ");
+    	}else{
+    		timesql.append("and uc.createtime>='"+starttime+"' and uc.createtime<='"+endtime+"' ");
+    	}
+    	return timesql;
+    }
+	
+	
+	
+	
+}

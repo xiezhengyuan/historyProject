@@ -1,0 +1,12 @@
+package com.hxy.isw.service;
+
+import com.google.gson.JsonArray;
+import com.hxy.isw.entity.AccountInfo;
+
+public interface StatisticService {
+	public JsonArray querywalletstatistic(AccountInfo emp,String starttime,String type,String companyid) throws Exception;
+	public JsonArray queryuserstatistic(AccountInfo emp,String starttime,String type,String companyid) throws Exception;
+	public JsonArray queryuser(AccountInfo emp) throws Exception;
+	public JsonArray queryincome(AccountInfo emp) throws Exception;
+	public JsonArray querycash(AccountInfo emp) throws Exception;
+}

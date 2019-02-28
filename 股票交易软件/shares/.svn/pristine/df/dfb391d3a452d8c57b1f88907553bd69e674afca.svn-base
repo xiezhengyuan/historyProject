@@ -1,0 +1,27 @@
+package com.hxy.isw.service;
+
+import java.util.List;
+import java.util.Map;
+
+import com.hxy.isw.entity.AccountInfo;
+import com.hxy.isw.entity.Company;
+
+public interface CompanyService {
+
+	public List<Map<String, Object>> querycompany(AccountInfo emp,String name,String mobile,Integer start,Integer limit)throws Exception;
+	public int countcompany(AccountInfo emp,String name,String mobile)throws Exception;
+	public void forbiddencompany(String id,Integer state)  throws Exception;
+	public AccountInfo queryuserbycompany(String id)  throws Exception;
+	public void modifycompany(AccountInfo emp,String companyid,String company,String mobile,String name,String proportion,String username,String password)throws Exception;
+	public void addcompany(AccountInfo emp,String company,String mobile,String name,String proportion,String username,String password)throws Exception;
+	public List<Map<String, Object>> querymember(AccountInfo emp,String companyid,String memberlevel,String name,String mobile,Integer start,Integer limit)throws Exception;
+	public int countmember(String companyid,String memberlevel,String name,String mobile)throws Exception;
+	public int querycompanyrole4(String companyid)throws Exception;
+	public int querycompanyrole5(String companyid)throws Exception;
+	public void forbiddenmember(String id,Integer state)  throws Exception;
+	public List<Map<String, Object>> querysalesmanbymanager(AccountInfo emp,String accountinfoid,String name,String mobile,Integer start,Integer limit)throws Exception;
+	public int countsalesman(String accountinfoid,String name,String mobile)throws Exception;
+	public List<Map<String, Object>> queryuserbysalesman(AccountInfo emp,String accountinfoid,String name,String mobile,Integer start,Integer limit)throws Exception;
+	public int countuserbysalesman(String accountinfoid,String name,String mobile)throws Exception;
+
+}

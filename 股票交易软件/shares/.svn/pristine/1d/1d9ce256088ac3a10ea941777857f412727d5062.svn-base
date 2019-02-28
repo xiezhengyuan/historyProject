@@ -1,0 +1,49 @@
+package com.hxy.isw.thread;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import com.hxy.isw.entity.FileInfo;
+import com.hxy.isw.entity.Notice;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.Sys;
+
+public class CheckNoticeState implements Runnable {
+	SimpleDateFormat sdf = null;
+	public static DatabaseHelper databaseHelper;
+	
+	
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		
+		try {
+			StringBuffer buffer =new StringBuffer("select n from Notice n where n.state=1");
+			List<Object> list = databaseHelper.getResultListByHql(buffer.toString());
+			Date[] dates = new Date[list.size()];
+			Long[] lon=new Long[list.size()];
+			
+			for(int i =0;i<list.size();i++){
+				Notice n =(Notice)list.get(i);
+				dates[i]=n.getSendtime();
+				lon[i]=n.getId();
+			}
+			for(int j=0;j<dates.length;j++){
+				Date now = new Date();
+				Long l = now.getTime();
+				if(dates[j].getTime()<=l){
+					Notice notice = (Notice)databaseHelper.getObjectById(Notice.class, lon[j]);
+					notice.setState(-1);
+					databaseHelper.updateObject(notice);
+				}
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	
+}

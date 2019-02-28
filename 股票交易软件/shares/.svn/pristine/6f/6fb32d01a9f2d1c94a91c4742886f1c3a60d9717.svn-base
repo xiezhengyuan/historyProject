@@ -1,0 +1,158 @@
+package com.hxy.isw.thread;
+
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.List;
+
+import com.hxy.isw.entity.FileInfo;
+import com.hxy.isw.entity.Notice;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.Sys;
+
+public class CheckFileState implements Runnable {
+	SimpleDateFormat sdf = null;
+	public static DatabaseHelper databaseHelper;
+	
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		
+		try {
+			StringBuffer buffer =new StringBuffer("select n from Notice n where n.state=1");
+			List<Object> list = databaseHelper.getResultListByHql(buffer.toString());
+			Date[] dates = new Date[list.size()];
+			Long[] lon=new Long[list.size()];
+			
+			for(int i =0;i<list.size();i++){
+				Notice n =(Notice)list.get(i);
+				dates[i]=n.getSendtime();
+				lon[i]=n.getId();
+			}
+			for(int j=0;j<dates.length;j++){
+				Date now = new Date();
+				Long l = now.getTime();
+				if(dates[j].getTime()<=l){
+					Notice notice = (Notice)databaseHelper.getObjectById(Notice.class, lon[j]);
+					notice.setState(-1);
+					databaseHelper.updateObject(notice);
+				}
+			}
+			long diff = ConstantUtil.setThreadStartTimer("00","30",null);
+			
+			if(diff<0){//凌晨0点30分之前则等待
+				Thread.sleep(0-diff);
+//				everydayincome();
+				checkFileState();
+			}else{//凌晨0点30分后则立即启动
+//				everydayincome();
+				checkFileState();
+			}
+		
+			while (true){
+					long diff11 = ConstantUtil.setThreadStartTimer("00","30",null);
+					Thread.sleep(1000l*60*60*24-diff11);
+//					everydayincome();
+					checkFileState();
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	private void checkFileState(){
+		Date now = new Date();
+		Long l_now = now.getTime();
+		String hql = "select fi from FileInfo fi where fi.state = 0";
+		List<Object> lst = databaseHelper.getResultListByHql(hql);
+		for (Object object : lst) {
+			FileInfo fi = (FileInfo)object;
+			Long time = fi.getTime().getTime();
+			//将超过3天没有被引用的文件删除
+			if(l_now-time>1000l*60*60*24*3){
+				Sys.out("not use file exipres::need to del:filename..."+fi.getFilename());
+				
+				String path = ConstantUtil.environment.equals("tomcat")?ConstantUtil.PROJECT_PATH.replace("/WEB-INF/classes/", ""):ConstantUtil.PROJECT_PATH.replace("/target/classes/","/src/main/webapp");
+
+				boolean flag = ConstantUtil.deleteFile(path+fi.getUrl());
+				if(flag){
+					fi.setState(-1);
+					databaseHelper.updateObject(fi);
+					Sys.out("not use file exipres:::filename..."+fi.getFilename()+"....del..success");
+				}
+			}
+		}
+	}
+	
+	/*private void everydayincome(){
+		Date now = new Date();
+		Sys.out("...."+now.toString()+"..........everydayincome........");
+		
+		Calendar c = Calendar.getInstance();
+        c.setTime(now);
+        c.add(Calendar.DAY_OF_MONTH, -1);
+        Date y = c.getTime();
+		
+		//找出昨日的年化率
+		StringBuffer find = new StringBuffer("select w from WalletSet w where w.state = 0 and  TO_DAYS(NOW()) - TO_DAYS(w.time) = 1 and w.fbusinessid = ")
+				.append(ConstantUtil.businessid);
+		List<Object> setlst = databaseHelper.getResultListByHql(find.toString());
+		
+		Double rate = 0d;
+		if(setlst.size()>0){
+			WalletSet w = (WalletSet)setlst.get(0);
+			rate = w.getInterestrate();
+		}else{
+			//找出最近一条记录
+			find = new StringBuffer("select w from WalletSet w where w.state = 0  and w.fbusinessid = ")
+					.append(ConstantUtil.businessid).append(" order by w.time desc ");
+			List<Object> lastlst = databaseHelper.getResultListByHql(find.toString());
+			
+			if(lastlst.size()==0)return;
+			
+			WalletSet w = (WalletSet)lastlst.get(0);
+			
+			rate = w.getInterestrate();
+			
+			WalletSet neww = w;
+			neww.setTime(y);
+			neww.setId(null);
+			databaseHelper.persistObject(neww);
+		}
+		
+		
+		//找出所有用户(融金宝有钱的)
+		StringBuffer query = new StringBuffer("select u from UserInfo u where u.state = 0 and u.amountpay > 0 and u.fbusinessid = ").append(ConstantUtil.businessid);
+		List<Object> lst = databaseHelper.getResultListByHql(query.toString());
+		
+		
+		
+		for (Object object : lst) {
+			UserInfo u = (UserInfo)object;
+			//检查用户昨日是否已经产生收益
+			StringBuffer check = new StringBuffer("select pd from PaymentsDetail pd where pd.classification = 1  and pd.state = 0 and pd.fuserinfoid = ")
+					.append(u.getId()).append(" and TO_DAYS(NOW()) - TO_DAYS(pd.createtime) = 1");
+			
+			List checklst = databaseHelper.getResultListByHql(check.toString());
+			
+			if(checklst.size()>0)continue;
+			
+			PaymentsDetail pd = new PaymentsDetail();
+			pd.setAmount(ConstantUtil.formatDouble(u.getAmountpay()*rate/365/100));
+			
+			pd.setBalance(u.getAmountpay()+pd.getAmount());
+			pd.setClassification(1);
+			pd.setCreatetime(y);
+			pd.setDatadescribe("融金宝日利息");
+			pd.setFuserinfoid(u.getId());
+			pd.setState(0);
+			pd.setType(1);
+			databaseHelper.persistObject(pd);
+			
+			u.setAmountpay(u.getAmountpay()+pd.getAmount());
+			databaseHelper.updateObject(u);
+		}
+	}*/
+}

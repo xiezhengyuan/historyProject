@@ -1,0 +1,166 @@
+package com.hxy.isw.control;
+
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.hxy.isw.entity.UserInfo;
+import com.hxy.isw.service.TradingService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.JsonUtil;
+
+@Controller
+@RequestMapping("/trading")
+public class TradingControl {
+		@Autowired
+		TradingService tradingService;
+		//查找用户金币信息
+		@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+				@RequestMapping(method = RequestMethod.POST, value = "/queryusertrading")
+				public void queryusertrading(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+					try {
+						int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+						int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+						String keyword =request.getParameter("keyword");
+						System.out.println(keyword);
+						Map<String,Object> map = tradingService.queryusertrading(start, keyword, limit);
+						JsonUtil.mapToJson(map, response);
+					} catch (Exception e) {
+						e.printStackTrace();
+						JsonUtil.success2page(response, "{\"msg\":\"fail\",\"info\":\"\"}");
+					}
+					
+				}
+				//修改虚拟资金和金币
+		@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+				@RequestMapping(method = RequestMethod.POST, value = "/modifytrading")
+				public void modifytrading(HttpServletRequest request,HttpServletResponse response,HttpSession session,UserInfo userInfo){
+					try {
+						tradingService.modifytrading(userInfo);
+						JsonUtil.success2page(response);
+					} catch (Exception e) {
+						e.printStackTrace();
+						JsonUtil.success2page(response, "{\"msg\":\"fail\",\"info\":\"\"}");
+					}
+					
+					
+				}
+				
+				//查找正在持仓信息
+		@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+				@RequestMapping(method = RequestMethod.POST, value = "/queryposition")
+				public void queryposition(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+					try {
+						int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+						int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+						String keyword =request.getParameter("keyword");
+						String tradingId=request.getParameter("tradingId");
+						String type=request.getParameter("type");
+						Map<String,Object> map = tradingService.queryposition(start, keyword, limit, tradingId,type);
+						JsonUtil.mapToJson(map, response);
+					} catch (Exception e) {
+						e.printStackTrace();
+						JsonUtil.success2page(response, "{\"msg\":\"fail\",\"info\":\"\"}");
+					}
+					
+				}
+				//查找股票历史交易
+		@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+				@RequestMapping(method = RequestMethod.POST, value = "/queryhistorytrading")
+				public void queryhistorytrading(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+					try {
+						int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+						int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+						String keyword =request.getParameter("keyword");
+						String tradingId=request.getParameter("tradingId");
+						String type=request.getParameter("type");
+						Map<String,Object> map = tradingService.queryhistorytrading(start, keyword, limit, tradingId,type);
+						JsonUtil.mapToJson(map, response);
+					} catch (Exception e) {
+						e.printStackTrace();
+						JsonUtil.success2page(response, "{\"msg\":\"fail\",\"info\":\"\"}");
+					}
+					
+				}
+				
+				//查找正在股票委托挂单信息
+		@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+				@RequestMapping(method = RequestMethod.POST, value = "/queryorders")
+				public void queryorders(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+					try {
+						int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+						int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+						String keyword =request.getParameter("keyword");
+						String tradingId=request.getParameter("tradingId");
+						String type=request.getParameter("type");
+						Map<String,Object> map = tradingService.queryorders(start, keyword, limit, tradingId,type);
+						JsonUtil.mapToJson(map, response);
+					} catch (Exception e) {
+						e.printStackTrace();
+						JsonUtil.success2page(response, "{\"msg\":\"fail\",\"info\":\"\"}");
+					}
+					
+				}
+				
+				//查找正在外汇正在持仓信息
+		@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+				@RequestMapping(method = RequestMethod.POST, value = "/queryforex")
+				public void queryforex(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+					try {
+						int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+						int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+						String keyword =request.getParameter("keyword");
+						String tradingId=request.getParameter("tradingId");
+						Map<String,Object> map = tradingService.queryforex(start, keyword, limit, tradingId);
+						JsonUtil.mapToJson(map, response);
+					} catch (Exception e) {
+						e.printStackTrace();
+						JsonUtil.success2page(response, "{\"msg\":\"fail\",\"info\":\"\"}");
+					}
+					
+				}
+				//查找外汇历史交易信息
+		@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+				@RequestMapping(method = RequestMethod.POST, value = "/queryhistoryforex")
+				public void queryhistoryforex(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+					try {
+						int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+						int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+						String keyword =request.getParameter("keyword");
+						String tradingId=request.getParameter("tradingId");
+						Map<String,Object> map = tradingService.queryhistoryforex(start, keyword, limit, tradingId);
+						JsonUtil.mapToJson(map, response);
+					} catch (Exception e) {
+						e.printStackTrace();
+						JsonUtil.success2page(response, "{\"msg\":\"fail\",\"info\":\"\"}");
+					}
+					
+				}
+				
+				//查找正在外汇委托挂单信息
+		@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+				@RequestMapping(method = RequestMethod.POST, value = "/queryforex1")
+				public void queryforex1(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+					try {
+						int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+						int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+						String keyword =request.getParameter("keyword");
+						String tradingId=request.getParameter("tradingId");
+						Map<String,Object> map = tradingService.queryforex1(start, keyword, limit, tradingId);
+						JsonUtil.mapToJson(map, response);
+					} catch (Exception e) {
+						e.printStackTrace();
+						JsonUtil.success2page(response, "{\"msg\":\"fail\",\"info\":\"\"}");
+					}
+					
+				}
+}

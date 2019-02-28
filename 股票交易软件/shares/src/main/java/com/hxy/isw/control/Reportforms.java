@@ -1,0 +1,131 @@
+package com.hxy.isw.control;
+
+import java.util.List;
+import java.util.Map;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.hxy.isw.entity.AccountInfo;
+import com.hxy.isw.service.ReportformService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.JsonUtil;
+
+@Controller
+@RequestMapping(value="reportforms")
+public class Reportforms {
+
+	@Autowired
+	ReportformService reportformservice;
+	
+	@RequestMapping(method = RequestMethod.POST, value = "/moneyreportforms")
+	public void moneyreportforms(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+
+		int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+		int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+		String companyid =request.getParameter("companyid")==null?"iscompany":request.getParameter("companyid");
+		String gengalid = request.getParameter("gengalid")==null?"isgengal":request.getParameter("gengalid");
+		String salesmanid=request.getParameter("salesmanid")==null?"issalesman":request.getParameter("salesmanid");
+		String starttime = request.getParameter("starttime");
+		String endtime =   request.getParameter("endtime");
+		String userinfo =  request.getParameter("userinfo");
+		AccountInfo acc=(AccountInfo)session.getAttribute("loginEmp");
+		try {
+			int records = reportformservice.countmoneyreportforms(companyid, gengalid, salesmanid, starttime, endtime, userinfo, acc);
+			int total = ConstantUtil.pages(records, limit);
+			if(records > 0 ){
+				
+				List<Map<String , Object>>lstMap = reportformservice.moneyreportforms(companyid, gengalid, salesmanid, starttime, endtime, userinfo, acc, start, limit);
+				JsonUtil.listToJson(lstMap, records, total, response);
+				
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		
+		
+		
+	}
+	
+	@RequestMapping(method = RequestMethod.POST, value = "/goldsreportforms")
+	public void goldsreportforms(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+
+		int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+		int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+		String companyid =request.getParameter("companyid")==null?"":request.getParameter("companyid");
+		String gengalid = request.getParameter("gengalid")==null?"":request.getParameter("gengalid");
+		String salesmanid=request.getParameter("salesmanid")==null?"":request.getParameter("salesmanid");
+		String starttime = request.getParameter("starttime");
+		String endtime =   request.getParameter("endtime");
+		String userinfo =  request.getParameter("userinfo");
+		AccountInfo acc=(AccountInfo)session.getAttribute("loginEmp");
+		try {
+			int records = reportformservice.countgoldsreportforms(companyid, gengalid, salesmanid,userinfo, acc);
+			int total = ConstantUtil.pages(records, limit);
+			if(records > 0 ){
+				
+				List<Map<String , Object>>lstMap = reportformservice.goldsreportforms(companyid, gengalid, salesmanid, starttime, endtime, userinfo, acc, start, limit);
+				JsonUtil.listToJson(lstMap, records, total, response);
+				
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 金币报表导出
+	 * @param request
+	 * @param session
+	 * @param response
+	 * @throws Exception
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/outportgoldslog")
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	public void outportcashlog(HttpServletRequest request,HttpSession session,HttpServletResponse response) throws Exception{
+		AccountInfo acc=(AccountInfo)session.getAttribute("loginEmp");
+		String companyid =request.getParameter("companyid")==null?"":request.getParameter("companyid");
+		String gengalid = request.getParameter("gengalid")==null?"":request.getParameter("gengalid");
+		String salesmanid=request.getParameter("salesmanid")==null?"":request.getParameter("salesmanid");
+		String starttime = request.getParameter("starttime");
+		String endtime =   request.getParameter("endtime");
+		String userinfo =  request.getParameter("userinfo");
+		String filename=reportformservice.outportcashlog(companyid, gengalid, salesmanid, starttime, endtime, userinfo,acc);
+		
+//		String filename = staticService.outportcashlog(starttime,endtime);
+		
+		JsonUtil.success2page(response,"{\"op\":\"success\",\"excel\":\""+filename+"\"}");
+	}
+	
+	/**
+	 * 入金报表导出
+	 * @param request
+	 * @param session
+	 * @param response
+	 * @throws Exception
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/outportinmoneylog")
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	public void outportinmoneylog(HttpServletRequest request,HttpSession session,HttpServletResponse response) throws Exception{
+		AccountInfo acc=(AccountInfo)session.getAttribute("loginEmp");
+		String companyid =request.getParameter("companyid")==null?"":request.getParameter("companyid");
+		String gengalid = request.getParameter("gengalid")==null?"":request.getParameter("gengalid");
+		String salesmanid=request.getParameter("salesmanid")==null?"":request.getParameter("salesmanid");
+		String starttime = request.getParameter("starttime");
+		String endtime =   request.getParameter("endtime");
+		String userinfo =  request.getParameter("userinfo");
+		String filename=reportformservice.outportinmoneylog(companyid, gengalid, salesmanid, starttime, endtime, userinfo,acc);
+		
+//		String filename = staticService.outportcashlog(starttime,endtime);
+		
+		JsonUtil.success2page(response,"{\"op\":\"success\",\"excel\":\""+filename+"\"}");
+	}
+}

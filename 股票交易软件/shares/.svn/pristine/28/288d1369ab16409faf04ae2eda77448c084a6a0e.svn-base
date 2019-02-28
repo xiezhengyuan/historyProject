@@ -1,0 +1,149 @@
+package com.hxy.isw.util;
+
+/*
+* Copyright 2017 Alibaba Group
+*
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
+*
+*     http://www.apache.org/licenses/LICENSE-2.0
+*
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+*/
+
+import com.alibaba.cloudapi.sdk.core.model.ApiResponse;
+
+public class SyncDemo_股票行情 {
+
+    private SyncApiClient_股票行情 syncClient = null;
+
+    public SyncDemo_股票行情() {
+    	if(syncClient==null)
+    		this.syncClient = SyncApiClient_股票行情.newBuilder()
+                .appKey("24634160")
+                .appSecret("d95a516a1252f25b761282e46f2e0949")
+                .build();
+    }
+
+    public ApiResponse 股票列表查询(String market,String page) {
+        ApiResponse response = syncClient.股票列表查询(market, page);
+        return response;
+    }
+    
+    public ApiResponse 大盘股指行情_批量() {
+    	 ApiResponse response = syncClient.大盘股指行情_批量("sh000001,sz399001,sz399006");
+        return response;
+    }
+    
+    public ApiResponse 股票行情_批量(String stocks) {
+        ApiResponse response = syncClient.股票行情_批量(stocks, "0");
+        return response;
+    }
+    
+    public ApiResponse 股票行情(String code,String need_k_pic,String needIndex) {
+        ApiResponse response = syncClient.股票行情(code, need_k_pic, needIndex);
+        return response;
+    }
+    
+    public ApiResponse 股票K线数据(String code,String time) {
+        ApiResponse response = syncClient.股票K线数据(code, time,null,null);
+        return response;
+    }
+    
+    public ApiResponse 股票实时分时线数据(String code,String day) {
+        ApiResponse response = syncClient.股票实时分时线数据(code, day);
+        return response;
+    }
+    
+    public void 大盘历史查询Demo() {
+        ApiResponse response = syncClient.大盘历史查询("", "");
+        printResponse(response);
+    }
+    public void 股票行情Demo() {
+        ApiResponse response = syncClient.股票行情("600887", "1", "1");
+        printResponse(response);
+    }
+    public void 大盘股指行情_批量Demo() {
+        ApiResponse response = syncClient.大盘股指行情_批量("sh000001,sz399001,sz399005,sz399006,hkhsi");
+        printResponse(response);
+    }
+    public void 股票行情_批量Demo() {
+        ApiResponse response = syncClient.股票行情_批量("", "0");
+        printResponse(response);
+    }
+    public void 沪深及港股历史行情Demo() {
+        ApiResponse response = syncClient.沪深及港股历史行情("", "", "");
+        printResponse(response);
+    }
+    public void 股票板块列表Demo() {
+        ApiResponse response = syncClient.股票板块列表();
+        printResponse(response);
+    }
+    public void 股票实时分时线数据Demo() {
+        ApiResponse response = syncClient.股票实时分时线数据("", "1");
+        printResponse(response);
+    }
+    public void 股票K线数据Demo() {
+        ApiResponse response = syncClient.股票K线数据("600887", "day", "20161101", "bfq");
+        printResponse(response);
+    }
+    public void 大盘股指列表查询Demo() {
+        ApiResponse response = syncClient.大盘股指列表查询("", "1");
+        printResponse(response);
+    }
+    public void 大盘股指K线数据Demo() {
+        ApiResponse response = syncClient.大盘股指K线数据("", "day", "20161101");
+        printResponse(response);
+    }
+    public void 股票列表查询Demo() {
+        ApiResponse response = syncClient.股票列表查询("", "2");
+        printResponse(response);
+    }
+    public void 大盘股指分时线Demo() {
+        ApiResponse response = syncClient.大盘股指分时线("", "1");
+        printResponse(response);
+    }
+    public void 沪深股票最新50条逐笔交易Demo() {
+        ApiResponse response = syncClient.沪深股票最新50条逐笔交易("");
+        printResponse(response);
+    }
+    public void 根据名称或编码查询股票信息Demo() {
+        ApiResponse response = syncClient.根据名称或编码查询股票信息(null, null, null);
+        printResponse(response);
+    }
+    public void 当日除权停复牌上市股票Demo() {
+        ApiResponse response = syncClient.当日除权停复牌上市股票("");
+        printResponse(response);
+    }
+    public void 查询沪深板块中的股票列表Demo() {
+        ApiResponse response = syncClient.查询沪深板块中的股票列表("", "");
+        printResponse(response);
+    }
+    public void 港股板块列表Demo() {
+        ApiResponse response = syncClient.港股板块列表();
+        printResponse(response);
+    }
+    public void 查询港股板块中的股票列表Demo() {
+        ApiResponse response = syncClient.查询港股板块中的股票列表("", "");
+        printResponse(response);
+    }
+    public void 沪深股票内外盘数据Demo() {
+        ApiResponse response = syncClient.沪深股票内外盘数据("");
+        printResponse(response);
+    }
+
+    private static void printResponse(ApiResponse response) {
+        try {
+            System.out.println("response code = " + response.getStatusCode());
+            System.out.println("response content = " + new String(response.getBody(), "utf-8"));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+}

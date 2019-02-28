@@ -1,0 +1,24 @@
+package com.hxy.isw.thread;
+
+import com.hxy.isw.entity.ForeignExchange;
+import com.hxy.isw.entity.SharesWareHouse;
+import com.hxy.isw.util.DatabaseHelper;
+
+public class FollowExampleSell implements Runnable {
+
+	public SharesWareHouse sharesWareHouse;
+	public ForeignExchange foreignexchange;
+	
+	public static DatabaseHelper databaseHelper;
+	
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		followExampleSellShares(sharesWareHouse,foreignexchange);
+	}
+	
+
+	private void followExampleSellShares(SharesWareHouse sharesWareHouse,ForeignExchange foreignexchange){
+		
+	}
+}

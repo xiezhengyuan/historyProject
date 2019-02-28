@@ -1,0 +1,180 @@
+package com.hxy.isw.test;
+
+import java.awt.Color;
+import java.awt.Font;
+import java.awt.Graphics;
+import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.FileReader;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.imageio.ImageIO;
+
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.HttpRequest;
+import com.hxy.isw.util.Sys;
+import com.sun.image.codec.jpeg.JPEGCodec;
+import com.sun.image.codec.jpeg.JPEGImageEncoder;
+public final class Test {
+    /**//*
+     * public final static String getPressImgPath() { return ApplicationContext
+     * .getRealPath("/template/data/util/shuiyin.gif"); }
+     */
+    /** *//**
+     * 把图片印刷到图片上
+     * 
+     * @param pressImg --
+     *            水印文件
+     * @param targetImg --
+     *            目标文件
+     * @param x
+     *            --x坐标
+     * @param y
+     *            --y坐标
+     */
+    public final static void pressImage(String pressImg, String targetImg,
+            int x, int y) {
+        try {
+            //目标文件
+            File _file = new File(targetImg);
+            Image src = ImageIO.read(_file);
+            int wideth = src.getWidth(null);
+            int height = src.getHeight(null);
+            BufferedImage image = new BufferedImage(wideth, height,
+                    BufferedImage.TYPE_INT_RGB);
+            Graphics g = image.createGraphics();
+            g.drawImage(src, 0, 0, wideth, height, null);
+            //水印文件
+            File _filebiao = new File(pressImg);
+            Image src_biao = ImageIO.read(_filebiao);
+            int wideth_biao = src_biao.getWidth(null);
+            int height_biao = src_biao.getHeight(null);
+            g.drawImage(src_biao, (wideth - wideth_biao) / 2,
+                    (height - height_biao) / 2, wideth_biao, height_biao, null);
+            //水印文件结束
+            g.dispose();
+            FileOutputStream out = new FileOutputStream(targetImg);
+            JPEGImageEncoder encoder = JPEGCodec.createJPEGEncoder(out);
+            encoder.encode(image);
+            out.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    /** *//**
+     * 打印文字水印图片
+     * 
+     * @param pressText
+     *            --文字
+     * @param targetImg --
+     *            目标图片
+     * @param fontName --
+     *            字体名
+     * @param fontStyle --
+     *            字体样式
+     * @param color --
+     *            字体颜色
+     * @param fontSize --
+     *            字体大小
+     * @param x --
+     *            偏移量
+     * @param y
+     */
+    public static void pressText(String pressText, String targetImg,
+            String fontName, int fontStyle, int color, int fontSize, int x,
+            int y) {
+        try {
+            File _file = new File(targetImg);
+            Image src = ImageIO.read(_file);
+            int wideth = src.getWidth(null);
+            int height = src.getHeight(null);
+            BufferedImage image = new BufferedImage(wideth, height,
+                    BufferedImage.TYPE_INT_RGB);
+            Graphics g = image.createGraphics();
+            g.drawImage(src, 0, 0, wideth, height, null);
+            // String s="www.qhd.com.cn";
+            g.setColor(Color.RED);
+            g.setFont(new Font(fontName, fontStyle, fontSize));
+            g.drawString(pressText, wideth - fontSize - x, height - fontSize
+                    / 2 - y);
+            g.dispose();
+            FileOutputStream out = new FileOutputStream(targetImg);
+            JPEGImageEncoder encoder = JPEGCodec.createJPEGEncoder(out);
+            encoder.encode(image);
+            out.close();
+        } catch (Exception e) {
+            System.out.println(e);
+        }
+    }
+    public static void main(String[] args) {
+        /*pressImage("D:/logo.png","D:/11.png", 0, 0);
+        pressText("HELLO WORLD", "D:/11.png", "宋体", 0, 0, 30, 150, 150);
+    	double y = 50.0;
+    	double d1 = Math.sqrt((4*y+25.0)/100)-0.5;
+    	System.out.println((int)d1);*/
+    	//testJpush();
+    	
+    	testJpush();
+    	
+    	String path = "E:\\x.txt";
+		
+    	
+		File file = new File(path );
+		Sys.out("before if ......"+path );
+		try {
+			if (file.exists()) {
+				
+				Sys.out("after if ......"+path);
+				BufferedReader b = new BufferedReader(new FileReader(file));
+				 String ss= "";	
+					String s = "";
+					do {
+						if(ss.length()>0){
+							String [] strs = ss.split("#");
+						
+
+							Sys.out("<tr><td>"+strs[0]+"</td><td>"+strs[1]+"</td><td>"+strs[2]+"</td></tr>");
+						}
+					} while ((ss = b.readLine())!= null);
+			} 
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+    }
+    public static void testJpush() {
+  		String url = "http://localhost:5555/ace/appServiceGoods/banner.action";
+  		//url = "http://localhost:9090/kuaiwa/appservice/login.action";
+  		/*List<Map<String,Long>> lstMap = new ArrayList<Map<String,Long>>();
+  		for (int i = 1; i < 3; i++) {
+			
+  			Map<String,Long> map = new HashMap<String,Long>();
+  			map.put("connectid", Long.valueOf(i));
+  			lstMap.add(map);
+		}*/
+  		
+      	//String p = "userid=2&connectids=[{\"connectid\":\"1\"},{\"connectid\":\"2\"}]";
+      	String p = "userid=16";
+     
+
+      	
+      	//&tag[]=1&tag[]=2&tag[]=3
+      	//p="";
+  		String result =  HttpRequest.sendPost(url, p);
+  		System.out.println(result);
+
+  	}
+    
+    
+}

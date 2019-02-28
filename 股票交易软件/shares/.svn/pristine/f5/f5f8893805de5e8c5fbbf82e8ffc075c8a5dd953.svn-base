@@ -1,0 +1,489 @@
+package com.hxy.isw.service.impl;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.hxy.isw.entity.AccountInfo;
+import com.hxy.isw.entity.AccountPermission;
+import com.hxy.isw.entity.Company;
+import com.hxy.isw.entity.MenuInfo;
+import com.hxy.isw.entity.UserInfo;
+import com.hxy.isw.service.CompanyService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+
+@Repository
+public class CompanyServiceImpl implements CompanyService{
+
+	@Autowired
+	DatabaseHelper databaseHelper;
+
+	@Override
+	public List<Map<String, Object>> querycompany(AccountInfo emp, String name, String mobile, Integer start,
+			Integer limit) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select c,ai from Company c,AccountInfo ai  where ai.role = 2 and ai.fcompanyid = c.id ");
+		hql = conditioncompany(hql,emp, name,mobile);
+		hql = hql.append(" order by c.createtime desc");
+		List<Object[]> lst = databaseHelper.getResultListByHql(hql.toString(),start,limit);
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		for (Object[] obj : lst) {
+			Company c = (Company) obj[0];
+			AccountInfo a = (AccountInfo) obj[1];
+			
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("id", c.getId());
+			map.put("name", c.getCompany());
+			map.put("mobile", a.getMobile());
+			map.put("proportion", a.getProportion());
+			map.put("state", c.getState()==0?"正常":"已禁用");
+			map.put("time", c.getCreatetime());
+			
+			lstMap.add(map);
+		}
+		
+		return lstMap;
+	}
+
+	@Override
+	public int countcompany(AccountInfo emp, String name, String mobile) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select count(c.id) from Company c,AccountInfo ai  where ai.role = 2 and ai.fcompanyid = c.id ");
+		hql = conditioncompany(hql, emp, name, mobile);
+		List lst = databaseHelper.getResultListByHql(hql.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+
+	private StringBuffer conditioncompany(StringBuffer hql,AccountInfo emp,String name,String mobile){
+	
+		if(name!=null&&name.length()>0)
+			hql = hql.append(" and c.company like '%").append(name).append("%'");
+		
+		if(mobile!=null&&mobile.length()>0)
+			hql = hql.append(" and ai.mobile like '%").append(mobile).append("%'");
+		
+		return hql;
+	}
+
+	@Override
+	public void forbiddencompany(String id, Integer state) throws Exception {
+		// TODO Auto-generated method stub
+		Company company = (Company) databaseHelper.getObjectById(Company.class, Long.parseLong(id));
+		company.setState(state);
+		databaseHelper.updateObject(company);
+	}
+
+	@Override
+	public AccountInfo queryuserbycompany(String id) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer queryuserbycompany = new StringBuffer("select ai from AccountInfo ai where ai.role = 2 and  ai.fcompanyid = ")
+				.append(Long.parseLong(id));
+		List<Object>aList = databaseHelper.getResultListByHql(queryuserbycompany.toString());
+		AccountInfo a = (AccountInfo) aList.get(0);
+		return a;
+	}
+
+	@Override
+	public void modifycompany(AccountInfo emp,String companyid, String company, String mobile, String name, String proportion,
+			String username, String password) {
+		// TODO Auto-generated method stub
+		StringBuffer queryuserbycompany = new StringBuffer("select ai from AccountInfo ai where ai.role = 2 and  ai.fcompanyid = ")
+				.append(Long.parseLong(companyid));
+		List<Object>aList = databaseHelper.getResultListByHql(queryuserbycompany.toString());
+		AccountInfo a = (AccountInfo) aList.get(0);
+		a.setMobile(mobile);
+		a.setUsername(username);
+		a.setPassword(password);
+		a.setName(name);
+		a.setProportion(Double.parseDouble(proportion));
+		databaseHelper.updateObject(a);
+		
+		Company c = (Company) databaseHelper.getObjectById(Company.class, Long.parseLong(companyid));
+		c.setCompany(company);
+		
+		//2017年8月18日 修改公司运维下的分成比例 by lxq
+		StringBuffer sql =new StringBuffer("UPDATE accountinfo ai SET ai.proportion=")
+				.append(proportion).append(" WHERE role=3 AND ai.fcompanyid=").append(Long.parseLong(companyid));
+		databaseHelper.executeNativeSql(sql.toString());
+		//修改结束
+		
+		databaseHelper.updateObject(c);
+	}
+
+	@Override
+	public void addcompany(AccountInfo emp, String company, String mobile, String name,
+			String proportion, String username, String password) throws Exception{
+		// TODO Auto-generated method stub
+		StringBuffer  querycompanyexcist = new StringBuffer("select c from Company c where c.company = '")
+				.append(company).append("'"); 
+		List<Object>cList = databaseHelper.getResultListByHql(querycompanyexcist.toString());
+		if(cList.size()>0)throw new Exception("公司名已存在");
+		
+		StringBuffer queryaccountexcist = new StringBuffer("select ai from AccountInfo ai where ai.name = '")
+				.append(name).append("'");
+		List<Object>aList = databaseHelper.getResultListByHql(queryaccountexcist.toString());
+		if(aList.size()>0)throw new Exception("负责人已被占用");
+		
+		StringBuffer queryusernameexcist = new StringBuffer("select ai from AccountInfo ai where ai.username = '")
+				.append(username).append("'");
+		List<Object>uList = databaseHelper.getResultListByHql(queryusernameexcist.toString());
+		if(uList.size()>0)throw new Exception("帐号已被占用");
+		Company c = new Company();
+		c.setCompany(company);
+		c.setCreatetime(new Date());
+		c.setState(0);
+		databaseHelper.persistObject(c);
+		
+		AccountInfo a = new AccountInfo();
+		a.setFcompanyid(c.getId());
+		a.setRole(2);
+		a.setUsername(username);
+		a.setPassword(password);
+		a.setMobile(mobile);
+		a.setName(name);
+		a.setProportion(Double.parseDouble(proportion));
+		a.setCreatetime(new Date());
+		databaseHelper.persistObject(a);
+		
+		StringBuffer querymenuinfo = new StringBuffer("select mi from MenuInfo mi where mi.type = 2");
+		List<Object>mList = databaseHelper.getResultListByHql(querymenuinfo.toString());
+		for (Object object : mList) {
+			MenuInfo m = (MenuInfo) object;
+			AccountPermission ap = new AccountPermission();
+			ap.setFaccountid(a.getId());
+			ap.setFmenuid(m.getId());
+			ap.setState(0);
+			databaseHelper.persistObject(ap);
+		}
+	}
+
+	@Override
+	public List<Map<String, Object>> querymember(AccountInfo emp, String companyid, String memberlevel, String name,
+			String mobile, Integer start, Integer limit) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select ai from AccountInfo ai  where ai.fcompanyid = ")
+				.append(Long.parseLong(companyid));
+		hql = conditionmember(hql,companyid,memberlevel,name,mobile);
+		hql = hql.append(" order by ai.createtime desc");
+		List<Object> lst = databaseHelper.getResultListByHql(hql.toString(),start,limit);
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		for (Object obj : lst) {
+			AccountInfo a = (AccountInfo) obj;
+			
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("id", a.getId());
+			map.put("name", a.getName());
+			map.put("mobile", a.getMobile());
+			map.put("roles", a.getRole());
+			
+			if(a.getFparentid()!=null){
+				AccountInfo fa = (AccountInfo) databaseHelper.getObjectById(AccountInfo.class, a.getFparentid());
+				map.put("role", a.getRole()==4?"经理":a.getRole()==5?"业务员"+"("+"所属经理:"+fa.getName()+")":"");
+			}else {
+				map.put("role", a.getRole()==4?"经理":a.getRole()==5?"业务员":"");
+			}
+			map.put("state", a.getState()==0?"正常":"已禁用");
+			map.put("time", a.getCreatetime());
+			
+			lstMap.add(map);
+		}
+		
+		return lstMap;
+	}
+
+	@Override
+	public int countmember(String companyid, String memberlevel, String name, String mobile) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select count(ai.id) from AccountInfo ai  where  ai.fcompanyid = ")
+				.append(Long.parseLong(companyid));
+		hql = conditionmember(hql,companyid,memberlevel,name, mobile);
+		List lst = databaseHelper.getResultListByHql(hql.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+	
+	private StringBuffer conditionmember(StringBuffer hql,String companyid,String memberlevel,String name,String mobile){
+		if(Integer.parseInt(memberlevel)==-1)
+		{hql = hql.append(" and (ai.role = 4 or ai.role = 5) ");}
+		
+		if(Integer.parseInt(memberlevel)==1)
+			{hql = hql.append(" and ai.role = 4 ");}
+		
+		if(Integer.parseInt(memberlevel)==2)
+			{hql = hql.append(" and ai.role = 5 ");}
+		
+		if(name!=null&&name.length()>0)
+			hql = hql.append(" and ai.name like '%").append(name).append("%'");
+		
+		if(mobile!=null&&mobile.length()>0)
+			hql = hql.append(" and ai.mobile like '%").append(mobile).append("%'");
+		
+		return hql;
+	}
+
+	@Override
+	public int querycompanyrole4(String companyid) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer querycompanyrole4 = new StringBuffer("select count(ai.id) from AccountInfo ai where ai.role = 4 and ai.fcompanyid = ")
+				.append(Long.parseLong(companyid));
+		List lst = databaseHelper.getResultListByHql(querycompanyrole4.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+
+	@Override
+	public int querycompanyrole5(String companyid) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer querycompanyrole5 = new StringBuffer("select count(ai.id) from AccountInfo ai where ai.role = 5 and ai.fcompanyid = ")
+				.append(Long.parseLong(companyid));
+		List lst = databaseHelper.getResultListByHql(querycompanyrole5.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+
+	@Override
+	public void forbiddenmember(String id, Integer state) throws Exception {
+		// TODO Auto-generated method stub
+		AccountInfo accountInfo = (AccountInfo) databaseHelper.getObjectById(AccountInfo.class, Long.parseLong(id));
+		accountInfo.setState(state);
+		databaseHelper.updateObject(accountInfo);
+	}
+
+	@Override
+	public List<Map<String, Object>> querysalesmanbymanager(AccountInfo emp, String accountinfoid, String name,
+			String mobile, Integer start, Integer limit) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select ai from AccountInfo ai  where ai.fparentid = ")
+				.append(Long.parseLong(accountinfoid));
+		hql = conditionsalesman(hql,accountinfoid,name,mobile);
+		hql = hql.append(" order by ai.createtime desc");
+		List<Object> lst = databaseHelper.getResultListByHql(hql.toString(),start,limit);
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		for (Object obj : lst) {
+			AccountInfo a = (AccountInfo) obj;
+			
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("id", a.getId());
+			map.put("name", a.getName());
+			map.put("mobile", a.getMobile());
+			map.put("extensionurl", a.getExtensionurl());
+			map.put("roles", a.getRole());
+			map.put("role", a.getRole()==4?"经理":a.getRole()==5?"业务员":"");
+			map.put("state", a.getState()==0?"正常":"已禁用");
+			map.put("time", a.getCreatetime());
+			
+			lstMap.add(map);
+		}
+		
+		return lstMap;
+	}
+
+	@Override
+	public int countsalesman(String accountinfoid, String name, String mobile) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select count(ai.id) from AccountInfo ai  where  ai.fparentid = ")
+				.append(Long.parseLong(accountinfoid));
+		hql = conditionsalesman(hql,accountinfoid,name, mobile);
+		List lst = databaseHelper.getResultListByHql(hql.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+	
+	private StringBuffer conditionsalesman(StringBuffer hql,String accountinfoid,String name,String mobile){
+		
+		if(name!=null&&name.length()>0)
+			hql = hql.append(" and ai.name like '%").append(name).append("%'");
+		
+		if(mobile!=null&&mobile.length()>0)
+			hql = hql.append(" and ai.mobile like '%").append(mobile).append("%'");
+		
+		return hql;
+	}
+
+	@Override
+	public List<Map<String, Object>> queryuserbysalesman(AccountInfo emp, String accountinfoid, String name,
+			String mobile, Integer start, Integer limit) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select u from UserInfo u  where u.faccountid = ")
+				.append(Long.parseLong(accountinfoid));
+		hql = conditionuserbysalesman(hql,accountinfoid,name,mobile);
+		hql = hql.append(" order by u.createtime desc");
+		List<Object> lst = databaseHelper.getResultListByHql(hql.toString(),start,limit);
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		for (Object obj : lst) {
+			UserInfo u = (UserInfo) obj;
+			
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("id", u.getId());
+			map.put("nickname", u.getNickname());
+			map.put("mobile", u.getMobile());
+			map.put("totalrecharge", u.getTotalrecharge());
+			map.put("golds", u.getGolds());
+			map.put("virtualcapital", u.getVirtualcapital());
+			map.put("state", u.getState()==0?"正常":"已禁用");
+			map.put("time", u.getCreatetime());
+			
+			lstMap.add(map);
+		}
+		
+		return lstMap;
+	}
+
+	@Override
+	public int countuserbysalesman(String accountinfoid, String name, String mobile) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select count(u.id) from UserInfo u  where u.faccountid = ")
+				.append(Long.parseLong(accountinfoid));
+		hql = conditionuserbysalesman(hql,accountinfoid,name, mobile);
+		List lst = databaseHelper.getResultListByHql(hql.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+
+private StringBuffer conditionuserbysalesman(StringBuffer hql,String accountinfoid,String name,String mobile){
+		
+		if(name!=null&&name.length()>0)
+			hql = hql.append(" and u.name like '%").append(name).append("%'");
+		
+		if(mobile!=null&&mobile.length()>0)
+			hql = hql.append(" and u.mobile like '%").append(mobile).append("%'");
+		
+		return hql;
+	}
+
+@Override
+public void addmanager(AccountInfo emp, String manager, String mobile, String proportion, String username,
+		String password) throws Exception {
+	// TODO Auto-generated method stub
+	StringBuffer  querycompanyexcist = new StringBuffer("select ai from AccountInfo ai where ai.name = '")
+			.append(manager).append("'"); 
+	List<Object>cList = databaseHelper.getResultListByHql(querycompanyexcist.toString());
+	if(cList.size()>0)throw new Exception("经理名已存在");
+	
+	/*StringBuffer queryaccountexcist = new StringBuffer("select ai from AccountInfo ai where ai.name = '")
+			.append(name).append("'");
+	List<Object>aList = databaseHelper.getResultListByHql(queryaccountexcist.toString());
+	if(aList.size()>0)throw new Exception("负责人已被占用");*/
+	
+	StringBuffer queryusernameexcist = new StringBuffer("select ai from AccountInfo ai where ai.username = '")
+			.append(username).append("'");
+	List<Object>uList = databaseHelper.getResultListByHql(queryusernameexcist.toString());
+	if(uList.size()>0)throw new Exception("帐号已被占用");
+	
+	AccountInfo a = new AccountInfo();
+	a.setFcompanyid(emp.getFcompanyid());
+	a.setRole(4);
+	a.setUsername(username);
+	a.setPassword(password);
+	a.setMobile(mobile);
+	a.setName(manager);
+	a.setProportion(Double.parseDouble(proportion));
+	a.setState(0);
+	a.setCreatetime(new Date());
+	a.setType(2);
+	databaseHelper.persistObject(a);
+	
+	StringBuffer querymenuinfo = new StringBuffer("select mi from MenuInfo mi where mi.type = 4");
+	List<Object>mList = databaseHelper.getResultListByHql(querymenuinfo.toString());
+	for (Object object : mList) {
+		MenuInfo m = (MenuInfo) object;
+		AccountPermission ap = new AccountPermission();
+		ap.setFaccountid(a.getId());
+		ap.setFmenuid(m.getId());
+		ap.setState(0);
+		databaseHelper.persistObject(ap);
+	}
+}
+
+@Override
+public void addsaleman(AccountInfo emp, String saleman, String mobile, String extensionurl, String proportion,
+		String username, String password) throws Exception {
+	// TODO Auto-generated method stub
+	StringBuffer  querycompanyexcist = new StringBuffer("select ai from AccountInfo ai where ai.name = '")
+			.append(saleman).append("'"); 
+	List<Object>cList = databaseHelper.getResultListByHql(querycompanyexcist.toString());
+	if(cList.size()>0)throw new Exception("业务员名已存在");
+	
+	/*StringBuffer queryaccountexcist = new StringBuffer("select ai from AccountInfo ai where ai.name = '")
+			.append(name).append("'");
+	List<Object>aList = databaseHelper.getResultListByHql(queryaccountexcist.toString());
+	if(aList.size()>0)throw new Exception("负责人已被占用");*/
+	
+	StringBuffer queryusernameexcist = new StringBuffer("select ai from AccountInfo ai where ai.username = '")
+			.append(username).append("'");
+	List<Object>uList = databaseHelper.getResultListByHql(queryusernameexcist.toString());
+	if(uList.size()>0)throw new Exception("帐号已被占用");
+	
+	AccountInfo a = new AccountInfo();
+	a.setFcompanyid(emp.getFcompanyid());
+	a.setRole(5);
+	a.setUsername(username);
+	a.setPassword(password);
+	a.setMobile(mobile);
+	a.setName(saleman);
+	a.setProportion(Double.parseDouble(proportion));
+	a.setExtensionurl(extensionurl);
+	a.setState(0);
+	a.setCreatetime(new Date());
+	a.setType(2);
+	a.setFparentid(emp.getId());
+	
+	databaseHelper.persistObject(a);
+	
+	//生成推广链接
+	extensionurl= "https://open.weixin.qq.com/connect/oauth2/authorize?appid="+ConstantUtil.APPID+"&redirect_uri="+ConstantUtil.MOBILEURL+"?faccountid="+a.getId()+"&response_type=code&scope=snsapi_userinfo&state=STATE#wechat_redirect";
+	a.setExtensionurl(extensionurl);
+	databaseHelper.updateObject(a);
+	
+	StringBuffer querymenuinfo = new StringBuffer("select mi from MenuInfo mi where mi.type = 5");
+	List<Object>mList = databaseHelper.getResultListByHql(querymenuinfo.toString());
+	for (Object object : mList) {
+		MenuInfo m = (MenuInfo) object;
+		AccountPermission ap = new AccountPermission();
+		ap.setFaccountid(a.getId());
+		ap.setFmenuid(m.getId());
+		ap.setState(0);
+		databaseHelper.persistObject(ap);
+	}
+}
+
+@Override
+public void modifymanager(AccountInfo emp, String companyid, String manager, String mobile,
+		String proportion, String username, String password) throws Exception {
+	// TODO Auto-generated method stub
+	StringBuffer queryuserbycompany = new StringBuffer("select ai from AccountInfo ai where ai.role = 4 and  ai.fcompanyid = ")
+			.append(Long.parseLong(companyid));
+	List<Object>aList = databaseHelper.getResultListByHql(queryuserbycompany.toString());
+	AccountInfo a = (AccountInfo) aList.get(0);
+	a.setMobile(mobile);
+	a.setUsername(username);
+	a.setPassword(password);
+	a.setName(manager);
+	a.setProportion(Double.parseDouble(proportion));
+	databaseHelper.updateObject(a);
+
+}
+
+@Override
+public void modifysaleman(AccountInfo emp, String accountinfoid, String saleman, String mobile,
+		String proportion, String username, String password) throws Exception {
+	// TODO Auto-generated method stub
+	/*StringBuffer queryuserbycompany = new StringBuffer("select ai from AccountInfo ai where ai.role = 5 and  ai.fcompanyid = ")
+			.append(Long.parseLong(companyid));
+	List<Object>aList = databaseHelper.getResultListByHql(queryuserbycompany.toString());*/
+	AccountInfo a = (AccountInfo) databaseHelper.getObjectById(AccountInfo.class, Long.parseLong(accountinfoid));
+	a.setMobile(mobile);
+	a.setUsername(username);
+	a.setPassword(password);
+	a.setName(saleman);
+	a.setProportion(Double.parseDouble(proportion));
+	databaseHelper.updateObject(a);
+	
+}
+	
+}

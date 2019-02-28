@@ -1,0 +1,152 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<div class="page-header">
+	<h1>
+		权限管理
+		<small>
+			<i class="ace-icon fa fa-angle-double-right"></i>
+			列表
+		</small>
+	</h1>
+</div><!-- /.page-header -->
+
+	<div class="row">
+		<div class="col-xs-12">
+			<div class="modal-header">
+				<button id="addmachinebtn" class="btn btn-purple btn-sm"  onclick="addpermissions()" data-placement="top" title="新增权限" data-toggle="modal" data-target="addpermissions">
+					新增管理员<span class="glyphicon glyphicon-plus"></span>
+				</button> 
+			</div>
+			
+			<!-- jqgrid 用户列表-->
+			<table id="pm_grid_table"></table>
+			<!-- jqgrid 页码栏-->
+			<div id="pm_grid_pager"></div>
+	
+			<!-- PAGE CONTENT ENDS -->
+		</div><!-- /.col -->
+	</div><!-- /.row -->
+					
+<!-- 新增管理员（Modal） -->
+<div id="div_addpermissions" ></div>
+			
+<script>
+
+Q.grid_selector = "pm_grid_table";
+Q.pager_selector = "pm_grid_pager";
+
+var url = Q.url+"/permissions/findPermissionsInfo.action";
+
+var colModel = [
+                { label: 'ID', name: 'id',align :'center',hidden:true,sortable : false,key:true },
+                { label: '名称', name: 'name',align :'center', sortable : false },
+                { label: '账号', name: 'username',align :'center', sortable : false },
+                { label: '时间', name: 'createtime',align :'center', sortable : false },
+                { label: '状态', name: 'state',align :'center',sortable : false },
+                {  
+                    name: '操作' ,align :'center', fixed: true, sortable: false, resize: false,  
+                    formatter: function (value, grid, rows, state) { 
+                    	
+                    	var btn = "";
+                    	if(rows.type==1 && rows.role==0 && rows.defaultaccount==1){
+                    		btn +="-";
+                    	}else{
+                    		if(rows.self!=rows.id){
+	                    		if(rows.state=='正常'){
+	                    			btn += Q.gridbtn_ban(Q.grid_selector,rows.id);
+	                    		}else{
+	                    			btn += Q.gridbtn_unban(Q.grid_selector,rows.id);
+	                    		}
+                    		}
+                    		btn +=" "+ Q.gridbtn_modify(Q.grid_selector,rows.id);
+                    	}
+                    	return  btn;
+                    }  
+                }
+            	];
+
+var caption = "权限列表";
+
+var postData ={};
+
+/**
+ * Q.grid_selector  tableid
+ * Q.pager_selector 页码栏id
+ * url 请求地址
+ * postData 请求参数
+ * colModel 表头
+ * caption 表名 
+ */
+Q.ExtJqGrid({
+	"grid":Q.grid_selector,
+	"pager":Q.pager_selector,
+	"url":url,
+	"param":postData,
+	"model":colModel,
+	"caption":caption
+});
+
+function getcondition(){
+	var o = {};
+	o.name = $('#name').val();
+	return o;
+}
+
+function queryempbycondition(){
+	postData = getcondition();
+	$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+}
+
+//详情函数----命名规则  detail_tableid
+function modify_pm_grid_table(id){
+	var _url= 'permissions/add.jsp?id='+id;
+	Q.viewJsp('#div_addpermissions',_url);
+}
+
+/* 封禁 */
+function ban_pm_grid_table(id){
+	Q.confirm("确定吗？",function(r){
+		if(r){
+			$._ajax({
+				url:Q.url+"/permissions/ban.action",
+				data:{"id":id},
+			    success:function(data){
+			    	if(data.op=="success"){
+			    		Q.toastr("提示","已封禁",'success');
+			    		$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+			    	}else{
+			    		Q.toastr("提示","操作失败",'warning');
+			    	}
+			    }
+			})
+		}
+	})
+}
+
+/* 解禁 */
+function unban_pm_grid_table(id){
+	Q.confirm("确定吗？",function(r){
+		if(r){
+			$._ajax({
+				url:Q.url+"/permissions/unban.action",
+				data:{"id":id},
+			    success:function(data){
+			    	if(data.op=="success"){
+			    		Q.toastr("提示","已解禁",'success');
+			    		$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+			    	}else{
+			    		Q.toastr("提示","操作失败",'warning');
+			    	}
+			    }
+			})
+		}
+	})
+}
+
+function addpermissions(){
+	var _url= 'permissions/add.jsp';
+	Q.viewJsp('#div_addpermissions',_url); 
+}
+
+</script>
+<script src="js/jqgridresize.js"></script>

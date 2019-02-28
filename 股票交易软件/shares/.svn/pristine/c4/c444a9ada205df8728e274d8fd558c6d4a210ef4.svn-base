@@ -1,0 +1,303 @@
+package com.hxy.isw.service.impl;
+
+import java.io.PrintWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.hxy.isw.entity.AccountInfo;
+import com.hxy.isw.service.StatisticService;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.Sys;
+
+@Repository
+public class StatisticServiceImpl implements StatisticService{
+
+	@Autowired
+	DatabaseHelper databaseHelper;
+
+	@Override
+	public JsonArray querywalletstatistic(AccountInfo emp,String starttime,String type,String companyid) throws Exception {
+		// TODO Auto-generated method stub
+		int j =0;
+		int [] montharr= {31,28,31,30,31,30,31,31,30,31,30,31};
+		int year = Integer.parseInt(starttime.split("-")[0]);
+		int month = Integer.parseInt(starttime.split("-")[1]);
+		int day = Integer.parseInt(starttime.split("-")[2]);
+		if(Integer.parseInt(type)==1){
+			j =12;
+		}
+		if(Integer.parseInt(type)==2){
+			if(month==2){
+			if(year%4 == 0 && year%100!=0 || year%400 == 0){
+				j=29;
+			}
+		             }else{
+				j=montharr[month];
+			     }
+	}
+		
+		if(Integer.parseInt(type)==3){j =24;}
+		
+		List<Map<String,Object>> lstMap = new LinkedList<Map<String,Object>>();
+		Map<String, Object>map1 = new HashMap<String, Object>();
+		StringBuffer querytotalrecharge = new StringBuffer("select SUM(uc.amount) 'a' from userrecharge uc,userinfo ui,accountinfo ai where uc.fuserinfoid = ui.id and ui.faccountid = ai.id  and uc.paystate =1 and ai.fcompanyid = ")
+				.append(Long.parseLong(companyid));
+		List<Object> lst0 = databaseHelper.getResultListBySql(querytotalrecharge.toString());
+		StringBuffer querycompanyproportion = new StringBuffer("select  ai.proportion  from accountinfo ai where ai.role = 2 and ai.fcompanyid = ").append(Long.parseLong(companyid));
+		Sys.out(querycompanyproportion);
+		List<Object> lst1 = databaseHelper.getResultListBySql(querycompanyproportion.toString());
+		StringBuffer querytotaluser = new StringBuffer("select count(ui.id) from userinfo ui,accountinfo ai where ui.faccountid = ai.id  and ai.fcompanyid = ").append(Long.parseLong(companyid));
+		List<Object> lst2 = databaseHelper.getResultListBySql(querytotaluser.toString());
+		StringBuffer querythsirecharge =new StringBuffer("select SUM(uc.amount) 'a' from userrecharge uc,userinfo ui,accountinfo ai where uc.fuserinfoid = ui.id and ui.faccountid = ai.id  and uc.paystate =1 and ai.fcompanyid = ")
+				.append(Long.parseLong(companyid));
+		if(Integer.parseInt(type)==1){
+			querythsirecharge.append(" and year(uc.createtime)= ").append(year);
+			}
+			if(Integer.parseInt(type)==2){
+				querythsirecharge.append(" and month(uc.createtime) = ").append(month);
+			}
+			if(Integer.parseInt(type)==3){
+				querythsirecharge.append(" and day(uc.createtime) = ").append(day);
+			}
+			List<Object> lst4 = databaseHelper.getResultListBySql(querythsirecharge.toString());
+		Double totalrecharge =0.0;
+		Double proportion = 0.0;
+		Integer totaluser = 0;
+		Double thisrecharge = 0.0;
+		if(lst0==null||lst0.size()==0||lst0.get(0)==null){
+			totalrecharge = 0.0;
+		}else{totalrecharge = Double.parseDouble(lst0.get(0).toString());}
+		if(lst1==null||lst1.size()==0||lst1.get(0)==null){
+			proportion = 0.0;
+		}else{proportion = Double.parseDouble(lst1.get(0).toString());}
+		if(lst2==null||lst2.size()==0||lst2.get(0)==null){
+			totaluser = 0;
+		}else{totaluser = Integer.parseInt(lst2.get(0).toString());}
+		if(lst4==null||lst4.size()==0||lst4.get(0)==null){
+			thisrecharge = 0.0;
+		}else{thisrecharge = Double.parseDouble(lst4.get(0).toString());}
+		map1.put("totaluser", totaluser);
+		map1.put("totalrecharge", totalrecharge);
+		map1.put("totalincome", totalrecharge*proportion);
+		map1.put("thisrecharge", thisrecharge);
+		map1.put("thisincome", thisrecharge*proportion);
+		lstMap.add(map1);
+		
+		
+		for (int i = 1; i <=j ; i++) {
+			StringBuffer sql = new StringBuffer("");
+			Map<String,Object> map = new HashMap<String,Object>();
+			sql.append("select SUM(uc.amount) 'a' from userrecharge uc,userinfo ui,accountinfo ai where uc.fuserinfoid = ui.id and ui.faccountid = ai.id  and uc.paystate =1 and  year(uc.createtime) =")
+			.append(year).append(" and ai.fcompanyid = ").append(Long.parseLong(companyid));
+			if(Integer.parseInt(type)==1){
+			sql.append(" and month(uc.createtime)= ").append(i);
+			}
+			if(Integer.parseInt(type)==2){
+			sql.append(" and day(uc.createtime) = ").append(i);
+			}
+			if(Integer.parseInt(type)==3){
+				sql.append(" and day(uc.createtime) = ").append(day).append(" and hour(uc.createtime) =").append(i);
+			}
+			List<Object> lst = databaseHelper.getResultListBySql(sql.toString());
+			map.put("amount", lst==null?"0":lst.size()==0?"0":lst.get(0)==null?"0":lst.get(0).toString());
+			if(Integer.parseInt(type)==1){
+			map.put("time", i+"月");
+			}
+			if(Integer.parseInt(type)==2){
+				map.put("time", i+"日");
+				}
+			if(Integer.parseInt(type)==3){
+				map.put("time", i+"点");
+				}
+			lstMap.add(map);
+		}
+		
+		String result = new Gson().toJson(lstMap);
+		JsonArray jarr = (JsonArray) new JsonParser().parse(result);
+		return jarr;		
+		
+	}
+
+	@Override
+	public JsonArray queryuserstatistic(AccountInfo emp, String starttime, String type, String companyid)
+			throws Exception {
+		// TODO Auto-generated method stub
+		int j =0;
+		int [] montharr= {31,28,31,30,31,30,31,31,30,31,30,31};
+		int year = Integer.parseInt(starttime.split("-")[0]);
+		int month = Integer.parseInt(starttime.split("-")[1]);
+		int day = Integer.parseInt(starttime.split("-")[2]);
+		if(Integer.parseInt(type)==1){
+			j =12;
+		}
+		if(Integer.parseInt(type)==2){
+			if(month==2){
+			if(year%4 == 0 && year%100!=0 || year%400 == 0){
+				j=29;
+			}
+		             }else{
+				j=montharr[month];
+			     }
+	}
+		
+		if(Integer.parseInt(type)==3){j =24;}
+		
+		List<Map<String,Object>> lstMap = new LinkedList<Map<String,Object>>();
+		Map<String, Object>map1 = new HashMap<String, Object>();
+		StringBuffer querynewadd = new StringBuffer("select count(ui.id) from userinfo ui,accountinfo ai where date(ui.createtime) = curdate() and ui.faccountid = ai.id  and ai.fcompanyid = ").append(Long.parseLong(companyid));
+				List<Object>lst0 = databaseHelper.getResultListBySql(querynewadd.toString());
+		StringBuffer querytotaluser = new StringBuffer("select count(ui.id) from userinfo ui,accountinfo ai where ui.faccountid = ai.id  and ai.fcompanyid = ").append(Long.parseLong(companyid));
+		List<Object> lst2 = databaseHelper.getResultListBySql(querytotaluser.toString());
+		StringBuffer querythisadd =new StringBuffer("select count(ui.id) from userinfo ui,accountinfo ai where ui.faccountid = ai.id and ai.fcompanyid = ")
+				.append(Long.parseLong(companyid));
+		if(Integer.parseInt(type)==1){
+			querythisadd.append(" and year(ui.createtime)= ").append(year);
+			}
+			if(Integer.parseInt(type)==2){
+				querythisadd.append(" and month(ui.createtime) = ").append(month);
+			}
+			if(Integer.parseInt(type)==3){
+				querythisadd.append(" and day(ui.createtime) = ").append(day);
+			}
+			List<Object> lst4 = databaseHelper.getResultListBySql(querythisadd.toString());
+		
+		Integer totaluser = 0;
+		Integer newadd = 0;
+		Integer thisadd = 0;
+		if(lst0==null||lst0.size()==0||lst0.get(0)==null){
+			newadd = 0;
+		}else{newadd = Integer.parseInt(lst0.get(0).toString());}
+		
+		if(lst2==null||lst2.size()==0||lst2.get(0)==null){
+			totaluser = 0;
+		}else{totaluser = Integer.parseInt(lst2.get(0).toString());}
+		if(lst4==null||lst4.size()==0||lst4.get(0)==null){
+			thisadd = 0;
+		}else{thisadd =Integer.parseInt(lst4.get(0).toString());}
+		map1.put("totaluser", totaluser);
+		map1.put("thisadd", thisadd);
+		map1.put("newadd", newadd);
+		lstMap.add(map1);
+		
+		for (int i = 1; i <=j ; i++) {
+			StringBuffer sql = new StringBuffer("");
+			Map<String,Object> map = new HashMap<String,Object>();
+			sql.append("select count(ui.id) from userinfo ui,accountinfo ai where ui.faccountid = ai.id and  year(ui.createtime) =")
+			.append(year).append(" and ai.fcompanyid = ").append(Long.parseLong(companyid));
+			if(Integer.parseInt(type)==1){
+			sql.append(" and month(ui.createtime)= ").append(i);
+			}
+			if(Integer.parseInt(type)==2){
+			sql.append(" and day(ui.createtime) = ").append(i);
+			}
+			if(Integer.parseInt(type)==3){
+				sql.append(" and day(ui.createtime) = ").append(day).append(" and hour(ui.createtime) =").append(i);
+			}
+			List<Object> lst = databaseHelper.getResultListBySql(sql.toString());
+			map.put("nums", lst==null?"0":lst.size()==0?"0":lst.get(0)==null?"0":lst.get(0).toString());
+			if(Integer.parseInt(type)==1){
+			map.put("time", i+"月");
+			}
+			if(Integer.parseInt(type)==2){
+				map.put("time", i+"日");
+				}
+			if(Integer.parseInt(type)==3){
+				map.put("time", i+"点");
+				}
+			lstMap.add(map);
+		}
+		
+		String result = new Gson().toJson(lstMap);
+		JsonArray jarr = (JsonArray) new JsonParser().parse(result);
+		return jarr;	
+	}
+
+	@Override
+	public JsonArray queryuser(AccountInfo emp) throws Exception {
+		// TODO Auto-generated method stub
+		int [] montharr= {31,28,31,30,31,30,31,31,30,31,30,31};
+		int m = new Date().getMonth()+1;
+		int y = new Date().getYear()+1900;
+		List<Map<String,Object>> lstMap = new LinkedList<Map<String,Object>>();
+		for (int i = 1; i <=montharr[m] ; i++) {
+		StringBuffer sql = new StringBuffer("");
+		Map<String,Object> map = new HashMap<String,Object>();
+		sql.append("select count(ui.id) from userinfo ui where   year(ui.createtime) =")
+		.append(y).append(" and month(ui.createtime) = ").append(m)
+		.append(" and day(ui.createtime) = ").append(i);
+		Sys.out(sql);
+		List<Object> lst = databaseHelper.getResultListBySql(sql.toString());
+		map.put("nums", lst==null?"0":lst.size()==0?"0":lst.get(0)==null?"0":lst.get(0).toString());
+		map.put("time", i+"日");
+		lstMap.add(map);
+		}
+		
+		String result = new Gson().toJson(lstMap);
+		JsonArray jarr = (JsonArray) new JsonParser().parse(result);
+		return jarr;	
+	}
+
+	@Override
+	public JsonArray queryincome(AccountInfo emp) throws Exception {
+		// TODO Auto-generated method stub
+		int [] montharr= {31,28,31,30,31,30,31,31,30,31,30,31};
+		int m = new Date().getMonth()+1;
+		int y = new Date().getYear()+1900;
+		List<Map<String,Object>> lstMap = new LinkedList<Map<String,Object>>();
+		for (int i = 1; i <=montharr[m] ; i++) {
+		StringBuffer sql = new StringBuffer("");
+		Map<String,Object> map = new HashMap<String,Object>();
+		sql.append("select SUM(uc.amount) from userrecharge uc where uc.paystate = 1 and uc.state = 0 and year(uc.createtime) =")
+		.append(y).append(" and month(uc.createtime) = ").append(m)
+		.append(" and day(uc.createtime) = ").append(i);
+		Sys.out(sql);
+		List<Object> lst = databaseHelper.getResultListBySql(sql.toString());
+		map.put("nums", lst==null?"0":lst.size()==0?"0":lst.get(0)==null?"0":lst.get(0).toString());
+		map.put("time", i+"日");
+		lstMap.add(map);
+		}
+		
+		String result = new Gson().toJson(lstMap);
+		JsonArray jarr = (JsonArray) new JsonParser().parse(result);
+		return jarr;	
+	}
+
+	@Override
+	public JsonArray querycash(AccountInfo emp) throws Exception {
+		// TODO Auto-generated method stub
+		int [] montharr= {31,28,31,30,31,30,31,31,30,31,30,31};
+		int m = new Date().getMonth()+1;
+		int y = new Date().getYear()+1900;
+		List<Map<String,Object>> lstMap = new LinkedList<Map<String,Object>>();
+		for (int i = 1; i <=montharr[m] ; i++) {
+		StringBuffer sql = new StringBuffer("");
+		Map<String,Object> map = new HashMap<String,Object>();
+		sql.append("select SUM(ci.amount) from cashinfo ci where ci.state = 2 and year(ci.createtime) =")
+		.append(y).append(" and month(ci.createtime) = ").append(m)
+		.append(" and day(ci.createtime) = ").append(i);
+		Sys.out(sql);
+		List<Object> lst = databaseHelper.getResultListBySql(sql.toString());
+		map.put("nums", lst==null?"0":lst.size()==0?"0":lst.get(0)==null?"0":lst.get(0).toString());
+		map.put("time", i+"日");
+		lstMap.add(map);
+		}
+		
+		String result = new Gson().toJson(lstMap);
+		JsonArray jarr = (JsonArray) new JsonParser().parse(result);
+		return jarr;	
+	}
+
+	
+	
+}

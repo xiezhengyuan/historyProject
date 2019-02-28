@@ -1,0 +1,53 @@
+[{DRIVER_MAIN=null, REFUEL=null, SUPPLIER=深圳市德运亨通物流有限公司, KILOMETERS_NUMBER=null, MOTORCYPE_TYPE=null, SEND_A_SINGLE_CODE=null, IS_SHOW_PHONE=00, TOTAL_FREIGHT=null, PREPAID_CASH=null, TONNAGE=null, NAVIGATION_DISTANCE=null, THE_ACTUAL_FREIGHT=null, CAR_RENTAL_DEPOSIT=null, CAR_GP=null, YY_VEHICLE_SCHEDULE_ID=9e7af0b4c18e4d1c8e011b04d347065f, carrier=深圳市德运亨通物流有限公司, SEND_A_SINGLE_STATE=10002, ADVANCE_PAYMENT=null, MODELS=11201, TIME_TO_START_TIME=null, WHITE_CARD_NUMBER=null, ACTUAL_TIME=null, CL_DRIVER_BASE_INPUT_INFO_ID=null, DRIVER_ATTACHE=null, UNIT_PRICE=null, PLAN_DEPARTURE_TIME=2017-12-1913:59, ACTUAL_AGING=null, TEMPORARY_FINE=null, DRIVER_ATTACHE_PHONE_NUMBER=null, ENDCITYID=沙井, YY_SCHEDULE_VEHICLE_ID=0bbcb7fcf66341ebbd3d3eb5c7eb5cd7, COMPLETION_DATE=null, CAR_SIZE=null, CAR_HQ=null, NUMBER_GUIPLATE=null, UPDATE_TIMESTAMP=1515065452785, OIL_CARD=null, DELETE_FLAG=1, TRAILER=null, PLAN_ARRIVAL_TIME=2017-12-2212:59, BASIC_CONSUMPTION=null, VEHICLE_LOAD_RATE=null, ORIGINATING_STATION=成都市, OPERATOR_ID=5dcce225de0a46b4aeedd82932e01f7e, COMPANY_RELATIONSHIP_ID=null, REMARKS=null, COMPANY_NAME=上海新珏宁国际物流有限公司, NUMBER_PLATE=null, DERIVER_MAIN_ID_CARD=null, THE_TOTAL_PAY=null, IS_ABNORMAL=1, CONTAINER_NUMBER=null, STATUS=10601, PREPAID_FREIGHT=null, INSERT_TIMESTAMP=1515065452751, STARTCTIYID=成都市, SEND_A_SINGLE_NUMBER=p015-1801040063, PAYEE=null, ARRIVAL_TIME=null, THE_REAL_PAY=null, REGULATIONS=null, BANK_CARD_NUMBER=null, PEPAID_FUEL_CARD=null, ENTERPRISE_ID=567ed48a8ae1434aa1a2a71fd7fc2013, DEDUCT_THE_TOTAL_COST=null, VEHICLE_VOLUME=null, GPS_ADDRESS=null, DESTINATION_STATION=沙井, LICENSE_PLATE=null, REFERENCE_INFORMATION=null, FUEL_COSTS=null, TRANSPORT_ITEMS=null, DRIVER_PHONE_NUMBER=null, VEHICLE_PROPERTY_ATTRIBUTE=null, FU_CL_DRIVER_BASE_INPUT_INFO_ID=null, STOP_BY2=null, STOP_BY3=null, TITLE=null, STOP_BY1=null}]
+
+[{weight=2303.5, custref_no=ICN17C0739, consignee=成都联想电子科技有限公司, pb_name=深圳兴奇宏科技, has_pickup_fare=不收, consignee_contact=叶成, pickup_tm=21:00, shipper_city=沙井, commotity=电子产品, consignee_city=成都市, pickup_date=2017-12-18, pickup=客户送货, consignee_contact_tel=13018218019, plan_timespan=87, shipper=深圳兴奇宏科技有限公司, shipper_contact_tel=13670151387, arrive_tm=12:30, shipper_addr=蚝乡路与西沙路交叉口南150, deliveryto=送货, shipper_contact=林海珍, CustomerName=深圳兴奇宏科技有限公司, consignee_addr=四川省成都市高新西區天勤東街99號, pieces=9, arrive_date=2017-12-22, volume=14.56, shipper_linkman_tel=0755-29692288, consignee_linkman_tel=}]
+
+
+
+{"prmkey":1613449,"work_no":"M351-171219002","service_type_name":"干线运输",
+"is_carload":"零担","load_addr":"深圳兴奇宏科技有限公司","load_city":"沙井","unload_addr":"成都联想电子科技有限公司",
+"unload_city":"N/A","carrier":"深圳市德运亨通物流有限公司","cont_linkman":"蔡金荣","carrier_tel":"13902979056",
+"invoiced_carrier":"深圳市德运亨通物流有限公司","invoiced_carrier_tel":"13902979056","container_type_id":0,
+"truck_type_id":7,"depart_date":"2017-12-19","depart_tm":"13:59","arrive_date":"2017-12-22","arrive_tm":"12:59","
+notes":"","orders":[{"commotity":"电子产品","pieces":9,"volume":14.56,"weight":2303.5,"pickup_date":"2017-12-18",
+"pickup_tm":"21:00","arrive_date":"2017-12-22","arrive_tm":"12:30","plan_timespan":87,"shipper":"深圳兴奇宏科技有限公司",
+"shipper_city":"沙井","shipper_contact":"林海珍","shipper_linkman_tel":"0755-29692288","shipper_contact_tel":"13670151387",
+"shipper_addr":"蚝乡路与西沙路交叉口南150","pickup":"客户送货","has_pickup_fare":"不收","CustomerName":"深圳兴奇宏科技有限公司",
+"custref_no":"ICN17C0739","pb_name":"深圳兴奇宏科技","consignee":"成都联想电子科技有限公司","consignee_city":"成都市","consignee_contact":"叶成",
+"consignee_linkman_tel":"","consignee_contact_tel":"13018218019","consignee_addr":"四川省成都市高新西區天勤東街99號","deliveryto":"送货"}]}
+
+
+
+
+
+
+{"prmkey":1613449,"work_no":"M351-171219002","service_type_name":"干线运输","is_carload":"零担","load_addr":"深圳兴奇宏科技有限公司",
+"load_city":"沙井","unload_addr":"成都联想电子科技有限公司","unload_city":"N/A","carrier":"深圳市德运亨通物流有限公司","cont_linkman":"蔡金荣",
+"carrier_tel":"13902979056","invoiced_carrier":"深圳市德运亨通物流有限公司","invoiced_carrier_tel":"13902979056","container_type_id":0,"truck_type_id":7,
+"depart_date":"2017-12-19","depart_tm":"13:59","arrive_date":"2017-12-22","arrive_tm":"12:59","notes":"","orders":[{"commotity":"电子产品","pieces":9,"volume":14.56,
+"weight":2303.5,"pickup_date":"2017-12-18","pickup_tm":"21:00","arrive_date":"2017-12-22","arrive_tm":"12:30","plan_timespan":87,"shipper":"深圳兴奇宏科技有限公司",
+"shipper_city":"沙井","shipper_contact":"林海珍","shipper_linkman_tel":"0755-29692288","shipper_contact_tel":"13670151387","shipper_addr":"蚝乡路与西沙路交叉口南150",
+"pickup":"客户送货","has_pickup_fare":"不收","CustomerName":"深圳兴奇宏科技有限公司","custref_no":"ICN17C0739","pb_name":"深圳兴奇宏科技","consignee":"成都联想电子科技有限公司",
+"consignee_city":"成都市","consignee_contact":"叶成","consignee_linkman_tel":"","consignee_contact_tel":"13018218019","consignee_addr":"四川省成都市高新西區天勤東街99號","deliveryto":"送货"}]}
+
+
+consignee_city_addr
+
+{"prmkey":1613449,"work_no":"M351-171219002","service_type_name":"干线运输","is_carload":"零担","load_addr":"深圳兴奇宏科技有限公司","load_city":"沙井","unload_addr":"成都联想电子科技有限公司","unload_city":"N/A","carrier":"深圳市德运亨通物流有限公司","cont_linkman":"蔡金荣","carrier_tel":"13902979056","invoiced_carrier":"深圳市德运亨通物流有限公司","invoiced_carrier_tel":"13902979056","container_type_id":0,"truck_type_id":7,"depart_date":"2017-12-19","depart_tm":"13:59","arrive_date":"2017-12-22","arrive_tm":"12:59","notes":"","orders":[{"commotity":"电子产品","pieces":9,"volume":14.56,"weight":2303.5,"pickup_date":"2017-12-18","pickup_tm":"21:00","arrive_date":"2017-12-22","arrive_tm":"12:30","plan_timespan":87,"shipper":"深圳兴奇宏科技有限公司","shipper_city":"沙井","shipper_contact":"林海珍","shipper_linkman_tel":"0755-29692288","shipper_contact_tel":"13670151387","shipper_addr":"蚝乡路与西沙路交叉口南150","pickup":"客户送货","has_pickup_fare":"不收","CustomerName":"深圳兴奇宏科技有限公司","custref_no":"ICN17C0739","pb_name":"深圳兴奇宏科技","consignee":"成都联想电子科技有限公司","consignee_city":"成都市","consignee_contact":"叶成","consignee_linkman_tel":"","consignee_contact_tel":"13018218019","consignee_addr":"四川省成都市高新西區天勤東街99號","deliveryto":"送货"}]}
+
+
+"shipper_city_addr":"杭州市,浙江省"
+,"consignee_city_addr":"佛山市,广东省"
+
+{"prmkey":1285569,"work_no":"M351-170809005","service_type_name":"干线运输","is_carload":"零担","load_addr":"广东美的暖通设备有限公司内销","load_city":"佛山市",
+"unload_addr":"杭州云汉科技有限公司","unload_city":"杭州市","carrier":"福建祥隆物流有限公司","cont_linkman":"陈福山","carrier_tel":"18859669111","invoiced_carrier":"福建祥隆物流有限公司",
+"invoiced_carrier_tel":"18859669111","container_type_id":2,"truck_type_id":31,"depart_date":"2017-06-01","depart_tm":"12:54","arrive_date":"2017-06-03","arrive_tm":"00:00","notes":"",
+"orders":[{"shipper_city_addr":"杭州市,浙江省","consignee_city_addr":"佛山市,广东省","commotity":"家电","pieces":1,"volume":2.16,"weight":315.0,"pickup_date":"2017-06-03","pickup_tm":"12:00","arrive_date":"2017-06-05",
+"arrive_tm":"00:00","plan_timespan":36,"shipper":"广东美的暖通设备有限公司内销","shipper_city":"佛山市","shipper_contact":"欧星阳","shipper_linkman_tel":"","shipper_contact_tel":"17665625200",
+"shipper_addr":"水口村顺德水口4仓顺德水口11仓","pickup":"其他","has_pickup_fare":"不收","CustomerName":"福建隆顺物流有限公司","custref_no":"T1706021413081","pb_name":"美的","consignee":"杭州格调机电设备有限公司",
+"consignee_city":"杭州市","consignee_contact":" 王丽平","consignee_linkman_tel":"","consignee_contact_tel":"13701968477","consignee_addr":"浙江省杭州市余杭区闲林街道杭州市余杭区东西大道（杭州外国语学院","deliveryto":"其他"},
+{"shipper_city_addr":"杭州市,浙江省","consignee_city_addr":"佛山市,广东省","commotity":"家电","pieces":60,"volume":3.36,"weight":0.0,"pickup_date":"2017-06-03","pickup_tm":"12:00","arrive_date":"2017-06-05",
+"arrive_tm":"00:00","plan_timespan":36,"shipper":"广东美的暖通设备有限公司内销","shipper_city":"佛山市","shipper_contact":"欧星阳","shipper_linkman_tel":"","shipper_contact_tel":"17665625200",
+"shipper_addr":"水口村顺德水口4仓顺德水口11仓","pickup":"其他","has_pickup_fare":"不收","CustomerName":"福建隆顺物流有限公司","custref_no":"T1706021413096","pb_name":"美的","consignee":"杭州酷普环保科技有限公司",
+"consignee_city":"杭州市","consignee_contact":"  何志友","consignee_linkman_tel":"","consignee_contact_tel":"15968861582","consignee_addr":"中国浙江省杭州市萧山区萧山区河庄镇河庄大道附近（提前电话联系）","deliveryto":"其他"},
+{"shipper_city_addr":"杭州市,浙江省","consignee_city_addr":"佛山市,广东省","commotity":"家电","pieces":69,"volume":4.14,"weight":547.49,"}]}

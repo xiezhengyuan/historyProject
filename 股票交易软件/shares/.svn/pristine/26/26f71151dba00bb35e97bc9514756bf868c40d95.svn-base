@@ -1,0 +1,10 @@
+package com.hxy.isw.service;
+/**
+* @author lcc
+* @date 2017年7月20日 下午3:13:13
+* @describe
+*/
+public interface AppServiceExample {
+	public String quotation4hs(String userid,int start,int limit) throws Exception;
+	public String index4shares(String userid,String type) throws Exception;
+}

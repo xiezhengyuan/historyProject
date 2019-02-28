@@ -1,0 +1,247 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+	<table id="running" class="table table-condensed" align="center" style="width: 80%;font-size: 20px;text-align: center;">
+		
+	</table>
+
+<!-- panel1 start -->
+  <div role="tabpanel" class="tab-pane active" id="tab_running_state0">
+  		<!-- jqgrid 用户列表--><span style="font-size: 20px;">最近交易</span>
+							<table id="running_grid_table0"></table>
+							<!-- jqgrid 页码栏-->
+							<div id="running_grid_pager0"></div>
+  	</div>
+  	
+  	<div role="tabpanel" class="tab-pane active" id="tab_running_state1">
+  		<!-- jqgrid 用户列表--><span style="font-size: 20px">当前持仓</span>
+							<table id="running_grid_table1"></table>
+							<!-- jqgrid 页码栏-->
+							<div id="running_grid_pager1"></div>
+  	</div>
+  	
+<script>
+//最近交易
+Q.grid_selector = "running_grid_table0";
+Q.pager_selector = "running_grid_pager0";
+
+var url = Q.url+"/example/findAuthstrList.action";
+var colModel = [
+                { label: 'ID', name: 'id',align :'center',hidden:true,sortable : false,key:true },
+                { label: '名称', name: 'nickname',align :'center', sortable : false },
+                { label: '买入价', name: 'mobile',align :'center', sortable : false },
+                { label: '仓位', name: 'golds',align :'center', sortable : false },
+                { label: '数量', name: 'virtualcapital',align :'center', sortable : false },
+                { label: '时间', name: 'time',align :'center', sortable : false },
+            	];
+var caption = "最近交易";
+var postData = {};
+postData = getcondition();
+/**
+ * Q.grid_selector  tableid
+ * Q.pager_selector 页码栏id
+ * url 请求地址
+ * postData 请求参数
+ * colModel 表头
+ * caption 表名 
+ */
+/* Q.extJqGrid(Q.grid_selector,Q.pager_selector,url,postData,colModel,caption,null,function(d){
+	}); */
+	
+Q.ExtJqGrid({
+	"grid":Q.grid_selector,
+	"pager":Q.pager_selector,
+	"url":url,
+	"param":postData,
+	"model":colModel,
+	"caption":caption
+});
+	
+//当前持仓
+Q.grid_selector = "running_grid_table1";
+Q.pager_selector = "running_grid_pager1";
+
+var url = Q.url+"/example/findAuthstrList.action";
+var colModel = [
+                { label: 'ID', name: 'id',align :'center',hidden:true,sortable : false,key:true },
+                { label: '名称', name: 'nickname',align :'center', sortable : false },
+                { label: '成本价', name: 'mobile',align :'center', sortable : false },
+                { label: '仓位', name: 'golds',align :'center', sortable : false },
+                { label: '浮动盈亏', name: 'virtualcapital',align :'center', sortable : false },
+                { label: '盈亏比例', name: 'time',align :'center', sortable : false },
+            	];
+var caption = "当前持仓";
+var postData = {};
+postData = getcondition();
+/**
+ * Q.grid_selector  tableid
+ * Q.pager_selector 页码栏id
+ * url 请求地址
+ * postData 请求参数
+ * colModel 表头
+ * caption 表名 
+ */
+/* Q.extJqGrid(Q.grid_selector,Q.pager_selector,url,postData,colModel,caption,null,function(d){
+	}); */
+	
+Q.ExtJqGrid({
+	"grid":Q.grid_selector,
+	"pager":Q.pager_selector,
+	"url":url,
+	"param":postData,
+	"model":colModel,
+	"caption":caption
+});
+	
+
+	
+plan_running();
+function plan_running(){
+	$._ajax({
+		url:Q.url+"/example/planRunning.action",
+		data:{"id":id},
+	    success:function(data){
+	    	if(data.op=="success"){
+	    		var btn1="";
+	    		if(data.ischoiceness==0){
+	    			btn1+="<button title='设为精选' class='btn btn-success btn-xs' style='color:#f60;margin-left:3px;' onclick='change("+id+")'>设为精选</button>";
+	    		}
+	    		
+	    		$("#running").append(
+   				"<tr>"
+				+"	<td rowspan='3'>目标收益："+data.targetprofit+"</td>"
+				+"	<td>大盘同期：15%</td>"
+				+"	<td>创建计划时间："+data.time+"</td>"
+				+"	<td>已运行："+data.before+"天</td>"
+				+"	<td rowspan='3' width='10%'>"+btn1+"</td>"
+				+"</tr>"
+				+"<tr>"
+				+"	<td>止损线："+data.stopline+"</td>"
+				+"	<td>计划开始时间："+data.starttime+"</td>"
+				+"	<td rowspan='2'>剩余："+data.after+"天</td>"
+				+"</tr>"
+				+"<tr>"
+				+"	<td>最长时限："+data.days+"天</td>"
+				+"	<td>计划结束时间："+data.endtime+"</td>"
+				+"</tr>"
+	    		);
+	    	}else{
+	    		Q.toastr("提示","操作失败",'warning');
+	    	}
+	    }
+	})
+}
+	
+	
+function change(id){
+	Q.confirm("设为精选，确定吗？",function(r){
+		if(r){
+			$._ajax({
+				url:Q.url+"/example/select.action",
+				data:{"id":id},
+			    success:function(data){
+			    	if(data.op=="success"){
+			    		Q.toastr("提示","已精选",'success');
+			    		Q.viewJsp("#tab_running","example/running.jsp");
+			    	}else{
+			    		Q.toastr("提示","操作失败",'warning');
+			    	}
+			    }
+			})
+		}
+	})
+}
+	
+function getcondition(){
+	var o = {};
+	o.keyword= $('#keyword').val();
+	return o;
+}
+
+
+function queryexbycondition(){
+	postData = getcondition();
+	$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+	//Q.extJqGrid(grid_selector,pager_selector,url,postData,colModel,caption);
+}
+
+function getSelectedRows() {
+    var grid = $(Q.grid_selector);
+    var rowKey = grid.getGridParam("selrow");
+
+    if (!rowKey) {
+        alert("No rows are selected");
+    } else {
+        var selectedIDs = grid.getGridParam("selarrrow");
+        //var result = "";
+        //for (var i = 0; i < selectedIDs.length; i++) {
+        //    result += selectedIDs[i] + ",";
+        //}
+        var result = selectedIDs.join(",");
+        alert(result);
+    }
+}
+
+/* 通过 */
+function pass_authstr_grid_table(id){
+	Q.confirm("通过后该用户将成为牛人，确定吗？",function(r){
+		if(r){
+			$._ajax({
+				url:Q.url+"/example/pass.action",
+				data:{"id":id},
+			    success:function(data){
+			    	if(data.op=="success"){
+			    		Q.toastr("提示","已通过",'success');
+			    		$("#"+Q.grid_selector).setGridParam({postData:postData,page:$('#'+Q.grid_selector).getGridParam('page')}).trigger("reloadGrid"); 
+			    	}else{
+			    		Q.toastr("提示","操作失败",'warning');
+			    	}
+			    }
+			})
+		}
+	})
+}
+
+/* 不通过 */
+function notpass_authstr_grid_table(id){
+	Q.confirm("确定吗？",function(r){
+		if(r){
+			$._ajax({
+				url:Q.url+"/example/notpass.action",
+				data:{"id":id},
+			    success:function(data){
+			    	if(data.op=="success"){
+			    		Q.toastr("提示","未通过",'success');
+			    		$("#"+Q.grid_selector).setGridParam({postData:postData,page:$('#'+Q.grid_selector).getGridParam('page')}).trigger("reloadGrid"); 
+			    	}else{
+			    		Q.toastr("提示","操作失败",'warning');
+			    	}
+			    }
+			})
+		}
+	})
+}
+
+//详情函数----命名规则  detail_tableid
+function yifahuo_orderstate1_grid_table(id){
+	var _url= 'order/expressagedetail.jsp?orderinfoid='+id;
+	
+	Q.viewJsp('#div_expressagedetail',_url);
+}
+
+
+function filemanager(){
+	var _url= 'zyUpload/uploadimg.jsp';
+	
+	Q.viewJsp('#div_img',_url);
+}
+
+//查看牛人待审核
+$('#panel_state0').click(function(){
+	//Q.viewJsp("#tab_example_state0","example/info.jsp");
+	Q.grid_selector = "ex_grid_table";
+	Q.pager_selector = "ex_grid_pager";
+})
+
+
+
+</script>

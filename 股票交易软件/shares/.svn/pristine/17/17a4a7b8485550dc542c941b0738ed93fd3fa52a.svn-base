@@ -1,0 +1,10 @@
+package com.hxy.isw.service;
+
+import java.util.List;
+import java.util.Map;
+
+public interface CompanyuserService {
+ 
+	public int comcountuserinfo(String querybyuserinfo, String querybyaccountinfo)throws Exception;
+	public List<Map<String,Object>> comqueryuserinfo( String querybyuserinfo, String querybyaccountinfo,int start, int limit)throws Exception;
+}

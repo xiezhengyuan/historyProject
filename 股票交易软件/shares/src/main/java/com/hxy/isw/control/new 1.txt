@@ -1,0 +1,400 @@
+package com.shanreal.controller.edi.xn;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
+
+import com.service.wuche.base_area.Base_areaManager;
+import com.service.wuche.base_city.Base_cityManager;
+import com.service.wuche.base_goods.Base_goodsManager;
+import com.service.wuche.base_province.Base_provinceManager;
+import com.service.wuche.base_receiver.Base_receiverManager;
+import com.service.wuche.base_sender.Base_senderManager;
+import com.service.wuche.edi.xinning.Edi_XinningManager;
+import com.service.wuche.kh_contract_price.Kh_contract_priceManager;
+import com.service.wuche.kh_info.Kh_infoManager;
+import com.service.wuche.yy_order.Yy_orderManager;
+import com.service.wuche.yy_receiver.Yy_receiverManager;
+import com.service.wuche.yy_sender.Yy_senderManager;
+import com.service.wuche.yy_vehicle_schedule_order.Yy_vehicle_schedule_orderManager;
+import com.shanreal.constant.OrderEnum;
+import com.shanreal.controller.base.BaseController;
+import com.shanreal.dao.redis.RedisDao;
+import com.shanreal.util.DesUtil;
+import com.shanreal.util.EmptyUtils;
+import com.shanreal.util.JsonConvertList;
+import com.shanreal.util.PageData;
+import com.shanreal.util.RandomSerialNumber;
+import com.shanreal.util.ServiceHelper;
+
+import net.sf.json.JSONArray;
+import net.sf.json.JSONObject;
+
+/**
+ * 新宁接口自动生成单子
+ * 2017-12-29
+ *
+ * @author lenovo
+ *
+ */
+
+@Controller
+@RequestMapping(value="/edi/xinning")
+public class MainHandelController extends BaseController{
+	
+	private Yy_orderManager yy_orderService = (Yy_orderManager) ServiceHelper.getService("yy_order");
+	private Base_goodsManager goodsService = (Base_goodsManager) ServiceHelper.getService("base_goods");
+	private Kh_infoManager kh_infoManager = (Kh_infoManager) ServiceHelper.getService("kh_info");
+	private Yy_senderManager yy_senderManager = (Yy_senderManager) ServiceHelper.getService("yy_sender");
+	private Yy_receiverManager yy_receiverManager = (Yy_receiverManager) ServiceHelper.getService("yy_receiver");
+	private Base_receiverManager base_receiverManager = (Base_receiverManager) ServiceHelper.getService("base_receiver");
+	private Base_senderManager base_senderManager = (Base_senderManager) ServiceHelper.getService("base_sender");
+	private Base_provinceManager base_provinceManager = (Base_provinceManager) ServiceHelper.getService("base_province");
+	private Base_cityManager base_cityManager = (Base_cityManager) ServiceHelper.getService("base_city");
+	private Base_areaManager base_areaManager = (Base_areaManager) ServiceHelper.getService("base_area");
+	private static RedisDao redisDaoImpl = (RedisDao) ServiceHelper.getService("redisDaoImpl");
+	private Kh_infoManager kh_infoService = (Kh_infoManager) ServiceHelper.getService("kh_info");
+	private Yy_vehicle_schedule_orderManager yy_vehicle_schedule_orderServie = (Yy_vehicle_schedule_orderManager) ServiceHelper.getService("yy_vehicle_schedule_order");//得到订单和派单关系服务
+	private static Kh_contract_priceManager kh_contract_priceService = (Kh_contract_priceManager) ServiceHelper.getService("kh_contract_price");
+	private static Edi_XinningManager Edi_XinningService = (Edi_XinningManager) ServiceHelper.getService("edi_xinning");
+	
+	
+	
+	
+	@RequestMapping(value = "/receiverOrder", method = {RequestMethod.POST }) 
+	@ResponseBody
+	public Object  receiverOrder(){
+		boolean flag = true;
+		PageData pd = new PageData();
+		pd = getPageData();
+		HashMap<String, Object> map = new HashMap<String, Object>();
+		try {
+			
+			String data =DesUtil.des3DecodeECB("YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4",pd.get("param").toString().replace(" ","+"));
+			/*System.out.println(data);*/
+			JSONObject JSON = new JSONObject();
+			JSON.put("data", data);
+			JSONObject scheduleVehicleJson = (JSONObject) JSON.get("data");
+			JSONArray ordersJsonArr = (JSONArray) scheduleVehicleJson.get("orders");
+			JSONObject ordersJson = ordersJsonArr.getJSONObject(0);
+			
+			String consigneeContact = ordersJson.getString("consignee_contact");
+				if(EmptyUtils.isEmpty(consigneeContact)){
+					map.put("code", OrderEnum.ORDER_CONSIGNEE_CONTACT_EMPTY.getCode());
+					map.put("message",OrderEnum.ORDER_CONSIGNEE_CONTACT_EMPTY.getMsg());
+					map.put("data", ordersJson);
+					return map;
+				}
+			String consigneeContactTel = ordersJson.getString("consignee_contact_tel");
+				if(EmptyUtils.isEmpty(consigneeContactTel)){
+					map.put("code",  OrderEnum.ORDER_CONSIGNEE_CONTACT_TEL_EMPTY.getCode());
+					map.put("message",OrderEnum.ORDER_CONSIGNEE_CONTACT_TEL_EMPTY.getMsg());
+					map.put("data", ordersJson);
+					return map;
+				}
+			String shipperContact = ordersJson.getString("shipper_contact");
+				if(EmptyUtils.isEmpty(shipperContact)){
+					map.put("code", OrderEnum.ORDER_SHIPPER_CONTACT_EMPTY.getCode());
+					map.put("message",OrderEnum.ORDER_SHIPPER_CONTACT_EMPTY.getMsg());
+					map.put("data", ordersJson);
+					return map;
+				}
+			String shipperContactTel = ordersJson.getString("shipper_contact_tel");
+				if(EmptyUtils.isEmpty(shipperContactTel)){
+					map.put("code", OrderEnum.ORDER_SHIPPER_CONTACT_TEL_EMPTY.getCode());
+					map.put("message",OrderEnum.ORDER_SHIPPER_CONTACT_TEL_EMPTY.getMsg());
+					map.put("data",ordersJson);
+					return map;
+				}	
+
+			String carrier = scheduleVehicleJson.getString("carrier");
+			String COMPANY_NAME = "上海新珏宁国际物流有限公司";
+			pd.put("carrier", carrier);
+			pd.put("COMPANY_NAME", COMPANY_NAME);
+			PageData carrierPd = Edi_XinningService.findByCompanyName(pd);
+			PageData companyPd = Edi_XinningService.findByKhName(pd);
+			
+			if(EmptyUtils.isEmpty(carrierPd)){
+				map.put("code", OrderEnum.ORDER_SHIPPER_CONTACT_CUSTOMER_NOT_EXTS.getCode());
+				map.put("message",OrderEnum.ORDER_SHIPPER_CONTACT_CUSTOMER_NOT_EXTS.getMsg());
+				map.put("data",scheduleVehicleJson);
+				return map;
+			}
+			
+			if(EmptyUtils.isEmpty(companyPd)){
+				map.put("code", OrderEnum.SCHEDULE_VEHICLE_CONSIGNEE_CONTACT_CARRIER_NOT_EXTS.getCode());
+				map.put("message",OrderEnum.SCHEDULE_VEHICLE_CONSIGNEE_CONTACT_CARRIER_NOT_EXTS.getMsg());
+				map.put("data",scheduleVehicleJson);
+				return map;
+			}
+			
+			// 获取订单的信息
+			List<Map<String, Object>> orderList = JsonConvertList.getArrayList(ordersJsonArr);
+			
+			scheduleVehicleJson.remove("orders");
+			//获取派车单信息
+			List<Map<String, Object>> scheduleVehicleList = JsonConvertList.getJsonConvertList(scheduleVehicleJson);
+			
+			//派车单号
+			String SEND_A_SINGLE_NUMBER = RandomSerialNumber.getSerialNumber(companyPd.get("ENTERPRISE_ID").toString(),"p");
+			
+			List<PageData> list = new ArrayList<PageData>();
+			
+			for(int i=0;i<orderList.size();i++){
+				PageData temp= new PageData();
+				
+			}
+			//创建订单
+			for(Map<String,Object> order : orderList){
+				
+				String ID_ORDER = RandomSerialNumber.getSerialNumber(companyPd.get("ENTERPRISE_ID").toString(),"YD");
+				String YY_ORDER_ID = this.get32UUID();
+				
+				order.put("YY_ORDER_ID", YY_ORDER_ID);
+				order.put("ID_ORDER",ID_ORDER);
+				order.put("STOP_OVER", null);
+				order.put("GOODS_ID", order.get("commotity"));
+				order.put("CUSTOMER_TYPE", "002");
+				order.put("CUSTOMER_NAME",COMPANY_NAME);
+				order.put("CUSTOMER_ID",companyPd.get("KH_INFO_ID").toString());
+				order.put("WAYBILL_STATUS","10002");
+				order.put("NUMBER", order.get("pieces").toString());
+				order.put("VOLUME",order.get("volume").toString());
+				order.put("WEIGHT",order.get("weight").toString());
+				order.put("SETTLEMENT_METHOD",null); //结算方式
+				order.put("PAYMENT_METHOD",null);//支付方式
+				order.put("GZ", null);//盖章
+				order.put("QZ", null);//签字
+				order.put("IF_REQUEST",null);//是否返单
+				order.put("GOODS_VALUE",null);//货物价值
+				order.put("COLLECTION_AMOUNT",null); //代收货款
+				order.put("BILLING",null);//是否开票
+				order.put("IF_CASH_RECEIEVD",null);
+				order.put("PAY_DATE",null);
+				order.put("CUSTOMER_ORDER_NUMBER",null);
+				order.put("CUSTOMER_REQUIREMENTS_TIME",order.get("plan_timespan").toString()); //客户时效
+				order.put("BACK_EXPRESS_NUM",null);
+				order.put("MODELS","11201");//车型
+				order.put("CAR_LENGTH","11306");//车长
+				order.put("PLAN_USE_VEHICLE_TIME",order.get("pickup_date").toString()+order.get("pickup_time"));//提货时间
+				order.put("FIXED_LINE",null);
+				order.put("RETURN_SINGLE_STATE","10401");//返单状态（已反、未反）
+				order.put("IF_EXCEPTION",null);//是否异常
+				order.put("ENTERPRISE_NUMBER",null);
+				order.put("BIZ_TYPE","11001");// 业务形态
+				order.put("TOTAL_FREIGHT",null);//货物价值
+				order.put("TRUNK_FREIGHT",null);//干线费用
+				order.put("INSURANCE",null);//保险费
+				order.put("AUDIT_STATE","11501");//财务审核状态
+				order.put("AUDIT_OPERATE_ID",null);//财务审核人
+				order.put("AUDIT_DATE",null);//财务审核日期
+				order.put("DELETE_FLAG","1");//删除标识
+				order.put("ENTERPRISE_ID",companyPd.get("ENTERPRISE_ID"));
+				order.put("OPERATOR_ID",companyPd.get("OPERATOR_ID"));
+				order.put("INSERT_TIMESTAMP",System.currentTimeMillis());
+				order.put("UPDATE_TIMESTAMP",System.currentTimeMillis());
+				order.put("REMARK",null);//备注
+				order.put("REQUIREMENT_RETURN",null);
+				order.put("APPROVAL_STATUS",null);//货物价值
+				order.put("ARRIVE_DATE",order.get("arrive_date").toString()+order.get("arrive_tm"));//计划到达目的点时间
+				order.put("VERSION","0" );
+				order.put("IS_HIST","0" );
+				order.put("LINE_REMARK",null );//线路备注
+				order.put("TASK_KEY",null);
+				order.put("SOURCE_TYPE","0");
+				order.put("stock", null);
+				order.put("isExistsStock", "0");
+				order.put("CUSTOMER_HDH", null);
+				order.put("CUSTOMER_YSDH", order.get("custref_no").toString());//客户运输单号
+				
+				//构建发货人信息(省市区)
+				String YY_SENDER_ID = this.get32UUID();
+				String SENDER_CITY_CODE = (String) order.get("consignee_city");
+				String RECEIVER_CITY_CODE = (String) order.get("shipper_city");
+				PageData codePd = new PageData();
+				codePd.put("CODE", SENDER_CITY_CODE);
+				
+				order.put("YY_SENDER_ID", YY_SENDER_ID);
+				order.put("FPARENT_ID",YY_ORDER_ID);
+				order.put("SENDER", order.get("shipper_contact").toString());
+				order.put("SENDER_COMPANY", order.get("shipper").toString());
+				order.put("SENDER_TEL_PHONE", order.get("shipper_linkman_tel").toString());
+				order.put("SENDER_PHONENUM", order.get("shipper_contact_tel").toString());
+				order.put("SEND_STATION", "0");
+				order.put("SENDER_DATE", order.get("arrive_date").toString()+" "+order.get("arrive_tm"));
+				order.put("SENDER_DETAILED_ADDRESS", order.get("shipper_addr").toString());
+				order.put("SENDER_CITY_CODE", base_cityManager.getCityNameByCode(codePd));//得到市编码
+				order.put("SENDER_PROVINCE_CODE", null);
+				order.put("SENDER_DISTRICT_CODE", null);
+				order.put("SENDER_STREET_CODE", null);
+				order.put("SENDER_ADDRESS", null);
+				order.put("SENDER_Y", null);
+				order.put("SENDER_X", null);
+				order.put("SENDER_COMPLETE", null);
+				order.put("SENDER_OUT_DATE", null);
+				//
+				
+				
+				
+				//构建收货人信息(省市区)
+				String YY_RECEIVER_ID = this.get32UUID();
+				codePd.clear();
+				codePd.put("CODE", RECEIVER_CITY_CODE);
+				
+				
+				order.put("YY_RECEIVER_ID", YY_RECEIVER_ID);
+				order.put("ID_ORDER", YY_ORDER_ID);
+				order.put("RECEIVER_STATION", "0");
+				order.put("RECEIVER_TYPE", "1");
+				
+				order.put("RECEIVER_NAME", order.get("consignee_contact").toString());
+				order.put("RECEIVER_COMPANY", order.get("consignee").toString());
+				order.put("RECEIVER_TEL_PHONE", order.get("consignee_linkman_tel").toString());
+				order.put("RECEIVER_PHONENUM", order.get("consignee_contact_tel").toString());
+				order.put("RECEIVER_DATE", order.get("pickup_date").toString()+" "+order.get("pickup_tm"));
+				order.put("RECEIVER_DETAILED_ADDRESS", order.get("consignee_addr").toString());
+				
+				order.put("RECEIVER_PROVINCE_CODE", null);
+				order.put("RECEIVER_CITY_CODE", base_cityManager.getCityNameByCode(codePd));//得到市编码
+				order.put("RECEIVER_DISTRICT_CODE", null);
+				order.put("RECEIVER_X", null);
+				order.put("RECEIVER_Y", null);
+				order.put("RECEIVER_STREET_CODE", null);
+				order.put("RECEIVER_DETAILED_ADDRESS", null);
+				order.put("RECEIVER_ADDRESS", null);
+				order.put("RECEIVER_OUT_DATE", null);
+				order.put("RECEIVER_COMPLETE", null);
+			
+				
+				
+				
+				
+				//构建中间表信息
+				order.put("YY_VEHICLE_SCHEDULE_ORDER_ID", this.get32UUID());
+				order.put("YY_VEHICLE_SCHEDULE_ID", SEND_A_SINGLE_NUMBER);
+			}
+			String YY_VEHICLE_SCHEDULE_ID = this.get32UUID();
+			//构建派车单 
+			for(Map<String,Object> scheduleVehicle : scheduleVehicleList){
+				
+				scheduleVehicle.put("YY_VEHICLE_SCHEDULE_ID", YY_VEHICLE_SCHEDULE_ID);
+				scheduleVehicle.put("SEND_A_SINGLE_NUMBER", SEND_A_SINGLE_NUMBER);
+				scheduleVehicle.put("SEND_A_SINGLE_STATE", "10002");
+				scheduleVehicle.put("IS_ABNORMAL", "1");
+				scheduleVehicle.put("MODELS", "11201");
+				scheduleVehicle.put("TONNAGE", null);
+				scheduleVehicle.put("NUMBER_PLATE", null);
+				scheduleVehicle.put("DRIVER_MAIN", null);
+				scheduleVehicle.put("DRIVER_PHONE_NUMBER", null);
+				scheduleVehicle.put("DRIVER_ATTACHE", null);
+				scheduleVehicle.put("DRIVER_ATTACHE_PHONE_NUMBER", null);
+				scheduleVehicle.put("CONTAINER_NUMBER",null);
+				scheduleVehicle.put("TITLE", null);
+				scheduleVehicle.put("WHITE_CARD_NUMBER", null);
+				scheduleVehicle.put("DERIVER_MAIN_ID_CARD", null);
+				scheduleVehicle.put("TRANSPORT_ITEMS", null);
+				scheduleVehicle.put("PLAN_DEPARTURE_TIME",scheduleVehicle.get("depart_date").toString()+scheduleVehicle.get("depart_tm"));
+				scheduleVehicle.put("PLAN_ARRIVAL_TIME", scheduleVehicle.get("arrive_date").toString()+scheduleVehicle.get("arrive_tm"));
+				scheduleVehicle.put("VEHICLE_VOLUME", null);
+				scheduleVehicle.put("VEHICLE_LOAD_RATE", null);
+				scheduleVehicle.put("TIME_TO_START_TIME",null);
+				scheduleVehicle.put("ARRIVAL_TIME", null);
+				scheduleVehicle.put("KILOMETERS_NUMBER", null);
+				scheduleVehicle.put("NAVIGATION_DISTANCE", null);
+				scheduleVehicle.put("UNIT_PRICE", null);
+				scheduleVehicle.put("BASIC_CONSUMPTION", null);
+				scheduleVehicle.put("PREPAID_CASH", null);
+				scheduleVehicle.put("DELETE_FLAG", "1");
+				scheduleVehicle.put("ENTERPRISE_ID", companyPd.get("ENTERPRISE_ID"));
+				scheduleVehicle.put("OPERATOR_ID", companyPd.get("OPERATOR_ID"));
+				scheduleVehicle.put("INSERT_TIMESTAMP", System.currentTimeMillis());
+				scheduleVehicle.put("UPDATE_TIMESTAMP", System.currentTimeMillis());
+				scheduleVehicle.put("STARTCTIYID", orderList.get(0).get("consignee_city"));
+				scheduleVehicle.put("ENDCITYID", orderList.get(0).get("shipper_city"));
+				scheduleVehicle.put("NUMBER_GUIPLATE", null);//柜号
+				scheduleVehicle.put("TRAILER", null);
+				scheduleVehicle.put("STOP_BY1", null);
+				scheduleVehicle.put("STOP_BY2", null);
+				scheduleVehicle.put("STOP_BY3", null);
+				scheduleVehicle.put("CL_DRIVER_BASE_INPUT_INFO_ID",null);
+				scheduleVehicle.put("FU_CL_DRIVER_BASE_INPUT_INFO_ID", null);
+				scheduleVehicle.put("GPS_ADDRESS", null);
+				scheduleVehicle.put("COMPLETION_DATE", null);
+				scheduleVehicle.put("IS_SHOW_PHONE", "00");
+				scheduleVehicle.put("COMPANY_RELATIONSHIP_ID", null);
+				scheduleVehicle.put("MOTORCYPE_TYPE", null);
+				scheduleVehicle.put("CAR_SIZE", null);
+				scheduleVehicle.put("CAR_GP", null);
+				scheduleVehicle.put("CAR_HQ", null);
+				
+				//构建派车费用表
+				scheduleVehicle.put("YY_SCHEDULE_VEHICLE_ID", this.get32UUID());
+				scheduleVehicle.put("SEND_A_SINGLE_NUMBER", SEND_A_SINGLE_NUMBER);
+				scheduleVehicle.put("STATUS","10601");
+				scheduleVehicle.put("ACTUAL_TIME",null);
+				scheduleVehicle.put("SEND_A_SINGLE_CODE",null);
+				scheduleVehicle.put("ORIGINATING_STATION",orderList.get(0).get("consignee_city"));//始发站
+				scheduleVehicle.put("DESTINATION_STATION",orderList.get(0).get("shipper_city"));//目的站
+				scheduleVehicle.put("LICENSE_PLATE",null);//车牌
+				scheduleVehicle.put("SUPPLIER",carrier);
+				scheduleVehicle.put("TOTAL_FREIGHT",null);//总运费
+				scheduleVehicle.put("PREPAID_FREIGHT",null);
+				scheduleVehicle.put("PEPAID_FUEL_CARD",null);
+				scheduleVehicle.put("REFUEL",null);
+				scheduleVehicle.put("UNIT_PRICE",null);
+				scheduleVehicle.put("FUEL_COSTS",null);
+				scheduleVehicle.put("CAR_RENTAL_DEPOSIT",null);
+				scheduleVehicle.put("REGULATIONS",null);
+				scheduleVehicle.put("ACTUAL_AGING",null);
+				scheduleVehicle.put("TEMPORARY_FINE",null);
+				scheduleVehicle.put("THE_REAL_PAY",null);
+				scheduleVehicle.put("THE_TOTAL_PAY",null);
+				scheduleVehicle.put("THE_ACTUAL_FREIGHT",null);
+				scheduleVehicle.put("REMARKS",null);
+				scheduleVehicle.put("DEDUCT_THE_TOTAL_COST",null);
+				scheduleVehicle.put("REFERENCE_INFORMATION",null);
+				scheduleVehicle.put("VEHICLE_PROPERTY_ATTRIBUTE",null);
+				scheduleVehicle.put("ADVANCE_PAYMENT",null);
+				scheduleVehicle.put("OIL_CARD",null);
+				scheduleVehicle.put("BANK_CARD_NUMBER",null);
+				scheduleVehicle.put("PAYEE",null);
+			}
+			
+			System.out.println("执行dao层");
+			System.out.println(orderList.toString());
+			System.out.println(scheduleVehicleList.toString());
+			//创建 订单表、 派车单与订单中间表、派车单表、派车单费用、发货人表、收货人表 
+			  flag = Edi_XinningService.createOrderAndScheduleVehicle(orderList, scheduleVehicleList);
+			  
+			if(flag){
+				logger.info("创建派车单 订单成功");
+				/*HashMap result = new HashMap();
+				result.put("work_no", SEND_A_SINGLE_NUMBER);
+				result.put("prmkey", YY_VEHICLE_SCHEDULE_ID);
+				result.put("carrier", carrier);
+				result.put("carrier_tel", companyPd.get("MOBILE_PHONE"));*/
+
+				map.put("code", OrderEnum.ORDER_SCHEDULE_VEHICLE_SUCCESS.getCode());
+				map.put("message",OrderEnum.ORDER_SCHEDULE_VEHICLE_SUCCESS.getMsg());
+				return map;
+		
+			} else {
+				logger.error("创建订单，派车单出错");
+				map.put("code", OrderEnum.ORDER_SCHEDULE_VEHICLE_ERROR.getCode());
+				map.put("message",OrderEnum.ORDER_SCHEDULE_VEHICLE_ERROR.getMsg());
+				return map;
+			}
+		} catch (Exception e) {
+			logger.error("创建订单，派车单出错"+e);
+			map.put("code", OrderEnum.ORDER_SCHEDULE_VEHICLE_ERROR.getCode());
+			map.put("message",OrderEnum.ORDER_SCHEDULE_VEHICLE_ERROR.getMsg());
+			return map;
+		}
+	}
+}

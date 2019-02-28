@@ -1,0 +1,443 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="Edi_xinningMapper">
+	<sql id="vsField">
+		SEND_A_SINGLE_NUMBER,
+		SEND_A_SINGLE_STATE,
+		IS_ABNORMAL,
+		MODELS,
+		TONNAGE,
+		NUMBER_PLATE,
+		DRIVER_MAIN,
+		DRIVER_PHONE_NUMBER,
+		DRIVER_ATTACHE,
+		DRIVER_ATTACHE_PHONE_NUMBER,
+		CONTAINER_NUMBER,
+		TITLE,
+		WHITE_CARD_NUMBER,
+		DERIVER_MAIN_ID_CARD,
+		TRANSPORT_ITEMS,
+		PLAN_DEPARTURE_TIME,
+		PLAN_ARRIVAL_TIME,
+		VEHICLE_VOLUME,
+		VEHICLE_LOAD_RATE,
+		TIME_TO_START_TIME,
+		ARRIVAL_TIME,
+		KILOMETERS_NUMBER,
+		NAVIGATION_DISTANCE,
+		UNIT_PRICE,
+		BASIC_CONSUMPTION,
+		PREPAID_CASH,
+		DELETE_FLAG,
+		ENTERPRISE_ID,
+		OPERATOR_ID,
+		INSERT_TIMESTAMP,
+		UPDATE_TIMESTAMP,
+		YY_VEHICLE_SCHEDULE_ID,
+		STARTCTIYID,
+		ENDCITYID,
+		NUMBER_GUIPLATE,
+		TRAILER,
+		STOP_BY1,
+		STOP_BY2,
+		STOP_BY3,
+		CL_DRIVER_BASE_INPUT_INFO_ID,
+		FU_CL_DRIVER_BASE_INPUT_INFO_ID,
+		GPS_ADDRESS,
+		COMPLETION_DATE,
+		IS_SHOW_PHONE,
+		COMPANY_RELATIONSHIP_ID,
+		XINNING_WORK_NO,
+		MOTORCYPE_TYPE,
+		CAR_SIZE,
+		CAR_GP,
+		CAR_HQ
+	</sql>
+
+	<sql id="svField">
+		STATUS,
+		SEND_A_SINGLE_NUMBER,	
+		ACTUAL_TIME,	
+		SEND_A_SINGLE_CODE,	
+		ORIGINATING_STATION,	
+		DESTINATION_STATION,	
+		LICENSE_PLATE,	
+		REGISTERED,	
+		SUPPLIER,	
+		TOTAL_FREIGHT,	
+		PREPAID_FREIGHT,	
+		PEPAID_FUEL_CARD,	
+		REFUEL,	
+		UNIT_PRICE,	
+		FUEL_COSTS,	
+		CAR_RENTAL_DEPOSIT,	
+		REGULATIONS,	
+		ACTUAL_AGING,	
+		TEMPORARY_FINE,	
+		THE_REAL_PAY,	
+		THE_TOTAL_PAY,	
+		THE_ACTUAL_FREIGHT,	
+		REMARKS,	
+		DEDUCT_THE_TOTAL_COST,	
+		REFERENCE_INFORMATION,	
+		DELETE_FLAG,	
+		ENTERPRISE_ID,	
+		OPERATOR_ID,	
+		INSERT_TIMESTAMP,	
+		UPDATE_TIMESTAMP,	
+		YY_SCHEDULE_VEHICLE_ID,
+		VEHICLE_PROPERTY_ATTRIBUTE,
+		ADVANCE_PAYMENT,
+		OIL_CARD,
+		BANK_CARD_NUMBER,
+		PAYEE
+	</sql>
+	<sql id="sendField">
+		FPARENT_ID,	
+		SENDER,	
+		SENDER_COMPANY,	
+		SENDER_PHONENUM,	
+		SENDER_PROVINCE_CODE,	
+		SENDER_CITY_CODE,	
+		SENDER_DISTRICT_CODE,	
+		SENDER_STREET_CODE,	
+		SENDER_DETAILED_ADDRESS,	
+		DELETE_FLAG,	
+		ENTERPRISE_ID,	
+		OPERATOR_ID,	
+		INSERT_TIMESTAMP,	
+		UPDATE_TIMESTAMP,	
+		YY_SENDER_ID,
+		SENDER_ADDRESS,
+		SENDER_Y,
+		SENDER_X,
+		SENDER_COMPLETE,
+		SEND_STATION
+	</sql>
+
+	<sql id="receiverField">
+		
+		FPARENT_ID,	
+		RECEIVER_NAME,	
+		RECEIVER_COMPANY,	
+		RECEIVER_PHONENUM,	
+		RECEIVER_PROVINCE_CODE,	
+		RECEIVER_CITY_CODE,	
+		RECEIVER_DISTRICT_CODE,	
+		RECEIVER_STREET_CODE,	
+		RECEIVER_DETAILED_ADDRESS,	
+		DELETE_FLAG,	
+		ENTERPRISE_ID,	
+		OPERATOR_ID,	
+		INSERT_TIMESTAMP,	
+		UPDATE_TIMESTAMP,	
+		YY_RECEIVER_ID,
+		RECEIVER_ADDRESS,
+		RECEIVER_X,
+		RECEIVER_Y,
+		RECEIVER_STATION,
+		RECEIVER_COMPLETE,
+		RECEIVER_TYPE
+	</sql>
+	<sql id="orderField">
+		ID_ORDER,	
+		CUSTOMER_ID,
+		WAYBILL_STATUS,
+		CUSTOMER_TYPE,		
+		NUMBER,	
+		WEIGHT,	
+		VOLUME,	
+		SETTLEMENT_METHOD,	
+		PAYMENT_METHOD,	
+		IF_REQUEST,	
+		GOODS_VALUE,	
+		COLLECTION_AMOUNT,	
+		BILLING,	
+		IF_CASH_RECEIEVD,	
+		PAY_DATE,	
+		CUSTOMER_ORDER_NUMBER,	
+		CUSTOMER_REQUIREMENTS_TIME,	
+		BACK_EXPRESS_NUM,	
+		MODELS,	
+		CAR_LENGTH,	
+		PLAN_USE_VEHICLE_TIME,	
+		FIXED_LINE,	
+		RETURN_SINGLE_STATE,	
+		IF_EXCEPTION,	
+		ENTERPRISE_NUMBER,	
+		TOTAL_FREIGHT,	
+		TRUNK_FREIGHT,	
+		INSURANCE,	
+		DELETE_FLAG,	
+		ENTERPRISE_ID,	
+		OPERATOR_ID,	
+		INSERT_TIMESTAMP,	
+		UPDATE_TIMESTAMP,	
+		YY_ORDER_ID,
+		GOODS_ID,
+		CUSTOMER_NAME,
+		GZ,
+		QZ,
+		STOP_OVER,
+	    BIZ_TYPE,
+	    REQUIREMENT_RETURN,
+	    APPROVAL_STATUS,
+	    ARRIVE_DATE,
+	    REMARK,
+	    VERSION,
+	    IS_HIST,
+		TASK_KEY,
+		SOURCE_TYPE,
+		LINE_REMARK,
+		COMPANY_RELATIONSHIP_ID,
+		CUSTOMER_HDH,
+		CUSTOMER_YSDH
+	</sql>
+	
+	<select id="findByKhName" parameterType="pd" resultType="pd">
+		select i.ENTERPRISE_ID,i.KH_INFO_ID,i.MOBILE_PHONE,i.OPERATOR_ID from wuche_base_company c join wuche_kh_info i
+		on i.ENTERPRISE_ID = c.ENTERPRISE_ID 
+		where c.COMPANY_NAME =#{carrier} 
+		and i.DELETE_FLAG = '1' 
+		and c.DELETE_FLAG 
+		and i.COMPANY_NAME =#{COMPANY_NAME}
+		group by i.ENTERPRISE_ID,i.KH_INFO_ID,i.MOBILE_PHONE,OPERATOR_ID
+	</select>
+	
+	<select id="findByCompanyName" parameterType="pd" resultType="pd">
+		select ENTERPRISE_ID,OPERATOR_ID from wuche_base_company where DELETE_FLAG ='1' and COMPANY_NAME = #{carrier}
+		group by ENTERPRISE_ID,OPERATOR_ID
+		
+	</select>
+	
+	<insert id="batchInsterOrder"  parameterType="java.util.List">
+	insert into wuche_yy_order (<include refid="orderField"></include>)
+	values 
+		 <foreach collection="list" item="item" index="index" separator="," >  
+        	(
+        	#{item.ID_ORDER},	
+			#{item.CUSTOMER_ID},	
+			#{item.WAYBILL_STATUS},
+			#{item.CUSTOMER_TYPE},	
+			#{item.NUMBER},	
+			#{item.WEIGHT},	
+			#{item.VOLUME},	
+			#{item.SETTLEMENT_METHOD},	
+			#{item.PAYMENT_METHOD},	
+			#{item.IF_REQUEST},	
+			#{item.GOODS_VALUE},	
+			#{item.COLLECTION_AMOUNT},	
+			#{item.BILLING},	
+			#{item.IF_CASH_RECEIEVD},	
+			#{item.PAY_DATE},	
+			#{item.CUSTOMER_ORDER_NUMBER},	
+			#{item.CUSTOMER_REQUIREMENTS_TIME},	
+			#{item.BACK_EXPRESS_NUM},	
+			#{item.MODELS},	
+			#{item.CAR_LENGTH},	
+			#{item.PLAN_USE_VEHICLE_TIME},	
+			#{item.FIXED_LINE},	
+			#{item.RETURN_SINGLE_STATE},	
+			#{item.IF_EXCEPTION},	
+			#{item.ENTERPRISE_NUMBER},	
+			#{item.TOTAL_FREIGHT},	
+			#{item.TRUNK_FREIGHT},	
+			#{item.INSURANCE},	
+			#{item.DELETE_FLAG},	
+			#{item.ENTERPRISE_ID},	
+			#{item.OPERATOR_ID},	
+			#{item.INSERT_TIMESTAMP},	
+			#{item.UPDATE_TIMESTAMP},	
+			#{item.YY_ORDER_ID},
+			#{item.GOODS_ID},
+			#{item.CUSTOMER_NAME},
+			#{item.GZ},
+			#{item.QZ},
+			#{item.STOP_OVER},
+			#{item.BIZ_TYPE},
+			#{item.REQUIREMENT_RETURN},
+			#{item.APPROVAL_STATUS},
+			#{item.ARRIVE_DATE},
+			#{item.REMARK},
+			#{item.VERSION},
+			#{item.IS_HIST},
+			#{item.TASK_KEY},
+			#{item.SOURCE_TYPE},
+			#{item.LINE_REMARK},
+			#{item.COMPANY_RELATIONSHIP_ID},
+			#{item.CUSTOMER_HDH},
+			#{item.CUSTOMER_YSDH}
+        	)
+   		 </foreach> 
+	</insert>
+	
+	<insert id="batchInsterSender"  parameterType="java.util.List">
+		insert into wuche_yy_sender(<include refid="sendField"></include>)
+		values
+		 <foreach collection="list" item="item" index="index" separator="," >  
+        	(	#{item.FPARENT_ID},	
+				#{item.SENDER},	
+				#{item.SENDER_COMPANY},	
+				#{item.SENDER_PHONENUM},	
+				#{item.SENDER_PROVINCE_CODE},	
+				#{item.SENDER_CITY_CODE},	
+				#{item.SENDER_DISTRICT_CODE},	
+				#{item.SENDER_STREET_CODE},	
+				#{item.SENDER_DETAILED_ADDRESS},	
+				#{item.DELETE_FLAG},	
+				#{item.ENTERPRISE_ID},	
+				#{item.OPERATOR_ID},	
+				#{item.INSERT_TIMESTAMP},	
+				#{item.UPDATE_TIMESTAMP},	
+				#{item.YY_SENDER_ID},
+				#{item.SENDER_ADDRESS},
+				#{item.SENDER_X},
+				#{item.SENDER_Y},
+				#{item.SENDER_COMPLETE},
+				#{item.SEND_STATION})
+   		 </foreach> 
+	</insert>
+	
+	
+	<insert id="batchInsterReceiver" parameterType="java.util.List">
+		insert into wuche_yy_receiver (<include refid="receiverField"></include>)
+		values
+		 <foreach collection="list" item="item" index="index" separator="," >  
+		 (
+        	#{item.FPARENT_ID},	
+			#{item.RECEIVER_NAME},	
+			#{item.RECEIVER_COMPANY},	
+			#{item.RECEIVER_PHONENUM},	
+			#{item.RECEIVER_PROVINCE_CODE},	
+			#{item.RECEIVER_CITY_CODE},	
+			#{item.RECEIVER_DISTRICT_CODE},	
+			#{item.RECEIVER_STREET_CODE},	
+			#{item.RECEIVER_DETAILED_ADDRESS},	
+			#{item.DELETE_FLAG},	
+			#{item.ENTERPRISE_ID},	
+			#{item.OPERATOR_ID},	
+			#{item.INSERT_TIMESTAMP},	
+			#{item.UPDATE_TIMESTAMP},	
+			#{item.YY_RECEIVER_ID},
+			#{item.RECEIVER_ADDRESS},
+			#{item.RECEIVER_X},
+			#{item.RECEIVER_Y},
+			#{item.RECEIVER_STATION},
+			#{item.RECEIVER_COMPLETE},
+			#{item.RECEIVER_TYPE}
+			)
+   		 </foreach> 
+	</insert>
+	
+	<insert id="batchInsterVehicleScheduleOrder"  parameterType="java.util.List">
+			insert into wuche_yy_vehicle_schedule_order(YY_VEHICLE_SCHEDULE_ORDER_ID,YY_VEHICLE_SCHEDULE_ID,YY_ORDER_ID)
+			values 
+		 <foreach collection="list" item="item" index="index" separator="," >  
+        	(#{item.YY_VEHICLE_SCHEDULE_ORDER_ID},#{item.YY_VEHICLE_SCHEDULE_ID},#{item.YY_ORDER_ID})
+   		 </foreach> 
+	</insert>
+	
+	<insert id="batchInsterVehicleSchedule"  parameterType="java.util.List">
+			insert into wuche_yy_vehicle_schedule( <include refid="vsField"></include> )
+			values 
+		 <foreach collection="list" item="item" index="index" separator="," >  
+        	(
+        		#{item.SEND_A_SINGLE_NUMBER},
+				#{item.SEND_A_SINGLE_STATE},
+				#{item.IS_ABNORMAL},
+				#{item.MODELS},
+				#{item.TONNAGE},
+				#{item.NUMBER_PLATE},
+				#{item.DRIVER_MAIN},
+				#{item.DRIVER_PHONE_NUMBER},
+				#{item.DRIVER_ATTACHE},
+				#{item.DRIVER_ATTACHE_PHONE_NUMBER},
+				#{item.CONTAINER_NUMBER},
+				#{item.TITLE},
+				#{item.WHITE_CARD_NUMBER},
+				#{item.DERIVER_MAIN_ID_CARD},
+				#{item.TRANSPORT_ITEMS},
+				#{item.PLAN_DEPARTURE_TIME},
+				#{item.PLAN_ARRIVAL_TIME},
+				#{item.VEHICLE_VOLUME},
+				#{item.VEHICLE_LOAD_RATE},
+				#{item.TIME_TO_START_TIME},
+				#{item.ARRIVAL_TIME},
+				#{item.KILOMETERS_NUMBER},
+				#{item.NAVIGATION_DISTANCE},
+				#{item.UNIT_PRICE},
+				#{item.BASIC_CONSUMPTION},
+				#{item.PREPAID_CASH},
+				#{item.DELETE_FLAG},
+				#{item.ENTERPRISE_ID},
+				#{item.OPERATOR_ID},
+				#{item.INSERT_TIMESTAMP},
+				#{item.UPDATE_TIMESTAMP},
+				#{item.YY_VEHICLE_SCHEDULE_ID},
+				#{item.STARTCTIYID},
+				#{item.ENDCITYID},
+				#{item.NUMBER_GUIPLATE},
+				#{item.TRAILER},
+				#{item.STOP_BY1},
+				#{item.STOP_BY2},
+				#{item.STOP_BY3},
+				#{item.CL_DRIVER_BASE_INPUT_INFO_ID},
+				#{item.FU_CL_DRIVER_BASE_INPUT_INFO_ID},
+				#{item.GPS_ADDRESS},
+				#{item.COMPLETION_DATE},
+				#{item.IS_SHOW_PHONE},
+				#{item.COMPANY_RELATIONSHIP_ID},
+				#{item.XINNING_WORK_NO},
+				#{MOTORCYPE_TYPE},
+				#{CAR_SIZE},
+				#{CAR_GP},
+				#{CAR_HQ}
+				
+			)
+   		 </foreach> 
+	</insert>
+	
+	<insert id="batchInsterScheduleVehicle" parameterType="java.util.List">
+		insert into wuche_yy_schedule_vehicle(<include refid="svField"></include>)
+		values
+		 <foreach collection="list" item="item" index="index" separator="," >  
+        	(	#{item.STATUS},	
+				#{item.SEND_A_SINGLE_NUMBER},
+				#{item.ACTUAL_TIME},	
+				#{item.SEND_A_SINGLE_CODE},	
+				#{item.ORIGINATING_STATION},	
+				#{item.DESTINATION_STATION},	
+				#{item.LICENSE_PLATE},	
+				#{item.REGISTERED},	
+				#{item.SUPPLIER},	
+				#{item.TOTAL_FREIGHT},	
+				#{item.PREPAID_FREIGHT},	
+				#{item.PEPAID_FUEL_CARD},	
+				#{item.REFUEL},	
+				#{item.UNIT_PRICE},	
+				#{item.FUEL_COSTS},	
+				#{item.CAR_RENTAL_DEPOSIT},	
+				#{item.REGULATIONS},	
+				#{item.ACTUAL_AGING},	
+				#{item.TEMPORARY_FINE},	
+				#{item.THE_REAL_PAY},	
+				#{item.THE_TOTAL_PAY},	
+				#{item.THE_ACTUAL_FREIGHT},	
+				#{item.REMARKS},	
+				#{item.DEDUCT_THE_TOTAL_COST},	
+				#{item.REFERENCE_INFORMATION},	
+				#{item.DELETE_FLAG},	
+				#{item.ENTERPRISE_ID},	
+				#{item.OPERATOR_ID},	
+				#{item.INSERT_TIMESTAMP},	
+				#{item.UPDATE_TIMESTAMP},	
+				#{item.YY_SCHEDULE_VEHICLE_ID},
+				#{item.VEHICLE_PROPERTY_ATTRIBUTE},
+				#{item.ADVANCE_PAYMENT},
+				#{item.OIL_CARD},
+				#{item.BANK_CARD_NUMBER},
+				#{item.PAYEE})
+   		 </foreach> 
+	</insert>
+
+</mapper>

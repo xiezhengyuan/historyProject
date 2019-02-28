@@ -1,0 +1,128 @@
+package com.hxy.isw.service.impl;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.hxy.isw.entity.Shares;
+import com.hxy.isw.service.ManagerService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.JsonUtil;
+@Service
+public class ManagerServiceImpl implements ManagerService {
+	@Autowired
+	DatabaseHelper databaseHelper;
+	@Override
+	public List<Map<String, Object>> queryAll(Integer start, Integer limit, String type) throws Exception {
+		
+			String hql ="select s from Shares s where s.type="+type+"";
+			List<Object> list =databaseHelper.getResultListByHql(hql,start,limit);
+			List<Map<String, Object>> lstmap=new ArrayList<Map<String,Object>>();
+			for(Object obj:list){
+				Shares s= (Shares)obj;
+				Map<String, Object> map= new HashMap<String, Object>();
+				map.put("id", s.getId());
+				map.put("sharesname", s.getSharesname());
+				map.put("code", s.getCode());
+				map.put("price", s.getPrice());
+				map.put("upanddown", s.getUpanddown());
+				map.put("createtime", s.getCreatetime());
+				map.put("img", s.getImg());
+				if(Integer.parseInt(type)==0){
+					map.put("state", 2);
+				}else{
+					map.put("state", s.getState());
+				}
+				lstmap.add(map);
+			}
+
+		return lstmap;
+	}
+	@Override
+	public int countquerAll(String type) throws Exception {
+		String sql ="select count(s.id) from shares s where s.type="+type+"";
+		List<Object> lst = databaseHelper.getResultListBySql(sql);
+		return lst.get(0)==null?0:Integer.parseInt(lst.get(0).toString());
+	}
+	@Override
+	public Map<String, Object> queryAll2(Integer start, Integer limit, String type) throws Exception {
+		Map<String, Object> resultMap=new HashMap<String, Object>();
+		List<Map<String, Object>> lstmap=new ArrayList<Map<String,Object>>();
+		StringBuffer buffer=new StringBuffer("select count(s.id) from shares s where s.type=").append(type);
+		int records=databaseHelper.getSqlCount(buffer.toString());
+		int total=ConstantUtil.pages(records, limit);
+		if(records>0){
+			StringBuffer buffer1=new StringBuffer("select s from Shares s where s.type=").append(type);
+			List<Object> lit =databaseHelper.getResultListByHql(buffer1.toString(),start,limit);
+			for(Object obj:lit){
+				Shares s= (Shares)obj;
+				Map<String, Object> map= new HashMap<String, Object>();
+				map.put("id", s.getId());
+				map.put("sharesname", s.getSharesname());
+				map.put("code", s.getCode());
+				map.put("price", s.getPrice());
+				map.put("upanddown", s.getUpanddown());
+				map.put("createtime", s.getCreatetime());
+				map.put("img", s.getImg());
+				if(Integer.parseInt(type)==0){
+					map.put("state", 2);
+				}else{
+					map.put("state", s.getState());
+				}
+				lstmap.add(map);
+			}
+		}
+		resultMap.put("total", total);
+		resultMap.put("records", records);
+		resultMap.put("rows", lstmap);
+		
+		return resultMap;
+	}
+	@Override
+	public void modifyState(String id) throws Exception {
+		Shares s=(Shares)databaseHelper.getObjectById(Shares.class, Long.parseLong(id));
+		if(s.getState()==0){
+			s.setState(-1);
+		}else if(s.getState()==-1){
+			s.setState(0);
+		}
+		
+		databaseHelper.updateObject(s);
+		
+		
+	}
+	@Override
+	public JsonArray queryPhoto(String id) throws Exception {
+		StringBuffer querygoodsphotos = new StringBuffer("select s from Shares s where s.id=").append(id);
+			
+		List<Object> gpflist = databaseHelper.getResultListByHql(querygoodsphotos.toString());
+		
+		return JsonUtil.castLst2Arr4Single(gpflist);
+	}
+	@Override
+	public void modifyPhoto(String imgarr, String flag, String id) throws Exception {
+		if("false".equals(flag)){
+			JsonArray arr	 = (JsonArray) JsonUtil.getJsonParser().parse(imgarr);
+			if(arr.size()>0){
+				for (JsonElement jsonElement : arr) {
+					Shares s =(Shares)databaseHelper.getObjectById(Shares.class, Long.parseLong(id));
+					JsonObject jsonObject = jsonElement.getAsJsonObject();
+					String url = jsonObject.get("url").getAsString();
+					s.setImg(url);
+					databaseHelper.updateObject(s);
+				}
+					
+				}
+		}
+		
+	}
+
+}

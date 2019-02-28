@@ -1,0 +1,68 @@
+package com.hxy.isw.service.impl;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.hxy.isw.service.CompanyuserService;
+import com.hxy.isw.util.DatabaseHelper;
+
+@Repository
+public class CompanyuserServiceImp implements CompanyuserService {
+	
+	@Autowired
+	DatabaseHelper databaseHelper;
+
+	@Override
+	public int comcountuserinfo(String querybyuserinfo, String querybyaccountinfo) throws Exception {
+		StringBuffer sql=new StringBuffer("select count(u.id) from userinfo u");
+		sql.append(ptsql(querybyuserinfo, querybyaccountinfo));
+		List<Object> lst = databaseHelper.getResultListBySql(sql.toString());
+		return lst==null?0:Integer.parseInt(lst.get(0).toString());
+	}
+
+	@Override
+	public List<Map<String, Object>> comqueryuserinfo(String querybyuserinfo, String querybyaccountinfo, int start,
+			int limit) throws Exception {
+		StringBuffer sql=new StringBuffer("select u.* from userinfo u");
+		sql.append(ptsql(querybyuserinfo, querybyaccountinfo));
+		List<Object[]> lst = databaseHelper.getResultListBySql(sql.toString(),start,limit);
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		for (Object[] object : lst) {
+			
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("id", object[0].toString());
+			map.put("nickname", object[4].toString());
+			map.put("name",object[5].toString());
+			map.put("mobile",object[3].toString());
+			map.put("totalrecharge",object[9].toString());
+			map.put("golds", object[7].toString());
+			map.put("virtualcapital", object[8].toString());
+			map.put("createtime",object[16].toString());
+			map.put("state",object[17].toString());
+			lstMap.add(map);
+		}
+		
+		return lstMap;
+	}
+
+	
+	private StringBuffer ptsql(String querybyuserinfo,
+			String querybyaccountinfo){
+		StringBuffer sql=new StringBuffer("");
+		//按业务员姓名查询
+		sql.append(" where  (u.faccountid in (select a1.id from accountinfo a1 where a1.name LIKE '%"+querybyaccountinfo+"%')");
+		//按公司经理姓名查询
+		sql.append("or u.faccountid in (select a2.id from accountinfo a2 where a2.fparentid in(select a3.id from accountinfo a3 where a3.name LIKE '%"+querybyaccountinfo+"%'))");
+		//按公司名称查询
+		sql.append("or u.faccountid in (select a4.id from accountinfo a4 where a4.fcompanyid in(select c.id from company c where c.company LIKE '%"+querybyaccountinfo+"%')))");
+		//按用户的姓名或手机号查询
+		sql.append("and (u.mobile like '%"+querybyuserinfo+"%' OR u.name like '%"+querybyuserinfo+"%')");
+		
+		return sql;
+	}
+}

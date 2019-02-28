@@ -1,0 +1,114 @@
+package com.hxy.isw.entity;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+   /**
+    * exampleplan 实体类
+    * Fri Jul 14 17:20:34 CST 2017 lxq
+    */ 
+
+@Entity
+@Table(name = "exampleplan")
+public class ExamplePlan{
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
+	private Long id;
+
+	@Column(name = "fuserinfoid")
+	private Long fuserinfoid;
+
+	@Column(name = "targetprofit")
+	private String targetprofit;
+
+	@Column(name = "stopline")
+	private String stopline;
+
+	@Column(name = "starttime")
+	private Date starttime;
+
+	@Column(name = "endtime")
+	private Date endtime;
+
+	@Column(name = "createtime")
+	private Date createtime;
+
+	@Column(name = "state")
+	private Integer state;
+
+	@Column(name = "ischoiceness")
+	private Integer ischoiceness;
+
+	@Column(name = "type")
+	private Integer type;
+
+	public void setId(Long id){
+	this.id=id;
+	}
+	public Long getId(){
+		return id;
+	}
+	public void setFuserinfoid(Long fuserinfoid){
+	this.fuserinfoid=fuserinfoid;
+	}
+	public Long getFuserinfoid(){
+		return fuserinfoid;
+	}
+	
+	public String getTargetprofit() {
+		return targetprofit;
+	}
+	public void setTargetprofit(String targetprofit) {
+		this.targetprofit = targetprofit;
+	}
+	public String getStopline() {
+		return stopline;
+	}
+	public void setStopline(String stopline) {
+		this.stopline = stopline;
+	}
+	public void setStarttime(Date starttime){
+	this.starttime=starttime;
+	}
+	public Date getStarttime(){
+		return starttime;
+	}
+	public void setEndtime(Date endtime){
+	this.endtime=endtime;
+	}
+	public Date getEndtime(){
+		return endtime;
+	}
+	public void setCreatetime(Date createtime){
+	this.createtime=createtime;
+	}
+	public Date getCreatetime(){
+		return createtime;
+	}
+	public void setState(Integer state){
+	this.state=state;
+	}
+	public Integer getState(){
+		return state;
+	}
+	public void setIschoiceness(Integer ischoiceness){
+	this.ischoiceness=ischoiceness;
+	}
+	public Integer getIschoiceness(){
+		return ischoiceness;
+	}
+	public void setType(Integer type){
+	this.type=type;
+	}
+	public Integer getType(){
+		return type;
+	}
+}
+

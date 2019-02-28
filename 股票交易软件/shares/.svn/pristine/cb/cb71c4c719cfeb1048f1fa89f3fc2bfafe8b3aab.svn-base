@@ -1,0 +1,206 @@
+package com.hxy.isw.thread;
+
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+import com.alibaba.cloudapi.sdk.core.model.ApiResponse;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.hxy.isw.entity.ExamplePlan;
+import com.hxy.isw.entity.ForeignExchange;
+import com.hxy.isw.entity.SharesWareHouse;
+import com.hxy.isw.entity.Subscription;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.NowApiUtil;
+import com.hxy.isw.util.SyncDemo_股票行情;
+import com.hxy.isw.util.Sys;
+
+/**
+* @author lcc
+* @date 2017年8月11日 上午11:07:39
+* @describe 检查牛人计划
+*/
+public class CheckPlan implements Runnable  {
+
+	SimpleDateFormat sdf = null;
+	public static DatabaseHelper databaseHelper;
+	
+	@Override
+	public void run() {
+		// TODO Auto-generated method stub
+		SyncDemo_股票行情 sd = new SyncDemo_股票行情();
+		try {
+			long diff = ConstantUtil.setThreadStartTimer("00","30",null);
+			
+			if(diff<0){//凌晨0点30分之前则等待
+				Thread.sleep(0-diff);
+				checkPlan(sd);
+				checkSubscription();
+			}else{//凌晨0点30分后则立即启动
+				checkPlan(sd);
+				checkSubscription();
+			}
+		
+			while (true){
+				long diff11 = ConstantUtil.setThreadStartTimer("00","30",null);
+				Thread.sleep(1000l*60*60*24-diff11);
+				checkPlan(sd);
+				checkSubscription();
+			}
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	
+	private void checkPlan(SyncDemo_股票行情 sd) throws Exception{
+		//找出所有新发布的计划
+		StringBuffer find = new StringBuffer("select ep from ExamplePlan ep where ep.state = 0 ");
+		List<Object> lst = databaseHelper.getResultListByHql(find.toString());
+		
+		for (Object object : lst) {
+			ExamplePlan ep = (ExamplePlan)object;
+			
+			Sys.out("checkPlan.state..new.."+ConstantUtil.differentDays(new Date(), ep.getStarttime()));
+			//计算当天是不是计划开始时间
+			if(ConstantUtil.differentDays(new Date(), ep.getStarttime())<=0){
+				ep.setState(1);
+				databaseHelper.updateObject(ep);
+			}
+			
+		}
+		
+		
+		//找出所有运行中的计划
+		find = new StringBuffer("select ep from ExamplePlan ep where ep.state = 1 ");
+		lst = databaseHelper.getResultListByHql(find.toString());
+		
+		for (Object object : lst) {
+			ExamplePlan ep = (ExamplePlan)object;
+				
+			//计算计划的实际收益
+			if(ep.getType()<2){//股票
+				//找出所有计划中的股票
+				StringBuffer query = new StringBuffer("select swh from SharesWareHouse swh where swh.isplan = 1 and swh.fexampleplanid = ").append(ep.getId());
+				List<Object> querylist = databaseHelper.getResultListByHql(query.toString());
+				
+				Double totaldiff = 0d;
+				for (Object object2 : querylist) {
+					SharesWareHouse swh = (SharesWareHouse)object2;
+					
+					String price = null;
+					
+					if(swh.getType()==0){//沪深股票
+						//查看股票行情
+						ApiResponse response = sd.股票行情(swh.getCode(), "0", "0");
+						
+						String result = new String(response.getBody(), "utf-8");
+						Sys.out("checkEntrust..."+sdf.format(new Date())+"..."+result);
+						JsonObject json = (JsonObject) new JsonParser().parse(result);
+						
+						if(json.get("showapi_res_code").getAsInt()!=0)return;
+						
+						JsonObject jsonObject = json.get("showapi_res_body").getAsJsonObject().get("stockMarket").getAsJsonObject();
+						
+						price = jsonObject.get("nowPrice").getAsString();//当前价
+					}else{//美股
+						String result = NowApiUtil.getShareIndexOfUS(swh.getCode());
+						 
+						 Sys.out("GetDataFromUS..."+sdf.format(new Date())+"..."+result);
+						
+						 JsonObject json = (JsonObject) new JsonParser().parse(result);
+							
+						JsonObject obj = json.get("result").getAsJsonObject().get("lists").getAsJsonObject().get(swh.getCode()).getAsJsonObject();
+						
+						price = obj.get("last_price").getAsString();
+					}
+					
+					//计算收益率
+					Double diff = ConstantUtil.formatDouble((Double.parseDouble(price)*swh.getCouldusenums()-swh.getCost())/swh.getCost());
+					totaldiff += diff;
+				}
+				Double targetprofit = 0d;
+				if(ep.getTargetprofit().indexOf("%")!=-1)targetprofit = ConstantUtil.intdevice2(Integer.parseInt(ep.getTargetprofit().replace("%", "")), 100, false);
+				else targetprofit = Double.parseDouble(ep.getTargetprofit());
+				
+				if(totaldiff>=targetprofit)ep.setSuccessed(1);
+				else ep.setSuccessed(0);
+				ep.setActualprofit(totaldiff);
+				
+			}else{//外汇
+				//找出所有计划中的外汇
+				StringBuffer query = new StringBuffer("select fe from ForeignExchange fe where fe.isplan = 1 and fe.fexampleplanid = ").append(ep.getId());
+				List<Object> querylist = databaseHelper.getResultListByHql(query.toString());
+				
+				Double totaldiff = 0d;
+				for (Object object2 : querylist) {
+					ForeignExchange fe = (ForeignExchange)object2;
+					
+					/*String result = NowApiUtil.getWHIndex(fe.getCode());
+					 
+					Sys.out("getData4whIndex..."+result);
+					 
+					JsonObject json = (JsonObject) new JsonParser().parse(result);
+						
+					JsonObject obj = json.get("result").getAsJsonObject();
+					
+					String price = obj.get("rate").getAsString();*/
+					
+					String res = NowApiUtil.getWHIndexByAli(fe.getCode());
+					
+					JsonObject json = (JsonObject) new JsonParser().parse(res);
+					
+					Double price = 0d;
+					if("ok".equals(json.get("msg").getAsString())){
+					
+						JsonObject jo = json.get("result").getAsJsonObject();
+					
+						price = jo.get("rate").getAsDouble();
+					}
+					
+					//计算收益率
+					Double diff = ConstantUtil.formatDouble((price*fe.getCouldusenums()-fe.getPurchase())/fe.getPurchase());
+					totaldiff += diff;
+				}
+				
+				if(totaldiff>=Double.parseDouble(ep.getTargetprofit()))ep.setSuccessed(1);
+				else ep.setSuccessed(0);
+				ep.setActualprofit(totaldiff);
+			}
+			
+			
+			//计算当天是不是计划结束时间或者实际收益到达了预计收益
+			Double targetprofit = 0d;
+			if(ep.getTargetprofit().indexOf("%")!=-1)targetprofit = ConstantUtil.intdevice2(Integer.parseInt(ep.getTargetprofit().replace("%", "")), 100, false);
+			else targetprofit = Double.parseDouble(ep.getTargetprofit());
+			Sys.out("checkPlan.state..run.."+ConstantUtil.differentDays(new Date(), ep.getEndtime()));
+			if(ConstantUtil.differentDays(new Date(),ep.getEndtime())<=0||(ep.getActualprofit()>=targetprofit)){
+				ep.setState(2);
+				ep.setRunday(ConstantUtil.differentDays(ep.getStarttime(),new Date()));
+				databaseHelper.updateObject(ep);
+			}
+			
+		}
+	}
+	
+	private void checkSubscription(){
+		//找出所有生效中的订单信息
+		StringBuffer find = new StringBuffer("select s from Subscription s where s.state = 0 ");
+		List<Object> lst = databaseHelper.getResultListByHql(find.toString());
+		
+		for (Object object : lst) {
+			Subscription s = (Subscription)object;
+		
+
+			//计算当天是不是订阅结束时间
+			if(ConstantUtil.differentDays( new Date(),s.getEndtime())<=0){
+				s.setState(-1);
+				databaseHelper.updateObject(s);
+			}
+			
+		}
+	}
+}

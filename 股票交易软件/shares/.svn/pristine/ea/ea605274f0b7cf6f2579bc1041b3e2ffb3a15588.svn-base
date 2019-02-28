@@ -1,0 +1,140 @@
+package com.hxy.isw.entity;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+   /**
+    * shareswarehouse 实体类
+    * Fri Jul 14 17:20:34 CST 2017 lxq
+    */ 
+
+@Entity
+@Table(name = "shareswarehouse")
+public class SharesWareHouse{
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
+	private Long id;
+
+	@Column(name = "fuserinfoid")
+	private Long fuserinfoid;
+
+	@Column(name = "sharesname")
+	private String sharesname;
+
+	@Column(name = "code")
+	private String code;
+
+	@Column(name = "marketvalue")
+	private Double marketvalue;
+
+	@Column(name = "warehousenums")
+	private Integer warehousenums;
+
+	@Column(name = "couldusenums")
+	private Integer couldusenums;
+
+	@Column(name = "cost")
+	private Double cost;
+
+	@Column(name = "presentprice")
+	private Double presentprice;
+
+	@Column(name = "profitloss")
+	private Double profitloss;
+
+	@Column(name = "time")
+	private Date time;
+
+	@Column(name = "state")
+	private Integer state;
+
+	@Column(name = "isplan")
+	private Integer isplan;
+
+	public void setId(Long id){
+	this.id=id;
+	}
+	public Long getId(){
+		return id;
+	}
+	public void setFuserinfoid(Long fuserinfoid){
+	this.fuserinfoid=fuserinfoid;
+	}
+	public Long getFuserinfoid(){
+		return fuserinfoid;
+	}
+	public void setSharesname(String sharesname){
+	this.sharesname=sharesname;
+	}
+	public String getSharesname(){
+		return sharesname;
+	}
+	public void setCode(String code){
+	this.code=code;
+	}
+	public String getCode(){
+		return code;
+	}
+	public void setMarketvalue(Double marketvalue){
+	this.marketvalue=marketvalue;
+	}
+	public Double getMarketvalue(){
+		return marketvalue;
+	}
+	public void setWarehousenums(Integer warehousenums){
+	this.warehousenums=warehousenums;
+	}
+	public Integer getWarehousenums(){
+		return warehousenums;
+	}
+	public void setCouldusenums(Integer couldusenums){
+	this.couldusenums=couldusenums;
+	}
+	public Integer getCouldusenums(){
+		return couldusenums;
+	}
+	public void setCost(Double cost){
+	this.cost=cost;
+	}
+	public Double getCost(){
+		return cost;
+	}
+	public void setPresentprice(Double presentprice){
+	this.presentprice=presentprice;
+	}
+	public Double getPresentprice(){
+		return presentprice;
+	}
+	public void setProfitloss(Double profitloss){
+	this.profitloss=profitloss;
+	}
+	public Double getProfitloss(){
+		return profitloss;
+	}
+	public void setTime(Date time){
+	this.time=time;
+	}
+	public Date getTime(){
+		return time;
+	}
+	public void setState(Integer state){
+	this.state=state;
+	}
+	public Integer getState(){
+		return state;
+	}
+	public void setIsplan(Integer isplan){
+	this.isplan=isplan;
+	}
+	public Integer getIsplan(){
+		return isplan;
+	}
+}
+

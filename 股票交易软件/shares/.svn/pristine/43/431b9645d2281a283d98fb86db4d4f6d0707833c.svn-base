@@ -1,0 +1,583 @@
+package com.hxy.isw.service.impl;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.poi.util.StringUtil;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.hxy.isw.entity.Follow;
+import com.hxy.isw.entity.MessageInfo;
+import com.hxy.isw.entity.NotifyInfo;
+import com.hxy.isw.entity.PostingStyle;
+import com.hxy.isw.entity.Postings;
+import com.hxy.isw.entity.PostingsComments;
+import com.hxy.isw.entity.PostingsPhotos;
+import com.hxy.isw.entity.PostingsPraise;
+import com.hxy.isw.entity.RewardLog;
+import com.hxy.isw.entity.RewardSetting;
+import com.hxy.isw.entity.UserInfo;
+import com.hxy.isw.entity.UserNotifyState;
+import com.hxy.isw.service.AppServiceSocial;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.JsonUtil;
+import com.hxy.isw.util.Sys;
+
+@Repository
+public class AppServiceSocialImpl implements AppServiceSocial{
+
+	@Autowired
+	DatabaseHelper databaseHelper;
+
+	@Override
+	public String getpostingslist(String userid,String fpostingstyleid,String exampleid, Integer start, Integer limit, String type) throws Exception {
+		// TODO Auto-generated method stub
+        if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+		
+		int count = countpostingslist(userid,exampleid,type,fpostingstyleid);
+		int pages = ConstantUtil.pages(count, limit);
+		
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		StringBuffer hql =new StringBuffer();
+		if(Integer.parseInt(type)==2){
+			hql = new StringBuffer("select p,ui,f from Postings p,UserInfo ui,Follow f where p.state = 0 and p.fuserinfoid = ui .id")
+					.append(" and p.fuserinfoid = f.ffollowedid and f.fuserinfoid =").append(userid);
+			if(fpostingstyleid!=null&&fpostingstyleid.length()>0)hql.append(" and p.fpostingstyleid = ").append(fpostingstyleid);
+		}else{
+		 hql = new StringBuffer("select p,ui from Postings p,UserInfo ui where p.state = 0 and p.fuserinfoid = ui.id ");
+		 if(exampleid!=null&&exampleid.length()>0){
+			 hql.append(" and ui.id = ").append(exampleid);
+		 }
+		 if(fpostingstyleid!=null&&fpostingstyleid.length()>0)hql.append(" and p.fpostingstyleid = ").append(fpostingstyleid);
+		}
+		hql = conditionposting(hql,type,userid);
+		hql.append(" order by p.createtime desc ");
+			
+			List<Object[]> lst = databaseHelper.getResultListByHql(hql.toString(), start, limit);
+			for (Object[] object : lst) {
+				Postings p = (Postings)object[0];
+				UserInfo u = (UserInfo)object[1];
+				Sys.out(u);
+				Map<String,Object> map = new HashMap<String,Object>();
+				map.put("id", p.getId());
+				map.put("userinfo", u);
+				map.put("nickname", u.getNickname());
+				map.put("headimg", u.getHeadimg());
+				map.put("isexample", u.getIsexample());
+				map.put("content", p.getPostingscontent());
+				map.put("praise", p.getPraise());
+				map.put("comments", p.getComments());
+				map.put("reward", p.getReward());
+				map.put("share", p.getShare());
+				map.put("time", ConstantUtil.showTime(p.getCreatetime().getTime()));
+				StringBuffer check = new StringBuffer("select f from Follow f where f.state = 0 and f.fuserinfoid = ").append(Long.parseLong(userid)).append(" and f.ffollowedid =").append(u.getId());
+				List<Object> clst = databaseHelper.getResultListByHql(check.toString());
+				if(clst.size()==0){
+					map.put("followed", 0);
+				}else{
+					Follow f = (Follow)clst.get(0);
+					map.put("followed", 1);
+				/*	map.put("followid", f.getId());*/
+				}
+				
+				StringBuffer queryexcist = new StringBuffer("select pp from PostingsPraise pp where pp.state = 0 and pp.fuserinfoid = ")
+						.append(userid).append(" and pp.fpostingsid = ").append(p.getId());
+				List<Object>ppList = databaseHelper.getResultListByHql(queryexcist.toString());
+				if(ppList.size()>0){
+					map.put("ispraise", 1);
+				}else{
+					map.put("ispraise", 0);
+				}
+				
+				StringBuffer querypostphoto = new StringBuffer("select pp from PostingsPhotos pp where pp.state = 0 and pp.fpostingsid = ")
+						.append(p.getId());
+				List<Object> plst = databaseHelper.getResultListByHql(querypostphoto.toString());
+				List<Map<String,Object>> plstMap = new ArrayList<Map<String,Object>>();
+				for (Object object2 : plst) {
+					PostingsPhotos pp = (PostingsPhotos) object2;
+					Map<String,Object> pmap = new HashMap<String,Object>();
+					pmap.put("id", pp.getId());
+					pmap.put("ffileinfoid", pp.getFfileinfoid());
+					pmap.put("photourl", pp.getPhotourl());
+					plstMap.add(pmap);
+				}
+				map.put("photos", plstMap);
+				lstMap.add(map);
+				
+			}
+		
+		String json = JsonUtil.getGson().toJson(lstMap);
+		JsonArray arr = (JsonArray) new JsonParser().parse(json);
+		JsonObject obj = new JsonObject();
+		obj.addProperty("total",count);
+		obj.addProperty("pages",pages);
+		obj.add("rows", arr);
+		
+		return obj.toString();
+	}
+
+	private int countpostingslist(String userid,String exampleid, String type,String fpostingstyleid)throws Exception{
+		StringBuffer count = new StringBuffer();
+		if(Integer.parseInt(type)==2){
+			 count = new StringBuffer("select count(p.id) from Postings p,UserInfo ui,Follow f where p.state = 0 and p.fuserinfoid = ui .id")
+					.append(" and p.fuserinfoid = f.ffollowedid and f.fuserinfoid =").append(userid);
+			 if(fpostingstyleid!=null&&fpostingstyleid.length()>0)count.append(" and p.fpostingstyleid = ").append(fpostingstyleid);
+		}else{
+			count = new StringBuffer("select count(p.id) from Postings p,UserInfo ui where p.state = 0 and p.fuserinfoid = ui .id ");
+			if(exampleid!=null&&exampleid.length()>0){
+				count.append(" and ui.id = ").append(exampleid);
+			 }
+			if(fpostingstyleid!=null&&fpostingstyleid.length()>0)count.append(" and p.fpostingstyleid = ").append(fpostingstyleid);
+		}
+		
+		count = conditionposting(count,type,userid);
+		List lst = databaseHelper.getResultListByHql(count.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+	
+	private StringBuffer conditionposting(StringBuffer hql,String type,String userid)throws Exception{
+		if(type==null&&type.length()==0) throw new Exception("参数错误");
+		if(Integer.parseInt(type)==1)/*{//热门
+			hql = hql.append(" and p.ishot = 1");}*/
+		
+		/*if(Integer.parseInt(type)==2){//关注
+			hql = hql.append(" and p.fuserinfoid = f.ffollowedid and f.fuserinfoid ").append(userid);}*/
+		
+		if(Integer.parseInt(type)==3){//我的
+			hql = hql.append(" and p.fuserinfoid = ").append(userid);}
+		
+		return hql;
+	}
+	
+	@Override
+	public String postingsdetail(String userid, String postingid) throws Exception {
+		// TODO Auto-generated method stub
+		if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		Map<String,Object> map = new HashMap<String,Object>();
+		
+		Postings p = (Postings) databaseHelper.getObjectById(Postings.class, Long.parseLong(postingid));
+		StringBuffer queryuser = new StringBuffer("select ui from UserInfo ui where ui.id = ").append(p.getFuserinfoid());
+		List<Object>uList = databaseHelper.getResultListByHql(queryuser.toString());
+		UserInfo u = (UserInfo) uList.get(0);
+		map.put("posting", p);
+		map.put("userinfo", u);
+		map.put("nickname", u.getNickname());
+		map.put("headimg", u.getHeadimg());
+		map.put("isexample", u.getIsexample());
+		StringBuffer queryexcist = new StringBuffer("select pp from PostingsPraise pp where pp.state = 0 and pp.fuserinfoid = ")
+				.append(userid).append(" and pp.fpostingsid = ").append(p.getId());
+		List<Object>ppList = databaseHelper.getResultListByHql(queryexcist.toString());
+		if(ppList.size()>0){
+			map.put("ispraise", 1);
+		}else{
+			map.put("ispraise", 0);
+		}
+		StringBuffer querypostingphotos = new StringBuffer("select pp from PostingsPhotos pp where pp.state = 0 and pp.fpostingsid = ")
+				.append(postingid);
+		List<Object> lst = databaseHelper.getResultListByHql(querypostingphotos.toString());
+		List<Map<String,Object>> plstMap = new ArrayList<Map<String,Object>>();
+		for (Object object : lst) {
+			PostingsPhotos pp = (PostingsPhotos) object;
+			Map<String,Object> pmap = new HashMap<String,Object>();
+			pmap.put("id", pp.getId());
+			pmap.put("ffileinfoid", pp.getFfileinfoid());
+			pmap.put("photourl", pp.getPhotourl());
+			plstMap.add(pmap);
+		}
+		map.put("photos", plstMap);
+		lstMap.add(map);
+		
+		String json = JsonUtil.getGson().toJson(lstMap);
+		return json;
+	}
+
+	@Override
+	public String postingscomments(String userid, String postingid,Integer start,Integer limit) throws Exception {
+		// TODO Auto-generated method stub
+		/*if(userid==null||userid.length()==0)throw new Exception("用户id错误");*/
+		int count = countcommentslist(postingid);
+		int pages = ConstantUtil.pages(count, limit);
+		
+		StringBuffer querypostingcomment = new StringBuffer("select pc,ui from PostingsComments pc,UserInfo ui where pc.fuserinfoid = ui.id and pc.fpostingsid = ")
+				.append(postingid);
+		List<Object[]> pclst = databaseHelper.getResultListByHql(querypostingcomment.toString(), start, limit);
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		Postings postings = (Postings) databaseHelper.getObjectById(Postings.class, Long.parseLong(postingid));
+		UserInfo author = (UserInfo) databaseHelper.getObjectById(UserInfo.class, postings.getFuserinfoid());
+		for (Object[] object : pclst) {
+			PostingsComments pc = (PostingsComments) object[0];
+			UserInfo ui = (UserInfo) object[1];
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("id", pc.getId());
+			map.put("headimg", ui.getHeadimg());
+			map.put("nickname", ui.getNickname());
+			map.put("time", ConstantUtil.showTime(pc.getCreatetime().getTime()));
+			map.put("comment", pc.getComment());
+			map.put("author", author);
+			if(pc.getFcommentid()!=null&&pc.getFcommentid()>0){
+				map.put("superaddition", 1);
+				PostingsComments pcomment = (PostingsComments)databaseHelper.getObjectById(PostingsComments.class, pc.getFcommentid());
+				UserInfo u1 = (UserInfo)databaseHelper.getObjectById(UserInfo.class, pcomment.getFuserinfoid());
+				
+				map.put("replyto", u1.getNickname()==null?u1.getUsername():u1.getNickname());
+				
+			}else{
+				map.put("superaddition", 0);
+			}
+			lstMap.add(map);
+		}
+		
+		String json = JsonUtil.getGson().toJson(lstMap);
+		JsonArray arr = (JsonArray) new JsonParser().parse(json);
+		JsonObject obj = new JsonObject();
+		obj.addProperty("total",count);
+		obj.addProperty("pages",pages);
+		obj.add("rows", arr);
+		
+		return obj.toString();
+	}
+
+	private int countcommentslist(String postingid)throws Exception{
+		StringBuffer count = new StringBuffer();
+			 count = new StringBuffer("select count(pc.id) from PostingsComments pc,UserInfo ui where pc.fuserinfoid = ui.id and pc.fpostingsid = ")
+				.append(postingid);
+		List lst = databaseHelper.getResultListByHql(count.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+	
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	public String praise(String userid, String postingid) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer queryexcist = new StringBuffer("select pp from PostingsPraise pp where pp.state = 0 and pp.fuserinfoid = ")
+				.append(userid).append(" and pp.fpostingsid = ").append(postingid);
+		Postings postings = (Postings) databaseHelper.getObjectById(Postings.class, Long.parseLong(postingid));
+		List<Object>ppList = databaseHelper.getResultListByHql(queryexcist.toString());
+		Map<String,Object> map = new HashMap<String,Object>();
+		if(ppList.size()>0){//取消点赞
+			PostingsPraise pp = (PostingsPraise) ppList.get(0);
+			pp.setState(-1);
+			databaseHelper.updateObject(pp);
+			postings.setPraise(postings.getPraise()-1);
+			databaseHelper.updateObject(postings);
+			map.put("msg", "success");
+			map.put("info", "取消点赞成功");
+		}else{//新增点赞
+			PostingsPraise pp1 = new PostingsPraise();
+			pp1.setFpostingsid(Long.parseLong(postingid));
+			pp1.setFuserinfoid(Long.parseLong(userid));
+			pp1.setState(0);
+			pp1.setCreatetime(new Date());
+			databaseHelper.persistObject(pp1);
+			postings.setPraise(postings.getPraise()+1);
+			databaseHelper.updateObject(postings);
+			map.put("msg", "success");
+			map.put("info", "点赞成功");
+		}
+		String json = JsonUtil.getGson().toJson(map);
+		
+		return json;
+	}
+
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	public String comment(String userid, String postingid, String comment, String commentid) throws Exception {
+		// TODO Auto-generated method stub
+	
+		Postings postings = (Postings) databaseHelper.getObjectById(Postings.class, Long.parseLong(postingid));
+	    if(commentid!=null&&commentid.length()>0){
+			if(!postings.getFuserinfoid().equals(Long.parseLong(userid))){
+				throw new Exception("只有发帖人才可回复评论");
+			}
+		}
+		PostingsComments comments = new PostingsComments();
+		Map<String,Object> map = new HashMap<String,Object>();
+		comments.setFuserinfoid(Long.parseLong(userid));
+		comments.setFpostingsid(Long.parseLong(postingid));
+		comments.setComment(comment);
+		comments.setState(0);
+		comments.setCreatetime(new Date());
+		comments.setFcommentid(commentid==null?0l:commentid==""?0l:Long.parseLong(commentid));
+		databaseHelper.persistObject(comments);
+
+		// 评论数+1
+		postings.setComments(postings.getComments()+1);
+		map.put("msg", "success");
+		map.put("info", "评论成功");
+		map.put("commentid", comments.getId());
+        String json = JsonUtil.getGson().toJson(map);
+		
+		return json;
+	}
+
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	public String reward(String userid, String postingid, String position) throws Exception {
+		// TODO Auto-generated method stub
+		if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+		if(postingid==null||postingid.length()==0)throw new Exception("postingid错误");
+		Map<String,Object> map = new HashMap<String,Object>();
+		StringBuffer queryexcist = new StringBuffer("select rl from RewardLog rl where rl.fpostingsid = ")
+				.append(postingid).append(" and rl.fuserinfoid = ").append(userid);
+		List<Object>rlList = databaseHelper.getResultListByHql(queryexcist.toString());
+		if(rlList.size()>0)throw new Exception("请勿重复打赏");
+		
+		//----------write by lcc ----start--------------
+		//找出发帖人
+		Postings p = (Postings)databaseHelper.getObjectById(Postings.class,Long.parseLong(postingid));
+		UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class,p.getFuserinfoid());
+		
+		if(ui.getIsexample()!=1)throw new Exception("只能打赏牛人发的帖子");
+		
+		//----------write by lcc ----end--------------
+		
+		RewardLog rewardLog = new RewardLog();
+		rewardLog.setFpostingsid(Long.parseLong(postingid));
+		rewardLog.setFuserinfoid(Long.parseLong(userid));
+		rewardLog.setMoney(Integer.parseInt(position));
+		rewardLog.setCreatetime(new Date());
+		rewardLog.setFrewardedid(ui.getId());
+		databaseHelper.persistObject(rewardLog);
+		
+		p.setReward(p.getReward()+1);
+		databaseHelper.updateObject(p);
+		map.put("msg", "success");
+		map.put("info", "打赏成功");
+        String json = JsonUtil.getGson().toJson(map);
+		
+		return json;
+	}
+
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	public String shareposting(String userid, String postingid) throws Exception {
+		// TODO Auto-generated method stub
+		Postings postings = (Postings) databaseHelper.getObjectById(Postings.class, Long.parseLong(postingid));
+		postings.setShare(postings.getShare()+1);
+		databaseHelper.updateObject(postings);
+		Map<String, Object>map = new HashMap<String, Object>();
+		map.put("msg", "success");
+		map.put("info", "分享成功");
+        String json = JsonUtil.getGson().toJson(map);
+		
+		return json;
+	}
+
+	@Override
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	public String sendpost(String userid,String fpostingstyleid, String postingscontent, String photos)throws Exception {
+		// TODO Auto-generated method stub
+		if(userid==null||userid.length()==0)throw new Exception("用户id错误");
+		if(fpostingstyleid==null||fpostingstyleid.length()==0)throw new Exception("帖子类型错误");
+		
+		Postings postings = new Postings();
+		postings.setPostingscontent(postingscontent);
+		postings.setFuserinfoid(Long.parseLong(userid));
+		postings.setIshot(0);
+		postings.setPraise(0);
+		postings.setReward(0);
+		postings.setShare(0);
+		postings.setState(0);
+		postings.setComments(0);
+		postings.setCreatetime(new Date());
+		postings.setFpostingstyleid(Long.parseLong(fpostingstyleid));
+		databaseHelper.persistObject(postings);
+		// 贴子图片
+		if(photos!=null&&photos.length()>0){
+		JsonArray arr = (JsonArray) JsonUtil.getJsonParser().parse(photos);
+		for (JsonElement jsonElement : arr) {
+			JsonObject jsonObject = jsonElement.getAsJsonObject();
+			/*Long id = jsonObject.get("id").getAsLong();*/
+			String url = jsonObject.get("url").getAsString();
+			PostingsPhotos postingsPhotos = new PostingsPhotos();
+			postingsPhotos.setFpostingsid(postings.getId());
+			postingsPhotos.setPhotourl(url);
+			postingsPhotos.setState(0);
+			postingsPhotos.setCreatetime(new Date());
+			databaseHelper.persistObject(postingsPhotos);
+		}
+	}
+		Map<String, Object>map = new HashMap<String, Object>();
+		map.put("msg", "success");
+		map.put("info", "发帖成功");
+        String json = JsonUtil.getGson().toJson(map);
+		
+		return json;
+		
+	}
+	
+
+	@Override
+	public String getrewardposition(String userid) throws Exception {
+		// TODO Auto-generated method stub
+		/*if(userid==null||userid.length()==0)throw new Exception("用户id错误");*/
+		StringBuffer countrewardset = new StringBuffer("select count(rs.id) from RewardSetting rs where rs.state = 0 ");
+		int count = Integer.parseInt(databaseHelper.getResultListByHql(countrewardset.toString()).get(0).toString());
+		
+		StringBuffer queryrewardset = new StringBuffer("select rs from RewardSetting rs where rs.state = 0 ");
+		List<Object>rList = databaseHelper.getResultListByHql(queryrewardset.toString());
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		for (Object object : rList) {
+			RewardSetting rs = (RewardSetting) object;
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("position", rs.getPosition());
+			lstMap.add(map);
+		}
+		
+		String json = JsonUtil.getGson().toJson(lstMap);
+		JsonArray arr = (JsonArray) new JsonParser().parse(json);
+		JsonObject obj = new JsonObject();
+		obj.addProperty("total",count);
+		obj.add("rows", arr);
+		
+		return obj.toString();
+	}
+
+	@Override
+	public String getpostingstyle() throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer querypostingstyle = new StringBuffer("select ps from PostingStyle ps where ps.state = 0 ");
+		List<Object>psList = databaseHelper.getResultListByHql(querypostingstyle.toString());
+		int count = psList.size();
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		for (Object object : psList) {
+			PostingStyle ps = (PostingStyle) object;
+			Map<String, Object>map = new HashMap<String, Object>();
+			map.put("id", ps.getId());
+			map.put("name", ps.getName());
+			lstMap.add(map);
+		}
+		String json = JsonUtil.getGson().toJson(lstMap);
+		JsonArray arr = (JsonArray) new JsonParser().parse(json);
+		JsonObject obj = new JsonObject();
+		obj.addProperty("total",count);
+		obj.add("rows", arr);
+		
+		return obj.toString();
+	}
+
+	@Override
+	public String sendmsg(String userid, String freceiverid, String content) throws Exception {
+		if(userid==null||userid.length()==0)throw new Exception("用户id错误");//发送人id
+		if(freceiverid==null||freceiverid.length()==0)throw new Exception("freceiverid错误");//接收人id
+		if(content==null||content.length()==0)throw new Exception("内容不能为空");
+		
+		UserInfo ui = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(userid));//发送人
+		UserInfo receiver = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(freceiverid));//接收人
+		
+		//检查notifyinfo表是否存在两个人的消息记录
+		StringBuffer query = new StringBuffer("select n from NotifyInfo n where  (n.fuserinfoid = ").append(userid)
+				.append(" and n.fsenduserid = ").append(freceiverid).append(") or (n.fuserinfoid = ").append(freceiverid).append(" and n.fsenduserid = ").append(userid).append(")");
+		
+		List<Object> lst = databaseHelper.getResultListByHql(query.toString());
+		
+		NotifyInfo n = null;
+		Date now = new Date();
+		if(lst.size()==0){
+			//没有  则新增
+			n = new NotifyInfo();
+			n.setContent(ConstantUtil.filterEmoji(content));
+			n.setTitle(ui.getNickname());
+			n.setCreatetime(now);
+			n.setFsenduserid(ui.getId());
+			n.setFuserinfoid(Long.parseLong(freceiverid));
+			n.setState(0);
+			n.setType(1);
+			
+			databaseHelper.persistObject(n);
+			
+			UserNotifyState uns1 = new UserNotifyState();
+			uns1.setFnotifyinfoid(n.getId());
+			uns1.setFuserinfoid(Long.parseLong(userid));
+			uns1.setState(0);
+			uns1.setTime(now);
+			databaseHelper.persistObject(uns1);
+			
+			UserNotifyState uns2 = new UserNotifyState();
+			uns2.setFnotifyinfoid(n.getId());
+			uns2.setFuserinfoid(Long.parseLong(userid));
+			uns2.setState(0);
+			uns2.setTime(now);
+			databaseHelper.persistObject(uns2);
+			
+		}else{
+			//有   则更新notifyinfo的content和title为发送人的昵称和内容
+			n = (NotifyInfo)lst.get(0);
+			n.setContent(ConstantUtil.filterEmoji(content));
+			//n.setTitle(ui.getNickname());
+			n.setCreatetime(now);
+			databaseHelper.updateObject(n);
+			
+			//检查双方对此回话消息的状态
+			StringBuffer check = new StringBuffer("select uns from UserNotifyState uns where uns.fuserinfoid = ").append(ui.getId()).append(" and uns.fnotifyinfoid = ").append(n.getId());
+			List<Object> clst = databaseHelper.getResultListByHql(check.toString());
+			if(clst.size()==0){
+				UserNotifyState uns1 = new UserNotifyState();
+				uns1.setFnotifyinfoid(n.getId());
+				uns1.setFuserinfoid(ui.getId());
+				uns1.setState(0);
+				uns1.setTime(now);
+				databaseHelper.persistObject(uns1);
+			}else{
+				UserNotifyState uns1 = (UserNotifyState)clst.get(0);
+				uns1.setState(-1);
+				uns1.setTime(now);
+				databaseHelper.updateObject(uns1);
+			}
+			
+			
+			check = new StringBuffer("select uns from UserNotifyState uns where uns.fuserinfoid = ").append(receiver.getId()).append(" and uns.fnotifyinfoid = ").append(n.getId());
+			clst = databaseHelper.getResultListByHql(check.toString());
+			if(clst.size()==0){
+				UserNotifyState uns2 = new UserNotifyState();
+				uns2.setFnotifyinfoid(n.getId());
+				uns2.setFuserinfoid(receiver.getId());
+				uns2.setState(0);
+				uns2.setTime(now);
+				databaseHelper.persistObject(uns2);
+			}else{
+				UserNotifyState uns2 = (UserNotifyState)clst.get(0);
+				uns2.setState(-1);
+				uns2.setTime(now);
+				databaseHelper.updateObject(uns2);
+			}
+		}
+		
+		//私信加入messageinfo表
+		MessageInfo mi = new MessageInfo();
+		mi.setContent(ConstantUtil.filterEmoji(content));
+		mi.setCreatetime(now);
+		mi.setFnotifyid(n.getId());
+		mi.setFsenduserid(ui.getId());
+		mi.setFuserinfoid(Long.parseLong(freceiverid));
+		mi.setState(0);
+		databaseHelper.persistObject(mi);
+		
+		//TODO websocket 消息推送   --- 参数   接收人的用户 username 接收人的用户id 消息内容
+		ConstantUtil.broadcast(receiver.getUsername(), receiver.getId(), content);
+		
+		Map<String,Object> map = new HashMap<String,Object>();
+		
+		map.put("msg", "success");
+		map.put("info", "发送成功");
+		
+		String json = JsonUtil.getGson().toJson(map);
+		return json;
+	}
+	
+	
+	
+}

@@ -1,0 +1,332 @@
+package com.hxy.isw.service.impl;
+
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.hxy.isw.entity.AccountInfo;
+import com.hxy.isw.entity.CodeLog;
+import com.hxy.isw.entity.GoldsDetail;
+import com.hxy.isw.entity.UserInfo;
+import com.hxy.isw.service.AppServiceUser;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.JsonUtil;
+import com.hxy.isw.util.SignatureUtil;
+
+/**
+* @author lcc
+* @date 2017年7月20日 下午3:13:41
+* @describe
+*/
+
+@Repository
+public class AppServiceUserImpl implements AppServiceUser {
+
+	@Autowired
+	DatabaseHelper databaseHelper;
+
+	@Override
+	public String getcode(String type, String mobile) throws Exception {
+		// TODO Auto-generated method stub
+		if(type==null||type.length()==0)throw new Exception("参数type错误");
+		
+		if(mobile==null||mobile.length()==0)throw new Exception("请输入手机号码");
+		
+		int int_type = Integer.parseInt(type);
+		
+		UserInfo ui = null;
+		if(int_type == 2){//忘记密码 ，需要输入手机号检查用户是否存在
+			
+			
+			StringBuffer querymobile = new StringBuffer("select ui from UserInfo ui where ui.mobile = '").append(mobile).append("'");
+			List<Object> lst = databaseHelper.getResultListByHql(querymobile.toString());
+			
+			if(lst.size()==0)throw new Exception("该手机号的用户不存在噢╮(╯_╰)╭");
+			
+			ui = (UserInfo)lst.get(0);
+			
+		}
+		
+		
+		//检查1分钟之内是否已经发送过
+		StringBuffer check = new StringBuffer("select cl from CodeLog cl where cl.mobile ='")
+				.append(mobile).append("' and cl.type = ").append(int_type).append(" order by cl.createtime desc");
+		
+		List<Object> lst = databaseHelper.getResultListByHql(check.toString());
+		
+		if(lst.size()>0){
+			CodeLog cl = (CodeLog)lst.get(0);
+			Date last = cl.getCreatetime();
+			Date now = new Date();
+			long diff = now.getTime()-last.getTime();
+			//如果小于1分钟
+			if(diff<1000l*60)throw new Exception("1分钟内请不要重复发送验证码噢╮(╯_╰)╭");
+		}
+		
+		//检查今天该手机号一共接收了多少次短信
+		check = new StringBuffer("select cl from CodeLog cl where ")
+				.append(" cl.mobile ='").append(mobile).append("' and date(cl.createtime) = curdate()");
+		
+		lst = databaseHelper.getResultListByHql(check.toString());
+		
+		if(lst.size()>10)throw new Exception("同一个手机号一天最多只能接收10次短信噢╮(╯_╰)╭");
+		
+		String code = ConstantUtil.gencode();
+		
+		String content = "【抓抓乐】验证码为"+code+"。请勿泄露。";
+		
+		boolean flag = ConstantUtil.yunpian(content,mobile);
+		
+		
+		if(!flag)throw new Exception("短信服务器异常`(*>﹏<*)′");
+		
+		CodeLog cl = new CodeLog();
+		cl.setCode(code);
+		//cl.setFuserid(ui.getId());
+		cl.setMobile(mobile);
+		cl.setCreatetime(new Date());
+		cl.setType(Integer.parseInt(type));
+		
+		databaseHelper.persistObject(cl);
+		
+		Map<String,Object> map = new HashMap<String,Object>();
+		
+		map.put("msg", "success");
+		map.put("info", "验证码发送成功*^_^* ");
+		
+		String json = JsonUtil.getGson().toJson(map);
+		return json;
+	}
+
+	@Override
+	public String login(String mobile, String password) throws Exception {
+		// TODO Auto-generated method stub
+		if(mobile==null||mobile.length()==0)throw new Exception("请输入手机号");
+		
+		if(!ConstantUtil.isPhoneLegal(mobile))throw new Exception("手机号码格式错误");
+		
+		if(password==null||password.length()==0)throw new Exception("请输入密码");
+		
+		StringBuffer querymobile = new StringBuffer("select ui from UserInfo ui where ui.state = 0 and ui.mobile = '").append(mobile).append("'");
+		List<Object> lst = databaseHelper.getResultListByHql(querymobile.toString());
+		
+		if(lst.size()==0)throw new Exception("该手机号的用户不存在噢╮(╯_╰)╭");
+		
+		UserInfo ui = (UserInfo)lst.get(0);
+		
+		if(ui.getState() < -1)throw new Exception("该手机号的用户已被禁用,请联系管理员o(︶︿︶)o");
+		
+		/*if(ui.getLoginstate() == 1){
+			
+			ui.setLoginstate(0);
+			databaseHelper.updateObject(ui);
+			
+			Map<String,Object> map = new HashMap<String,Object>();
+			
+			map.put("msg", "fail");
+			map.put("info", "该用户已在线，请不要重复登录(︶︿︶)o");
+			
+			String json = JsonUtil.getGson().toJson(map);
+			
+			return json;
+			
+		}*/
+		
+		String md5Password_real = ConstantUtil.getMD5Str(ui.getPassword()+SignatureUtil.TOKEN,null);
+		
+		if(!md5Password_real.equals(password))throw new Exception("密码不正确噢╮(╯_╰)╭");
+		
+		/*//登录成功，将用户在线状态置为1
+		if(ui.getLoginstate()!=1){
+			ui.setLoginstate(1);
+			databaseHelper.updateObject(ui);
+		}*/
+		
+		return getuserinfo(ui);
+	}
+	
+	//获取用户信息
+	private String getuserinfo(UserInfo ui){
+		Map<String,Object> map = new HashMap<String,Object>();
+		
+		map.put("msg", "success");
+		map.put("info", "登录成功");
+		map.put("userid", ui.getId());
+		map.put("isexample", ui.getIsexample());
+		map.put("name",ui.getName());
+		map.put("nickname",ui.getNickname());
+		map.put("speech",ui.getSpeech());
+		map.put("golds",ui.getGolds());
+		map.put("virtualcapital",ui.getVirtualcapital());
+		map.put("mobile",ui.getMobile());
+		map.put("totalrecharge",ui.getTotalrecharge());
+		map.put("username",ui.getUsername());
+		
+		String json = JsonUtil.getGson().toJson(map);
+		return json;
+	}
+
+	@Override
+	public String registe(String mobile, String password, String code,String faccountid,String finvateid) throws Exception {
+		// TODO Auto-generated method stub
+		if(mobile==null||mobile.length()==0)throw new Exception("请输入手机号");
+		
+		if(!ConstantUtil.isPhoneLegal(mobile))throw new Exception("手机号码格式错误");
+		
+		if(password==null||password.length()==0)throw new Exception("请输入密码");
+		
+		if(password==null||password.length()==0)throw new Exception("请输入验证码");
+		
+		String hql = "select u from UserInfo u where u.mobile = '"+mobile+"'";
+		List<Object> lst =  databaseHelper.getResultListByHql(hql);
+		if(lst.size()>0)throw new Exception("该手机已注册");
+		int type = 1;
+		checkcode(mobile, type, code);
+		
+		UserInfo u = new UserInfo();
+		u.setMobile(mobile);
+		u.setPassword(password);
+		u.setCreatetime(new Date());
+		u.setUsername(mobile);
+		u.setGolds(0d);
+		u.setVirtualcapital(0d);
+		
+		if(finvateid!=null&&finvateid.length()>0&&!finvateid.equals("null")){
+			u.setFinvateid(Long.parseLong(finvateid));
+			
+			//邀请人获得金币
+			UserInfo invater = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(finvateid));
+			invater.setGolds(invater.getGolds()+ConstantUtil.setting.getInvitefriends());
+			databaseHelper.updateObject(invater);
+			
+			//添加到金币表
+			GoldsDetail gd = new GoldsDetail();
+			gd.setCreatetime(new Date());
+			gd.setFuserinfoid(invater.getId());
+			gd.setGolds(Double.parseDouble(ConstantUtil.setting.getInvitefriends().toString()));
+			gd.setState(0);
+			gd.setType(3);
+			databaseHelper.persistObject(gd);
+			
+		}else u.setFinvateid(0l);
+		
+		if(faccountid!=null&&faccountid.length()>0&&!faccountid.equals("null"))u.setFaccountid(Long.parseLong(faccountid));
+		else{
+			//查找默认业务员
+			StringBuffer query = new StringBuffer("select a from AccountInfo a where a.state = 0 and a.defaultaccount = 1 and a.role = ").append(ConstantUtil.ROLE_COMPANY_SALESMAN);
+			List<Object> qlst = databaseHelper.getResultListByHql(query.toString());
+			
+			if(qlst.size()==0)u.setFaccountid(0l);
+			else{
+				AccountInfo a = (AccountInfo)qlst.get(0);
+				u.setFaccountid(a.getId());
+			}
+		}
+		u.setState(0);
+		u.setSpeech(0);
+		u.setIsexample(0);
+		
+		databaseHelper.persistObject(u);
+		
+		if(finvateid!=null&&finvateid.length()>0&&!finvateid.equals("null")){
+			//被邀请人获得金币
+			u.setGolds(u.getGolds()+ConstantUtil.setting.getFriends());
+			databaseHelper.updateObject(u);
+			
+			//添加到金币表
+			GoldsDetail gdu = new GoldsDetail();
+			gdu.setCreatetime(new Date());
+			gdu.setFuserinfoid(u.getId());
+			gdu.setGolds(Double.parseDouble(ConstantUtil.setting.getInvitefriends().toString()));
+			gdu.setState(0);
+			gdu.setType(3);
+			databaseHelper.persistObject(gdu);
+		}
+		
+		//TODO 生成推广链接和推广二维码
+		
+        Map<String,Object> map = new HashMap<String,Object>();
+		
+		map.put("msg", "success");
+		map.put("info", "注册成功");
+		String json = JsonUtil.getGson().toJson(map);
+		return json;
+		
+	}
+	
+	//检查验证码
+	private void checkcode(String mobile,int type,String code) throws Exception {
+		
+		String msg1 = "",msg2 = "";
+		if(type==1){
+			msg1 = "注册的手机验证码未成功发送噢╮(╯_╰)╭";
+			msg2 = "注册的手机验证码不正确噢╮(╯_╰)╭";
+		}else if(type==2){
+			msg1 = "忘记密码的验证码未成功发送噢╮(╯_╰)╭";
+			msg2 = "忘记密码的验证码不正确噢╮(╯_╰)╭";
+		}
+		
+		StringBuffer queryloginpwdcode = new StringBuffer("select cl from CodeLog cl where cl.mobile =")
+				.append(Long.parseLong(mobile)).append(" and cl.type = ").append(type).append(" order by cl.createtime desc");
+		
+		List<Object> lst = databaseHelper.getResultListByHql(queryloginpwdcode.toString());
+		
+		if(lst.size()==0)throw new Exception(msg1);
+		
+		CodeLog cl = (CodeLog)lst.get(0);
+		
+		if(!cl.getCode().equals(code))throw new Exception(msg2);
+	}
+
+	@Override
+	public String forgotpassword(String mobile, String newpassword, String code) throws Exception {
+		// TODO Auto-generated method stub
+		// TODO Auto-generated method stub
+		if(mobile==null||mobile.length()==0)throw new Exception("请输入手机号");
+		if(newpassword==null||newpassword.length()==0)throw new Exception("请输入新密码");
+		if(newpassword.length()>16||newpassword.length()<6)throw new Exception("新密码必须为6到16位");
+		
+		if(!ConstantUtil.isPhoneLegal(mobile))throw new Exception("手机号码格式错误");
+		
+		StringBuffer querymobile = new StringBuffer("select ui from UserInfo ui where ui.state = 0 and ui.mobile = '").append(mobile).append("'");
+		List<Object> lst = databaseHelper.getResultListByHql(querymobile.toString());
+		
+		if(lst.size()==0)throw new Exception("该手机号的用户不存在噢╮(╯_╰)╭");
+		
+		UserInfo ui = (UserInfo)lst.get(0);
+		
+		if(ui.getState() < -1)throw new Exception("该手机号的用户已被禁用,请联系管理员噢╮(╯_╰)╭");
+		
+		checkcode(mobile, 2, code);
+		
+		ui.setPassword(newpassword);
+		
+		databaseHelper.updateObject(ui);
+		
+		Map<String,Object> map = new HashMap<String,Object>();
+		
+		map.put("msg", "success");
+		map.put("info", "密码修改成功*^_^* ");
+		
+		String json = JsonUtil.getGson().toJson(map);
+		
+		return json;
+	}
+
+	@Override
+	public String sevendayprofit(String userid) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	@Override
+	public String myprofit(String userid) throws Exception {
+		// TODO Auto-generated method stub
+		return null;
+	}
+}

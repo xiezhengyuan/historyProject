@@ -1,0 +1,237 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<div class="page-header">
+	<h1>
+		系统设置
+		<small>
+			<i class="ace-icon fa fa-angle-double-right"></i>
+			基本设置
+		</small>
+	</h1>
+</div><!-- /.page-header -->
+ <form class="form-horizontal" role="form" id="form_editset">	
+ <input id="id" name="id" type="hidden">			
+<div style="margin-bottom: 50px">
+<ul class="nav nav-tabs" role="tablist">
+  <li role="presentation" class=""><a href="" role="tab" data-toggle="tab">基本设置</a></li>
+  
+</ul>
+<div class="tab-content">
+	<!-- panel1 start -->
+  <div role="tabpanel" class="tab-pane active" id="tab_company">
+				<!-- 	<hr style="height:1px;border:none;border-top:1px solid red;" /> -->
+	
+   <div>
+   <span>股票资金配比：</span><input type="text" name="sharesproportion" msg="请输入股票资金配比" id="sharesproportion" >
+   </div>	 
+   
+   <div>
+   <span>外汇资金配比：</span><input type="text" name="foreignexchangeproportion" msg="请输入外汇资金配比" id="foreignexchangeproportion" >
+   </div>
+   
+  </div>
+
+</div>
+</div>
+<!-----------------------------------------------------------------------------------------------------------------------------------------  -->
+
+<!-----------------------------------------------------------------------------------------------------------------------------------------  -->
+<ul class="nav nav-tabs" role="tablist">
+  <li role="presentation" class="active"><a href="#tab_company" role="tab" data-toggle="tab">计划购买设置</a></li>
+</ul>
+<div class="tab-content">
+	<!-- panel1 start -->
+  <div role="tabpanel" class="tab-pane active" id="tab_company">
+				<!-- 	<hr style="height:1px;border:none;border-top:1px solid red;" /> -->
+					
+   <div>
+   <span>抢购金币：</span><input type="text" name="purchasegold" msg="请输入抢购金币" id="purchasegold" >
+   </div>	 
+   
+   <div>
+   <span>观摩金币：</span><input type="text" name="viewgold" msg="请输入观摩金币" id="viewgold" >
+   </div>
+   
+    <div>
+   <span>订阅金币：</span><input type="text" name="subscriptiongold" msg="请输入订阅金币" id="subscriptiongold" >
+   </div>
+  </div>
+
+</div>
+
+<!-----------------------------------------------------------------------------------------------------------------------------------------  -->
+<ul class="nav nav-tabs" role="tablist">
+  <li role="presentation" class="active"><a href="#tab_company" role="tab" data-toggle="tab">金币分成</a></li>
+</ul>
+<div class="tab-content">
+	<!-- panel1 start -->
+  <div role="tabpanel" class="tab-pane active" id="tab_company">
+				<!-- 	<hr style="height:1px;border:none;border-top:1px solid red;" /> -->
+					
+   <div>
+   <span>计划成功，牛人获得分成：</span><input type="text" name="plansuccess" msg="请输入分成" id="plansuccess" >
+  
+   </div>	 
+   
+   <div>
+   <span>计划失败，牛人获得分成：</span><input type="text" name="planfail" msg="请输入分成" id="planfail" >，退还用户分成：<input type="text" name="returnuser" msg="请输入返还金币" id="returnuser" >金币
+   </div>
+   
+  </div>
+
+</div>
+
+<!-----------------------------------------------------------------------------------------------------------------------------------------  -->
+<ul class="nav nav-tabs" role="tablist">
+  <li role="presentation" class="active"><a href="#tab_company" role="tab" data-toggle="tab">邀请好友</a></li>
+</ul>
+<div class="tab-content">
+	<!-- panel1 start -->
+  <div role="tabpanel" class="tab-pane active" id="tab_company">
+				<!-- 	<hr style="height:1px;border:none;border-top:1px solid red;" /> -->
+					
+   <div>
+   <span>用户邀请好友获得：</span><input type="text" name="invitefriends" msg="请输入邀请获得" id="invitefriends" >金币，该好友获得<input type="text" name="friends" msg="请输入好友获得" id="friends" >金币
+   <button type="button" class="btn btn-primary btn-sm" id="editset">设置</button>
+   </div>	 
+
+   
+  </div>
+
+</div>
+</form>
+<!-- ----------------------------------------------------------------------------------------------------------------------------------------------- -->
+<div>
+<ul class="nav nav-tabs" role="tablist">
+  <li role="presentation" class="active"><a href="#tab_company" role="tab" data-toggle="tab">打赏设置</a></li>
+</ul>
+<div class="tab-content">
+	<!-- panel1 start -->
+  <div role="tabpanel" class="tab-pane active" id="tab_company">
+				<!-- 	<hr style="height:1px;border:none;border-top:1px solid red;" /> -->
+					
+   <div>
+   <span>随机档位：</span><input type="text" name="position" msg="请输入档位" id="position" >
+   <button type="button" class="btn btn-primary btn-sm" id="editreward">添加</button>
+                            <table id="reward_grid_table"></table>
+							<!-- jqgrid 页码栏-->
+							<div id="reward_grid_pager"></div>
+   </div>	 
+   
+   
+   
+  </div>
+
+</div>
+</div>
+<script>
+Q.grid_selector = "reward_grid_table";
+Q.pager_selector = "reward_grid_pager";
+
+var url = Q.url+"/setting/queryreward.action";
+
+var colModel = [
+                { label: 'ID', name: 'id',align :'center',hidden:true,sortable : false,key:true },
+                { label: '档位', name: 'position',align :'center', sortable : false },
+                {  
+                    name: '操作' ,align :'center', fixed: true, sortable: false, resize: false,  
+                    //formatter:'actions',  
+                    formatter: function (value, grid, rows, state) { 
+                    	var btn = "";
+                    	btn += Q.gridbtn_del(Q.grid_selector,rows.id) ;
+                    	return  btn;
+                    }  
+                }
+            	];
+
+var caption = "档位列表";
+
+var postData = {};
+
+Q.ExtJqGrid({
+	"grid":Q.grid_selector,
+	"pager":Q.pager_selector,
+	"url":url,
+	"param":postData,
+	"model":colModel,
+	"caption":caption
+})
+
+function del_reward_grid_table(id,stated){
+	$._ajax({
+		url: Q.url+"/setting/delreward.action",
+		data:{"rewardid":id},
+		success: function(data){
+			if( typeof(data) == 'object'){
+				if( data.op == 'success' ){
+					Q.toastr("提示","操作成功",'success');
+					//reloadgrid
+					$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+				}else if(data.op == 'fail')
+					Q.toastr("提示",data.msg,'error');
+				else
+					Q.toastr("提示","操作失败",'error');
+			}else {
+				Q.toastr("提示","操作失败",'error');
+			}
+		}
+	});
+}
+
+Q.getObjById("Setting",1,function(d){
+	$('#form_editset').resetObjectForm(d);
+})
+
+
+function returnbfbtn(){
+	var from = "company/company.jsp";
+	Q.viewJsp(Q.page_content,from);
+}
+
+
+$('#editset').click(function(){
+	if(!$('#form_editset').checkForm())return;
+	var o = $('#form_editset').serializeObject();
+	
+	$._ajax({
+		url: Q.url+"/setting/modifyset.action",
+		data:o,
+		success: function(data){
+			if( typeof(data) == 'object'){
+				if( data.op == 'success' ){
+					Q.toastr("提示","操作成功",'success');
+					queryreward();
+				}else if(data.op == 'fail')
+					Q.toastr("提示",data.msg,'error');
+				else
+					Q.toastr("提示","操作失败",'error');
+			}else {
+				Q.toastr("提示","操作失败",'error');
+			}
+		}
+	});
+})
+
+$('#editreward').click(function(){
+	var position = $("#position").val();
+	$._ajax({
+		url: Q.url+"/setting/addreward.action",
+		data:{"position":position},
+		success: function(data){
+			if( typeof(data) == 'object'){
+				if( data.op == 'success' ){
+					Q.toastr("提示","操作成功",'success');
+					$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+				}else if(data.op == 'fail')
+					Q.toastr("提示",data.msg,'error');
+				else
+					Q.toastr("提示","操作失败",'error');
+			}else {
+				Q.toastr("提示","操作失败",'error');
+			}
+		}
+	});
+})
+
+
+
+</script>

@@ -1,0 +1,133 @@
+package com.hxy.isw.service.impl;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.hxy.isw.entity.AccountInfo;
+import com.hxy.isw.entity.Company;
+import com.hxy.isw.entity.UserChangeLog;
+import com.hxy.isw.entity.UserEmployeeRelation;
+import com.hxy.isw.service.ChangeUserService;
+import com.hxy.isw.util.DatabaseHelper;
+
+@Service
+public class ChangeUserServiceImp implements ChangeUserService{
+
+	@Autowired
+	DatabaseHelper  databaseHelper;
+	@Override
+	public List<Map<String, Object>> querycompany(String companyname) throws Exception {
+		StringBuffer Hql=new StringBuffer("select c from Company c ");
+		Hql.append("where c.company like '%"+companyname+"%' and c.state !=-2");
+		List<Map<String, Object>>  lstmap=new ArrayList<Map<String,Object>>();
+		List<Object> lst = databaseHelper.getResultListByHql(Hql.toString());
+		for (Object o : lst) {
+			Company c=(Company) o; 
+			Map<String, Object> map=new HashMap<String, Object>();
+			map.put("id", c.getId().toString());
+			map.put("company", c.getCompany().toString());
+			lstmap.add(map);
+		}
+		return lstmap;
+	}
+	@Override
+	public int countqueryuserbycompany(long companyid) throws Exception {
+		StringBuffer sql=new StringBuffer("SELECT count(ua.id) from  ");
+		sql.append("(SELECT u.id,u.nickname,u.mobile,a.fparentid, a.`name` ywyname from userinfo u LEFT JOIN accountinfo a on u.faccountid=a.id where u.state != -2 and u.faccountid in (SELECT a1.id from accountinfo a1 where a1.fcompanyid="+companyid+")) ua ");
+		sql.append("LEFT JOIN accountinfo a2 ON ua.fparentid=a2.id");
+		List<Object> lst = databaseHelper.getResultListBySql(sql.toString());
+		return lst==null?0:Integer.parseInt(lst.get(0).toString());
+	}
+	@Override
+	public List<Map<String, Object>> queryuserbycompany(long companyid, int start, int limit) throws Exception {
+		StringBuffer sql=new StringBuffer("SELECT ua.id,ua.nickname,ua.mobile,ua.ywyname,a2.`name` from ");
+		sql.append("(SELECT u.id,u.nickname,u.mobile,a.fparentid,a.`name` as ywyname from userinfo u LEFT JOIN accountinfo a on u.faccountid=a.id where u.state != -2 and u.faccountid in (SELECT a1.id from accountinfo a1 where a1.fcompanyid="+companyid+")) ua ");
+		sql.append("LEFT JOIN accountinfo a2 ON ua.fparentid=a2.id");
+		List<Object[]> lst=databaseHelper.getResultListBySql(sql.toString(), start, limit);
+		List<Map<String, Object>> lstmap=new ArrayList<Map<String,Object>>();
+		for (Object[] o : lst) {
+			Map<String, Object> map =new HashMap<String, Object>();
+			map.put("id",o[0].toString() );
+			map.put("nickname",o[1].toString() );
+			map.put("mobile",o[2].toString() );
+			map.put("ywyname",o[3].toString() );
+			map.put("jlname",o[4].toString() );
+			map.put("companyid",companyid+"" );
+			lstmap.add(map);
+		}
+		return lstmap;
+	}
+	@Override
+	public List<Map<String, Object>> queryjlbycompanyid(long companyid) throws Exception {
+		StringBuffer Hql=new StringBuffer("SELECT  a  from AccountInfo a where  a.role=4 and a.state=0 ");
+		Hql.append("and  a.fcompanyid ="+companyid+"");
+		List<Map<String, Object>>  lstmap=new ArrayList<Map<String,Object>>();
+		List<Object> lst = databaseHelper.getResultListByHql(Hql.toString());
+		for (Object o : lst) {
+			AccountInfo a=(AccountInfo) o; 
+			Map<String, Object> map=new HashMap<String, Object>();
+			map.put("id", a.getId().toString());
+			map.put("name", a.getName().toString());
+			lstmap.add(map);
+		}
+		return lstmap;
+	}
+	@Override
+	public List<Map<String, Object>> queryywybyjlid(long jlid) throws Exception {
+		StringBuffer Hql=new StringBuffer("select a  from AccountInfo a where  a.role=5 and a.state=0 ");
+		Hql.append("AND a.fparentid="+jlid+" ");
+		List<Map<String, Object>>  lstmap=new ArrayList<Map<String,Object>>();
+		List<Object> lst = databaseHelper.getResultListByHql(Hql.toString());
+		for (Object o : lst) {
+			AccountInfo a=(AccountInfo) o; 
+			Map<String, Object> map=new HashMap<String, Object>();
+			map.put("id", a.getId().toString());
+			map.put("name", a.getName().toString());
+			lstmap.add(map);
+		}
+		return lstmap;
+	}
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void confirmtochange(String users, long ywyid, long fdoitid,long incompanyid) throws Exception {
+		
+		String[] usersarr= users.split(",");
+		Date date=new Date();
+		for (int i = 0; i < usersarr.length; i++) {
+			String[] user=usersarr[i].split("-");
+			 UserChangeLog ucl=new UserChangeLog();
+			 ucl.setFuserid(Long.parseLong(user[0]));
+			 ucl.setOutfcompanyid(Long.parseLong(user[1]));
+			 ucl.setInfcompanyid(incompanyid);
+			 ucl.setFaccountid(ywyid);
+			 ucl.setFdoitid(fdoitid);
+			 ucl.setCreatetime(date);
+			 ucl.setState(0);
+			 //加入记录表
+			 databaseHelper.persistObject(ucl);
+			 //更改userinfo表中的业务员
+			 String sql1="UPDATE userinfo  u set u.faccountid="+ywyid+" where u.id="+Long.parseLong(user[0])+"";
+			 databaseHelper.executeNativeSql(sql1);
+			 //将关系表中的状态设为-1
+			 String sql2="update useremployeerelation u SET u.state=-1 where u.fuserinfoid="+Long.parseLong(user[0])+"";
+			 databaseHelper.executeNativeSql(sql2);
+			 //在关系表中添加数据
+			 UserEmployeeRelation uer=new UserEmployeeRelation();
+			 uer.setFuserinfoid(Long.parseLong(user[0]));
+			 uer.setFaccountid(ywyid);
+			 uer.setCreatetime(date);
+			 uer.setState(0);
+			 databaseHelper.persistObject(uer);
+		}
+		
+	}
+
+}

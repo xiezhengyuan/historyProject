@@ -1,0 +1,12 @@
+package com.hxy.isw.service;
+
+import java.util.List;
+import java.util.Map;
+
+import com.google.gson.JsonArray;
+import com.hxy.isw.entity.AccountInfo;
+
+public interface StatisticService {
+	public JsonArray querywalletstatistic(AccountInfo emp,String starttime,String type,String companyid) throws Exception;
+	public JsonArray queryuserstatistic(AccountInfo emp,String starttime,String type,String companyid) throws Exception;
+}

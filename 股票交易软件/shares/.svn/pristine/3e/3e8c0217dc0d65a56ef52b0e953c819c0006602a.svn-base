@@ -1,0 +1,37 @@
+package com.hxy.isw.service;
+
+import com.hxy.isw.entity.ExamplePlan;
+
+/**
+* @author lcc
+* @date 2017年7月20日 下午3:13:13
+* @describe
+*/
+public interface AppServiceExample {
+	public String quotation4hs(String userid,String type,int start,int limit) throws Exception;
+	public String quotation4wh(String userid,int start,int limit) throws Exception;
+	public String index4shares(String userid,String type) throws Exception;
+	public String queryshareslist(String userid,String condition,int start,int limit) throws Exception;
+	public String sharesdetail(String userid,String shareid,String code,String type) throws Exception;
+	public String sharesKline(String userid,String shareid,String code,String type) throws Exception;
+	public String queryexamplelist(String userid,String condition,int start,int limit) throws Exception;
+	public String profitrankinglist(String userid,String type,int start,int limit) throws Exception;
+	public String historylog(String userid,String exampleid,String type,int start,int limit) throws Exception;
+	public String houselog(String userid,String exampleid,String type,int start,int limit) throws Exception;
+	public String popularityrankinglist(String userid,int start,int limit) throws Exception;
+	public String planrankinglist(String userid,String type,int start,int limit) throws Exception;
+	public String exampledetail(String userid,String exampleid) throws Exception;
+	public String planlist(String userid,String exampleid,String self,String type,String tag,int start,int limit) throws Exception;
+	public String follow(String userid,String exampleid) throws Exception;
+	public String subscription(String userid,String exampleid,String month,String amount) throws Exception;
+//	public String documentary(String userid,String exampleid,String amount) throws Exception;
+	public String documentary(String userid,String exampleid,String type,String value) throws Exception;
+	public String plandetail(String userid,String exampleid,String planid) throws Exception;
+	public String planwarehouse(String userid,String exampleid,String planid,int rows) throws Exception;
+	public String planofnew(String userid,String exampleid,String planid,int tag,int rows) throws Exception;
+	public String watchplan(String userid,String exampleid,String planid,String amount) throws Exception;
+	public String panicbuying(String userid,String exampleid,String planid,String amount) throws Exception;
+	public String publishplan(ExamplePlan ep) throws Exception;
+	public String profitstatistic(String userid,String exampleid,int tag) throws Exception;
+	public String tradestatistic(String userid,String exampleid,int tag,int type) throws Exception;
+}

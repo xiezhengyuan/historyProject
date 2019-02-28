@@ -1,0 +1,302 @@
+package com.hxy.isw.service.impl;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.poi.hssf.usermodel.HSSFRow;
+import org.apache.poi.hssf.usermodel.HSSFSheet;
+import org.apache.poi.hssf.usermodel.HSSFWorkbook;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonParser;
+import com.hxy.isw.entity.AccountInfo;
+import com.hxy.isw.entity.CashInfo;
+import com.hxy.isw.entity.UserInfo;
+import com.hxy.isw.entity.UserRecharge;
+import com.hxy.isw.service.MoneyService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.Sys;
+
+@Repository
+public class MoneyServiceImpl implements MoneyService{
+
+	@Autowired
+	DatabaseHelper databaseHelper;
+
+	@Override
+	public List<Map<String, Object>> querycash(AccountInfo emp, String name, String mobile, String state,Integer start,
+			Integer limit) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select ci,ui from CashInfo ci,UserInfo ui  where ci.fuserinfoid = ui.id and ci.state = ")
+				.append(Integer.parseInt(state));
+		hql = conditioncash(hql,emp, name,mobile);
+		hql = hql.append(" order by ci.createtime desc");
+		List<Object[]> lst = databaseHelper.getResultListByHql(hql.toString(),start,limit);
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		for (Object[] obj : lst) {
+			CashInfo c = (CashInfo) obj[0];
+			UserInfo u = (UserInfo) obj[1];
+			
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("id", c.getId());
+			map.put("name", u.getName());
+			map.put("mobile", u.getMobile());
+			map.put("amount", c.getAmount());
+			map.put("rmbamount", c.getAmount()*ConstantUtil.RATE);
+			map.put("time", c.getCreatetime().toString());
+			
+			lstMap.add(map);
+		}
+		
+		return lstMap;
+	}
+
+	@Override
+	public int countcash(AccountInfo emp, String name, String mobile, String state) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select count(ci.id) from CashInfo ci,UserInfo ui  where ci.fuserinfoid = ui.id and ci.state = ")
+				.append(Integer.parseInt(state));
+		hql = conditioncash(hql, emp, name, mobile);
+		List lst = databaseHelper.getResultListByHql(hql.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+
+	private StringBuffer conditioncash(StringBuffer hql,AccountInfo emp,String name,String mobile){
+	
+		if(name!=null&&name.length()>0)
+			hql = hql.append(" and ui.name like '%").append(name).append("%'");
+		
+		if(mobile!=null&&mobile.length()>0)
+			hql = hql.append(" and ui.mobile like '%").append(mobile).append("%'");
+		
+		return hql;
+	}
+
+	@Override
+	public List<Map<String, Object>> querycharge(AccountInfo emp, String name, String mobile, String starttime,
+			String endtime, Integer start, Integer limit) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select uc,ui from UserRecharge uc,UserInfo ui  where uc.fuserinfoid = ui.id and uc.paystate = 1");
+		hql = conditioncharge(hql,emp, name,mobile,starttime,endtime);
+		hql = hql.append(" order by uc.createtime desc");
+		List<Object[]> lst = databaseHelper.getResultListByHql(hql.toString(),start,limit);
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		Map<String, Object>map1 = new HashMap<String, Object>();
+		StringBuffer querytotalrecharge = new StringBuffer("select SUM(uc.amount) 'a' from userrecharge uc where  uc.paystate =1 ");
+		List<Object> lst0 = databaseHelper.getResultListBySql(querytotalrecharge.toString());
+		Double totalrecharge = 0.0;
+		if(lst0==null||lst0.size()==0||lst0.get(0)==null){
+			totalrecharge = 0.0;
+		}else{totalrecharge = Double.parseDouble(lst0.get(0).toString());}
+		for (Object[] obj : lst) {
+			UserRecharge uc = (UserRecharge) obj[0];
+			UserInfo u = (UserInfo) obj[1];
+			Map<String,Object> map = new HashMap<String,Object>();
+			map.put("id", uc.getId());
+			map.put("name", u.getName());
+			map.put("mobile", u.getMobile());
+			map.put("amount", uc.getAmount());
+			map.put("golds", uc.getGolds());
+			map.put("time", uc.getCreatetime().toString());
+			
+			lstMap.add(map);
+		}
+		map1.put("totalrecharge", totalrecharge);
+		lstMap.add(map1);
+		return lstMap;
+	}
+
+	@Override
+	public int countcharge(AccountInfo emp, String name, String mobile,String starttime,String endtime) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select count(uc.id) from UserRecharge uc,UserInfo ui  where uc.fuserinfoid = ui.id and uc.paystate = 1");
+		hql = conditioncharge(hql, emp, name, mobile,starttime,endtime);
+		List lst = databaseHelper.getResultListByHql(hql.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+
+	private StringBuffer conditioncharge(StringBuffer hql,AccountInfo emp,String name,String mobile,String starttime,String endtime){
+		
+		if(name!=null&&name.length()>0)
+			hql = hql.append(" and ui.name like '%").append(name).append("%'");
+		
+		if(mobile!=null&&mobile.length()>0)
+			hql = hql.append(" and ui.mobile like '%").append(mobile).append("%'");
+		
+		if(starttime!=null&&starttime.length()>0){
+			int year = Integer.parseInt(starttime.split("-")[0]);
+			int month = Integer.parseInt(starttime.split("-")[1]);
+			int day = Integer.parseInt(starttime.split("-")[2]);
+			hql = hql.append(" and year(uc.createtime) > ").append(year)
+					.append(" and month(uc.createtime) > ").append(month)
+					.append(" and day(uc.createtime) > ").append(day);
+		}
+		if(endtime!=null&&endtime.length()>0){
+			int year = Integer.parseInt(endtime.split("-")[0]);
+			int month = Integer.parseInt(endtime.split("-")[1]);
+			int day = Integer.parseInt(endtime.split("-")[2]);
+			hql = hql.append(" and year(uc.createtime) < ").append(year)
+					.append(" and month(uc.createtime) < ").append(month)
+					.append(" and day(uc.createtime) < ").append(day);
+		}
+		
+		return hql;
+	}
+
+	@Override
+	public void updatestate(String id, String state) throws Exception {
+		// TODO Auto-generated method stub
+		if(id!=null&&id.length()>0){
+			Long gid = Long.parseLong(id);
+			int states=Integer.parseInt(state);
+			CashInfo cashInfo = (CashInfo) databaseHelper.getObjectById(CashInfo.class, gid);
+			cashInfo.setState(states);
+	       
+			}
+	}
+
+	@Override
+	public String outportcashlog(AccountInfo emp,String name, String mobile,String state) throws Exception {
+		// TODO Auto-generated method stub
+		StringBuffer hql = new StringBuffer("select ci,ui from CashInfo ci,UserInfo ui  where ci.fuserinfoid = ui.id and ci.state = ")
+				.append(Integer.parseInt(state));
+		hql = conditioncash(hql,emp, name,mobile);
+		hql = hql.append(" order by ci.createtime desc");
+         List<Object[]> lst = databaseHelper.getResultListByHql(hql.toString());
+		String filename = gen_excel4order(lst);
+		
+		return filename;
+	}
+	
+	
+
+	private String gen_excel4order(List<Object[]> lst){
+		 HSSFWorkbook hssfworkbook = new HSSFWorkbook(); 
+		 HSSFSheet sheet = hssfworkbook.createSheet("new sheet");
+		 HSSFRow row = sheet.createRow(0);
+		 int count = 0;
+		
+		 
+		 row.createCell(0).setCellValue("编号");
+		 row.createCell(1).setCellValue("姓名");
+		 row.createCell(2).setCellValue("联系方式");
+	   	 row.createCell(3).setCellValue("提现金币");
+	   	 row.createCell(4).setCellValue("对应额度");
+	   	 row.createCell(5).setCellValue("审核时间");
+	   	row.createCell(6).setCellValue("提现状态");
+	   	 int len = lst.size();
+			
+	   	for (int i = 0; i < len; i++) {
+			CashInfo c  = (CashInfo)lst.get(i)[0];
+			UserInfo u = (UserInfo)lst.get(i)[1];
+				HSSFRow _row = sheet.createRow(++count);
+				_row.createCell(0).setCellValue(c.getId());
+		        _row.createCell(1).setCellValue(u.getName());
+		        _row.createCell(2).setCellValue(u.getMobile());
+		        _row.createCell(3).setCellValue(c.getAmount());
+		        _row.createCell(4).setCellValue(c.getAmount()*ConstantUtil.RATE);
+		        _row.createCell(5).setCellValue(c.getCreatetime().toString());
+		        _row.createCell(6).setCellValue(c.getState()==1?"待打款":"已打款");
+		      
+			}
+			
+			SimpleDateFormat _sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+			String time = _sdf.format(new Date());
+			time = time.replace(" ", "").replace(":", "").replace("-", "");
+		      //System.out.println("count:"+count);
+		   /*   String path = ConstantUtil.PROJECT_PATH.replace("WEB-INF/classes/", "");
+		      path = path + "html";*/
+	//   	  String path = ConstantUtil.PROJECT_PATH.replace("target/classes/","src/main/webapp/html/excel");
+			String path = ConstantUtil.environment .equals("maven")?ConstantUtil.PROJECT_PATH.replace("target/classes/", "src/main/webapp/excel/"):ConstantUtil.PROJECT_PATH.replace("WEB-INF/classes/", "excel/");//tomcat
+	//		path = ConstantUtil.PROJECT_PATH.replace("target/classes/", "src/main/webapp/excel/");//maven
+			File file = new File(path);
+		      if( !file.exists() ){
+		    	  file.mkdirs();
+		      }
+		      path += "excel_"+time+".xls";
+		      
+		      try {
+				FileOutputStream fileoutputstream = new FileOutputStream(path);
+				  hssfworkbook.write(fileoutputstream);
+				  fileoutputstream.flush();
+				  fileoutputstream.close();
+			} catch (FileNotFoundException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	      return "excel_"+time+".xls";
+	}
+
+	@Override
+	public JsonArray querycashstatistic(AccountInfo emp, String starttime) throws Exception {
+		// TODO Auto-generated method stub
+		int j =0;
+		int [] montharr= {31,28,31,30,31,30,31,31,30,31,30,31};
+		int year = Integer.parseInt(starttime.split("-")[0]);
+		int month = Integer.parseInt(starttime.split("-")[1]);
+		
+		if(month==2){
+			if(year%4 == 0 && year%100!=0 || year%400 == 0){
+				j=29;
+			}
+		             }else{
+				j=montharr[month];
+			     }
+		
+		List<Map<String,Object>> lstMap = new LinkedList<Map<String,Object>>();
+		Map<String, Object>map1 = new HashMap<String, Object>();
+		StringBuffer querytotalrecharge = new StringBuffer("select SUM(uc.amount) 'a' from userrecharge uc where uc.paystate =1 ");
+		List<Object> lst0 = databaseHelper.getResultListBySql(querytotalrecharge.toString());
+		
+		StringBuffer querythsirecharge =new StringBuffer("select SUM(uc.amount) 'a' from userrecharge uc where uc.paystate =1 ")
+				.append(" and year(uc.createtime)= ").append(year)
+				.append(" and month(uc.createtime)= ").append(month);
+			List<Object> lst4 = databaseHelper.getResultListBySql(querythsirecharge.toString());
+			Double totalrecharge =0.0;
+			Double thisrecharge = 0.0;
+			if(lst0==null||lst0.size()==0||lst0.get(0)==null){
+				totalrecharge = 0.0;
+			}else{totalrecharge = Double.parseDouble(lst0.get(0).toString());}
+			if(lst4==null||lst4.size()==0||lst4.get(0)==null){
+				thisrecharge = 0.0;
+			}else{thisrecharge = Double.parseDouble(lst4.get(0).toString());}
+			map1.put("thisrecharge", thisrecharge);
+			lstMap.add(map1);
+			
+			for (int i = 1; i <=j ; i++) {
+				StringBuffer sql = new StringBuffer("");
+				Map<String,Object> map = new HashMap<String,Object>();
+				sql.append("select SUM(uc.amount) 'a' from userrecharge uc  where uc.paystate =1 and  year(uc.createtime) =").append(year)
+				.append(" and month(uc.createtime)= ").append(month)
+				.append(" and day(uc.createtime) = ").append(i);
+				
+				List<Object> lst = databaseHelper.getResultListBySql(sql.toString());
+				map.put("amount", lst==null?"0":lst.size()==0?"0":lst.get(0)==null?"0":lst.get(0).toString());
+				map.put("time", i+"日");
+				lstMap.add(map);
+			}
+			
+			String result = new Gson().toJson(lstMap);
+			JsonArray jarr = (JsonArray) new JsonParser().parse(result);
+			return jarr;		
+	}
+
+
+}

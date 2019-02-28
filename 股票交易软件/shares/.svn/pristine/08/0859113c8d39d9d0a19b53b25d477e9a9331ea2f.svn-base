@@ -1,0 +1,307 @@
+package com.hxy.isw.entity;
+
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+/**
+ * userinfo 实体类 Fri Jul 14 17:20:34 CST 2017 lxq
+ */
+
+@Entity
+@Table(name = "userinfo")
+public class UserInfo {
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
+	private Long id;
+
+	@Column(name = "username")
+	private String username;
+
+	@Column(name = "password")
+	private String password;
+
+	@Column(name = "mobile")
+	private String mobile;
+
+	@Column(name = "nickname")
+	private String nickname;
+
+	@Column(name = "name")
+	private String name;
+	
+	@Column(name = "headimg")
+	private String headimg;
+	
+	@Column(name = "intro")
+	private String intro;
+
+	@Column(name = "wxid")
+	private String wxid;
+
+	@Column(name = "golds")
+	private Double golds;
+
+	public String getSpreadurl() {
+		return spreadurl;
+	}
+
+	public void setSpreadurl(String spreadurl) {
+		this.spreadurl = spreadurl;
+	}
+
+	public String getSpreadurlimg() {
+		return spreadurlimg;
+	}
+
+	public void setSpreadurlimg(String spreadurlimg) {
+		this.spreadurlimg = spreadurlimg;
+	}
+
+	@Column(name = "virtualcapital")
+	private Double virtualcapital;
+
+	@Column(name = "totalrecharge")
+	private Double totalrecharge;
+
+	@Column(name = "email")
+	private String email;
+
+	@Column(name = "address")
+	private String address;
+
+	@Column(name = "bank")
+	private String bank;
+
+	@Column(name = "bankaccount")
+	private String bankaccount;
+
+	@Column(name = "cardno")
+	private String cardno;
+
+	@Column(name = "paparno")
+	private String paparno;
+
+	@Column(name = "createtime")
+	private Date createtime;
+
+	@Column(name = "state")
+	private Integer state;
+
+	@Column(name = "speech")
+	private Integer speech;
+
+	@Column(name = "faccountid")
+	private Long faccountid;
+
+	@Column(name = "finvateid")
+	private Long finvateid;
+
+	@Column(name = "isexample")
+	private Integer isexample;
+	
+	@Column(name = "spreadurl")
+	private String spreadurl;
+	
+	@Column(name = "isexample")
+	private String spreadurlimg;
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public Long getId() {
+		return id;
+	}
+
+	public void setUsername(String username) {
+		this.username = username;
+	}
+
+	public String getUsername() {
+		return username;
+	}
+
+	public void setPassword(String password) {
+		this.password = password;
+	}
+
+	public String getPassword() {
+		return password;
+	}
+
+	public void setMobile(String mobile) {
+		this.mobile = mobile;
+	}
+
+	public String getMobile() {
+		return mobile;
+	}
+
+	public void setNickname(String nickname) {
+		this.nickname = nickname;
+	}
+
+	public String getNickname() {
+		return nickname;
+	}
+
+	public void setName(String name) {
+		this.name = name;
+	}
+
+	public String getName() {
+		return name;
+	}
+
+	public String getHeadimg() {
+		return headimg;
+	}
+
+	public void setHeadimg(String headimg) {
+		this.headimg = headimg;
+	}
+
+	public String getIntro() {
+		return intro;
+	}
+
+	public void setIntro(String intro) {
+		this.intro = intro;
+	}
+
+	public void setWxid(String wxid) {
+		this.wxid = wxid;
+	}
+
+	public String getWxid() {
+		return wxid;
+	}
+
+	public void setGolds(Double golds) {
+		this.golds = golds;
+	}
+
+	public Double getGolds() {
+		return golds;
+	}
+
+	public void setVirtualcapital(Double virtualcapital) {
+		this.virtualcapital = virtualcapital;
+	}
+
+	public Double getVirtualcapital() {
+		return virtualcapital;
+	}
+
+	public Double getTotalrecharge() {
+		return totalrecharge;
+	}
+
+	public void setTotalrecharge(Double totalrecharge) {
+		this.totalrecharge = totalrecharge;
+	}
+
+	public void setEmail(String email) {
+		this.email = email;
+	}
+
+	public String getEmail() {
+		return email;
+	}
+
+	public void setAddress(String address) {
+		this.address = address;
+	}
+
+	public String getAddress() {
+		return address;
+	}
+
+	public void setBank(String bank) {
+		this.bank = bank;
+	}
+
+	public String getBank() {
+		return bank;
+	}
+
+	public void setBankaccount(String bankaccount) {
+		this.bankaccount = bankaccount;
+	}
+
+	public String getBankaccount() {
+		return bankaccount;
+	}
+
+	public void setCardno(String cardno) {
+		this.cardno = cardno;
+	}
+
+	public String getCardno() {
+		return cardno;
+	}
+
+	public void setPaparno(String paparno) {
+		this.paparno = paparno;
+	}
+
+	public String getPaparno() {
+		return paparno;
+	}
+
+	public void setCreatetime(Date createtime) {
+		this.createtime = createtime;
+	}
+
+	public Date getCreatetime() {
+		return createtime;
+	}
+
+	public void setState(Integer state) {
+		this.state = state;
+	}
+
+	public Integer getState() {
+		return state;
+	}
+
+	public void setSpeech(Integer speech) {
+		this.speech = speech;
+	}
+
+	public Integer getSpeech() {
+		return speech;
+	}
+
+	public void setFaccountid(Long faccountid) {
+		this.faccountid = faccountid;
+	}
+
+	public Long getFaccountid() {
+		return faccountid;
+	}
+
+	public void setFinvateid(Long finvateid) {
+		this.finvateid = finvateid;
+	}
+
+	public Long getFinvateid() {
+		return finvateid;
+	}
+
+	public void setIsexample(Integer isexample) {
+		this.isexample = isexample;
+	}
+
+	public Integer getIsexample() {
+		return isexample;
+	}
+}

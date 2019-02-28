@@ -1,0 +1,456 @@
+package com.hxy.isw.service.impl;
+
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.hxy.isw.entity.CapitalDetail;
+import com.hxy.isw.entity.CashInfo;
+import com.hxy.isw.entity.ExampleApply;
+import com.hxy.isw.entity.GoldsDetail;
+import com.hxy.isw.entity.NotifyInfo;
+import com.hxy.isw.entity.UserInfo;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.SignatureUtil;
+
+@Service
+public class AppServiceUserinfoImp implements AppServiceUserinfo{
+
+	@Autowired
+	DatabaseHelper databaseHelper;
+	@Override
+	public Map<String, String> querymyinfo(long userid) throws Exception {
+		UserInfo u=(UserInfo) databaseHelper.getObjectById(UserInfo.class, userid);
+		Map<String, String> usermap=new HashMap<String, String>();
+		usermap.put("headimg", u.getHeadimg()==null?"":u.getHeadimg());
+		usermap.put("nickname", u.getNickname()==null?"":u.getNickname());
+		usermap.put("mobile", u.getMobile());
+		usermap.put("email", u.getEmail()==null?"":u.getEmail());
+		usermap.put("virtualcapital", u.getVirtualcapital()==null?"0.00": String.valueOf(ConstantUtil.formatDouble(u.getVirtualcapital())));
+		usermap.put("bank", u.getBank()==null?"":u.getBank());
+		usermap.put("bankaccount", u.getBankaccount()==null?"":u.getBankaccount());
+		usermap.put("bankno", u.getCardno()==null?"":u.getCardno());
+		usermap.put("readname", u.getName()==null?"":u.getName());
+		usermap.put("paparno", u.getPaparno()==null?"":u.getPaparno());
+		usermap.put("spreadurl", u.getSpreadurl()==null?"":u.getSpreadurl());
+		usermap.put("spreadurlimg", u.getSpreadurlimg()==null?"":u.getSpreadurlimg());
+		usermap.put("intro", u.getIntro()==null?"":u.getIntro());
+		return usermap;
+	}
+	@Override
+	public double querymygolds(long userid) throws Exception {
+		UserInfo u=(UserInfo) databaseHelper.getObjectById(UserInfo.class, userid);
+		return u.getGolds()==null?0:u.getGolds();
+	}
+
+	@Override
+	public int countmygoldsdetial(long userid) throws Exception {
+		String sql1="select DATE_FORMAT(createtime,'%Y-%m') from goldsdetail where state=0 and fuserinfoid="+userid+"  ORDER BY createtime DESC  LIMIT 1";
+		String sql2="select DATE_FORMAT(createtime,'%Y-%m') from goldsdetail where state=0 and fuserinfoid="+userid+"  ORDER BY createtime LIMIT 1";
+		String maxdate=databaseHelper.getResultListBySql(sql1).get(0).toString();
+		String mindate=databaseHelper.getResultListBySql(sql2).get(0).toString();
+		String[] splitmaxdate=maxdate.split("-");
+		if(Integer.parseInt(splitmaxdate[1])<10){
+			splitmaxdate[1]="0"+(Integer.parseInt(splitmaxdate[1])+1);
+		}else{
+			splitmaxdate[1]=Integer.parseInt(splitmaxdate[1])+1+"";
+		}
+		maxdate=splitmaxdate[0]+"-"+splitmaxdate[1];
+		System.out.println("maxdate:"+maxdate);
+		String sql="select count(createtime)  from mydata m where m.createtime >='"+mindate+"' and  m.createtime<='"+maxdate+"'";
+		List<Object> lst = databaseHelper.getResultListBySql(sql);
+		return lst.get(0)==null?0:Integer.parseInt(lst.get(0).toString());
+	}
+	@Override
+	public List<Map<String, Object>> mygoldsdetial(long userid, int start, int limit) throws Exception {
+		String sql1="select DATE_FORMAT(createtime,'%Y-%m') from goldsdetail where state=0 and fuserinfoid="+userid+"  ORDER BY createtime DESC  LIMIT 1";
+		String sql2="select DATE_FORMAT(createtime,'%Y-%m') from goldsdetail where state=0 and fuserinfoid="+userid+"  ORDER BY createtime LIMIT 1";
+		String maxdate=databaseHelper.getResultListBySql(sql1).get(0).toString();
+		String mindate=databaseHelper.getResultListBySql(sql2).get(0).toString();
+		String[] splitmaxdate=maxdate.split("-");
+		if(Integer.parseInt(splitmaxdate[1])<10){
+			splitmaxdate[1]="0"+(Integer.parseInt(splitmaxdate[1])+1);
+		}else{
+			splitmaxdate[1]=Integer.parseInt(splitmaxdate[1])+1+"";
+		}
+		maxdate=splitmaxdate[0]+"-"+splitmaxdate[1];
+		System.out.println("maxdate:"+maxdate);
+		StringBuffer sql=new StringBuffer("select table1.createtime, table2.outgolds,table3.ingolds from ");
+		sql.append("(select DATE_FORMAT(m.createtime,'%Y-%m') createtime  from mydata m where m.createtime >='"+mindate+"' and  m.createtime<='"+maxdate+"' ORDER BY m.createtime desc) table1 ");
+		sql.append("LEFT JOIN ");
+		sql.append("(select  date_format(createtime, '%Y-%m') createtime,sum(golds) outgolds from goldsdetail where type<0 and state=0 and fuserinfoid="+userid+" group by date_format(createtime, '%Y-%m'))table2 ");
+		sql.append("on  table1.createtime = table2.createtime  left join ");
+		sql.append("(select  date_format(createtime, '%Y-%m') createtime,sum(golds) ingolds from goldsdetail where type>0 and state=0 and fuserinfoid="+userid+" group by date_format(createtime, '%Y-%m'))table3 ");
+		sql.append("ON table1.createtime =table3.createtime ");
+		List<Object[]> lst=databaseHelper.getResultListBySql(sql.toString(), start,limit);
+		List<Map<String, Object>> lstmap=new ArrayList<Map<String,Object>>();
+	    for(Object[] o :lst){
+	    	Map<String, Object> map=new HashMap<String, Object>();
+	    	map.put("time", o[0]);
+	    	map.put("outgolds", o[1]==null?"0":o[1].toString());
+	    	map.put("ingolds", o[2]==null?"0":o[2].toString());
+	    	lstmap.add(map);
+	    }
+	    return lstmap;
+	}
+	
+	@Override
+	public double querymaxtotalgolds(long userid) throws Exception {
+		String sql1="select min(sumgolds.outgolds) from  (select  sum(golds) outgolds from goldsdetail where type<0 and state=0 and fuserinfoid="+userid+" group by date_format(createtime, '%Y-%m')) sumgolds";
+		String sql2="select max(sumgolds.ingolds) from   (select  sum(golds) ingolds from goldsdetail where type>0 and state=0 and fuserinfoid="+userid+" group by date_format(createtime, '%Y-%m')) sumgolds";
+		List<Object> outlst = databaseHelper.getResultListBySql(sql1);
+		List<Object> inlst = databaseHelper.getResultListBySql(sql2);
+		double outmaxgolds = outlst.get(0)==null?0:Math.abs(Double.parseDouble(outlst.get(0).toString()));
+		double inmaxgolds = inlst.get(0)==null?0:Double.parseDouble(inlst.get(0).toString());
+		return inmaxgolds>outmaxgolds?inmaxgolds:outmaxgolds;
+	}
+	
+	
+	
+	@Override
+	public int countmygoldsdetialanddetial(long userid, String type, String time,String starttime,String endtime,String inorout) throws Exception {
+		StringBuffer sql=new StringBuffer("select count(g.id) from  goldsdetail g where ");
+		if(inorout.equals("1")){
+			sql.append("g.type>0 and ");
+		}else if(inorout.equals("2")){
+			sql.append("g.type<0 and ");
+		}
+		sql.append(addsql(userid, type, time,starttime,endtime));
+		List<Object> lst = databaseHelper.getResultListBySql(sql.toString());
+		return lst.get(0)==null?0:Integer.parseInt(lst.get(0).toString());
+	}
+	@Override
+	public List<Map<String, Object>> mygoldsdetialanddetial(long userid, String type, String time,String starttime,String endtime, int start, int limit,String inorout)
+			throws Exception {
+		StringBuffer sql=new StringBuffer("select g.* from  goldsdetail g where ");
+		if(inorout.equals("1")){
+			sql.append("g.type>0 and ");
+		}else if(inorout.equals("2")){
+			sql.append("g.type<0 and ");
+		}
+		sql.append(addsql(userid, type, time,starttime,endtime));
+		sql.append("order by g.createtime desc");
+		List<Object[]> lst=databaseHelper.getResultListBySql(sql.toString(), start,limit);
+		List<Map<String,Object>> lstmap=new ArrayList<Map<String,Object>>();
+	    for(Object[] o :lst){
+	    	Map<String, Object> map=new HashMap<String, Object>();
+	    	map.put("createtime",o[4].toString());
+	    	map.put("goldstype", o[2].toString());
+	    	map.put("golds", o[3].toString());
+	    	lstmap.add(map);
+	    }
+	    return lstmap;
+	}
+
+	private String addsql(long userid, String type, String time,String starttime,String endtime){
+		String mysql="";
+		if(type.equals("0")){
+			String strattime1=time+"-01";
+			String[] splitmaxdate=time.split("-");
+			if(Integer.parseInt(splitmaxdate[1])<10){
+				splitmaxdate[1]="0"+(Integer.parseInt(splitmaxdate[1])+1);
+			}else{
+				splitmaxdate[1]=Integer.parseInt(splitmaxdate[1])+1+"";
+			}
+			time=splitmaxdate[0]+"-"+splitmaxdate[1];
+			String endtime1 =time+"-01";
+			mysql+= "g.fuserinfoid ="+userid+" and g.state=0 and g.createtime >='"+strattime1+"' and g.createtime< '"+endtime1+"' ";  
+		}else if(type.equals("1")){
+			mysql+="to_days(g.createtime) = to_days(now()) and g.fuserinfoid ="+userid+" and g.state=0 ";
+		}else if(type.equals("2")){
+			mysql+="DATEDIFF(DATE_FORMAT(NOW(),'%Y-%m-%d'),DATE_FORMAT(g.createtime,'%Y-%m-%d'))=1  and g.fuserinfoid ="+userid+" and g.state=0 ";
+		}else if(type.equals("3")){
+			mysql+="DATEDIFF(DATE_FORMAT(NOW(),'%Y-%m-%d'),DATE_FORMAT(g.createtime,'%Y-%m-%d'))<=7 and g.fuserinfoid ="+userid+" and g.state=0 ";
+		}else if(type.equals("4")){
+			mysql+="date_format(g.createtime,'%Y%m') = date_format(NOW(), '%Y%m')  and g.fuserinfoid ="+userid+" and g.state=0 ";
+		}else if(type.equals("5")){
+			mysql+="period_diff(date_format(now(),'%Y%m'),date_format(g.createtime, '%Y%m')) =1  and g.fuserinfoid ="+userid+" and g.state=0 ";
+		}else if(type.equals("6")){
+			SimpleDateFormat formatter = new SimpleDateFormat("yyyy-MM-dd");
+			String dateString = formatter.format(new Date());
+			String[] data =dateString.split("-");
+			String startyear=data[0]+"-01-01";
+			mysql+="g.fuserinfoid ="+userid+" and g.state=0 and g.createtime >='"+startyear+"'";
+		}else if(type.equals("7")){
+			mysql+="g.fuserinfoid ="+userid+" and g.state=0 and g.createtime >='"+starttime+"' and g.createtime<='"+endtime+"'";
+		}else{
+			mysql+="g.fuserinfoid ="+userid+" and g.state=0 ";
+		}
+		return mysql;
+	}
+	@Override
+	public double totalingolds(long userid, String type, String time,String starttime,String endtime) throws Exception {
+		StringBuffer sql= new StringBuffer("select SUM(g.golds) from  goldsdetail g where g.type>0 and ");
+		sql.append(addsql(userid, type, time,starttime,endtime));
+		List<Object> lst=databaseHelper.getResultListBySql(sql.toString());
+		return lst.get(0)==null?0:Double.parseDouble(lst.get(0).toString());
+	}
+	@Override
+	public double totaloutgolds(long userid, String type, String time,String starttime,String endtime) throws Exception {
+		StringBuffer sql= new StringBuffer("select SUM(g.golds) from  goldsdetail g where g.type<0 and ");
+		sql.append(addsql(userid, type, time,starttime,endtime));
+		List<Object> lst=databaseHelper.getResultListBySql(sql.toString());
+		return lst.get(0)==null?0:Double.parseDouble(lst.get(0).toString());
+		
+	}
+	@Override
+	public Map<String, String> towithdraw(long userid) throws Exception {
+		UserInfo u=(UserInfo) databaseHelper.getObjectById(UserInfo.class, userid);
+		Map<String, String> usermap=new HashMap<String, String>();
+		String mybankcard=u.getBank().split("银行")[0]+"银行"+"("+u.getCardno().substring(u.getCardno().length()-4,u.getCardno().length())+")";
+		String maxwithdraw=u.getGolds()/ConstantUtil.RATE+"";
+		usermap.put("bankandcard", mybankcard);
+		usermap.put("maxwithdraw", maxwithdraw);
+		return usermap;
+	}
+	
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void withdraw(long userid, double withdrawnumber) throws Exception {
+		UserInfo u=(UserInfo) databaseHelper.getObjectById(UserInfo.class, userid);
+		if(u.getIsexample()!=1)new Exception("只有牛人才能提现");
+		
+		if(u.getGolds()<withdrawnumber*ConstantUtil.RATE){
+			new NullPointerException("用户金币不足");
+		}else{
+			CashInfo c=new CashInfo();
+			c.setFuserinfoid(userid);
+			c.setAmount(withdrawnumber);
+			c.setCreatetime(new Date());
+			c.setState(0);
+			databaseHelper.persistObject(c);
+			String sql ="UPDATE userinfo u set u.golds=u.golds-"+withdrawnumber*ConstantUtil.RATE+" where u.id="+userid+"";
+			databaseHelper.executeNativeSql(sql);
+		}
+		
+	}
+	@Override
+	public Map<String, String> toexchange(long userid) throws Exception {
+		UserInfo u=(UserInfo) databaseHelper.getObjectById(UserInfo.class, userid);
+		Map<String, String> usermap=new HashMap<String, String>();
+		usermap.put("canusegolds", u.getGolds().toString());
+		usermap.put("canusemoney", u.getVirtualcapital().toString());
+		return usermap;
+	}
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void exchange(long userid, double exchangegolds) throws Exception {
+		UserInfo u=(UserInfo) databaseHelper.getObjectById(UserInfo.class, userid);
+		if(u.getGolds()<exchangegolds){
+			System.out.println("用户金币不足");
+			throw new NullPointerException("用户金币不足");
+		}else{
+			String sql="UPDATE userinfo  u set u.golds=u.golds-"+exchangegolds+" , u.virtualcapital=u.virtualcapital+"+exchangegolds*ConstantUtil.VRATE+" where u.id="+userid+"";
+			databaseHelper.executeNativeSql(sql);
+			Date now=new Date();
+			GoldsDetail g=new GoldsDetail();
+			g.setFuserinfoid(userid);
+			g.setCreatetime(now);
+			g.setType(-7);
+			g.setGolds(-exchangegolds);
+			g.setState(0);
+			databaseHelper.persistObject(g);
+			CapitalDetail c=new CapitalDetail();
+			c.setType(5);
+			c.setFuserinfoid(userid);
+			c.setCreatetime(now);
+			c.setState(0);
+			c.setCapital(exchangegolds*100);
+			databaseHelper.persistObject(c);
+		}	
+	}
+	@Override
+	public int countexchangerecord(long userid) throws Exception {
+		String sql="select count(c.id) from capitaldetail c where  c.fuserinfoid="+userid+" and c.type=5 and c.state=0";
+		List<Object> lst=databaseHelper.getResultListBySql(sql.toString());
+		return lst.get(0)==null?0:Integer.parseInt(lst.get(0).toString());
+	}
+	@Override
+	public List<Map<String, Object>> exchangerecord(long userid, int start, int limit) throws Exception {
+		String hql="select c from CapitalDetail c where  c.fuserinfoid="+userid+" and c.type=5 and c.state=0 order by c.createtime desc";
+		List<Object> Object=databaseHelper.getResultListByHql(hql, start, limit);
+		List<Map<String, Object>> lstmap=new ArrayList<Map<String,Object>>();
+		for(Object o:Object){
+			CapitalDetail c=(CapitalDetail) o;
+			Map<String, Object> map=new HashMap<String, Object>();
+			map.put("type", "金币兑换");
+			map.put("exchangemoney", c.getCapital().toString());
+			map.put("createtime",c.getCreatetime().toString());
+			map.put("state", c.getState().toString());
+			lstmap.add(map);
+		}
+		return lstmap;
+	}
+	
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void updatamyinfo(long userid, String updatatext,String type) throws Exception {
+		String sql;
+		if(type.equals("1")){
+			sql="UPDATE userinfo u set u.mobile='"+updatatext+"' where u.id="+userid+" ";
+		}else if(type.equals("2")){
+			sql="UPDATE userinfo u set u.email='"+updatatext+"' where u.id="+userid+" ";
+		}else{
+			sql="UPDATE userinfo u set u.nickname='"+updatatext+"' where u.id="+userid+" ";
+		}
+		databaseHelper.executeNativeSql(sql);
+	}
+	@Override
+	public int countsystemmessage(long userid) throws Exception {
+		String sql="select count(n.id) from notifyinfo n where n.type=0 and n.fuserinfoid="+userid+"";
+		List<Object> lst=databaseHelper.getResultListBySql(sql.toString());
+		return lst.get(0)==null?0:Integer.parseInt(lst.get(0).toString());
+	}
+	@Override
+	public List<Map<String, Object>> systemmessage(long userid, int start, int limit) throws Exception {
+		String hql="select n from NotifyInfo n where n.type=0 and n.fuserinfoid="+userid+" order by n.createtime desc ";
+		List<Object> lst=databaseHelper.getResultListByHql(hql, start, limit);
+		List<Map<String, Object>> lstmap=new ArrayList<Map<String,Object>>();
+		for(Object o:lst){
+			NotifyInfo n=(NotifyInfo) o;
+			Map<String, Object> map=new HashMap<String, Object>();
+			map.put("notifyinfoid", n.getId());
+			map.put("title", n.getTitle());
+			map.put("content", n.getContent());
+			map.put("createtime", n.getCreatetime().toString());
+			map.put("state", n.getState().toString());
+			lstmap.add(map);
+		}
+		return lstmap;
+	}
+	
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void updatamypassword(long userid, String password,String newpassword1,String newpassword2) throws Exception {
+		String sql1="select u.password from userinfo  u where u.id="+userid+" ";
+		String oldpassword=databaseHelper.getResultListBySql(sql1).get(0).toString();
+		if(!ConstantUtil.getMD5Str(oldpassword+SignatureUtil.TOKEN,null).equals(password)){
+			throw new NullPointerException("原密码输入有误");
+		}else if(!newpassword1.equals(newpassword2)){
+			throw new NullPointerException("两次密码输入不一致");
+		}else if(oldpassword.equals(newpassword1)){
+			throw new NullPointerException("新密码不能与原密码相同");
+		}else{
+			String sql2="UPDATE userinfo  u set u.password ='"+newpassword1+"' where u.id="+userid+" ";
+			databaseHelper.executeNativeSql(sql2);
+		}
+	}
+	
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void applyhero(long userid, String name, String mobile, String email, String bank, String cardno,
+			String paparno,String tag) throws Exception {
+		String sql1="select u.isexample from userinfo  u where u.id="+userid+" ";
+		String isexample=databaseHelper.getResultListBySql(sql1).get(0).toString();
+		if(isexample.equals(1)){
+			throw new Exception("您已是牛人");
+		}else{
+			StringBuffer sql2=new StringBuffer("UPDATE userinfo  u set ");
+			sql2.append(" u.name='"+name+"',");
+			sql2.append(" u.mobile='"+mobile+"',");
+			sql2.append(" u.email='"+email+"',");
+			sql2.append(" u.bank='"+bank+"',");
+			sql2.append(" u.cardno='"+cardno+"',");
+			sql2.append(" u.paparno='"+paparno+"' ");
+			sql2.append(" u.tag='"+tag+"' ");
+			sql2.append(" where u.id="+userid+" ");
+			databaseHelper.executeNativeSql(sql2.toString());
+			ExampleApply e=new ExampleApply();
+			e.setFuserinfoid(userid);
+			e.setTag(Integer.parseInt(tag));
+			e.setState(0);
+			e.setTime(new Date());
+			databaseHelper.persistObject(e);
+		}
+	}
+	@Override
+	public Map<String, String> myagent(long userid) throws Exception {
+		String sql1="select COUNT(id) from userinfo where finvateid="+userid+" and state=0";
+		String sql2="select count(id) from userinfo where finvateid="+userid+" and state=0 and id in (select fuserinfoid from capitaldetail where type>= -3 and  type <=3 )";
+		List<Object> lst1=databaseHelper.getResultListBySql(sql1.toString());
+		List<Object> lst2=databaseHelper.getResultListBySql(sql2.toString());
+		int myusernum=lst1.get(0)==null?0:Integer.parseInt(lst1.get(0).toString());
+		int myuserchangenum=lst2.get(0)==null?0:Integer.parseInt(lst2.get(0).toString());
+		UserInfo u=(UserInfo) databaseHelper.getObjectById(UserInfo.class,userid);
+		Map<String, String> map=new HashMap<String, String>();
+		map.put("myusernum", myusernum+"");
+		map.put("myuserchangenum", myuserchangenum+"");
+		map.put("spreadurl", u.getSpreadurl()==null?"":u.getSpreadurl());
+		map.put("spreadurlimg", u.getSpreadurlimg()==null?"":u.getSpreadurlimg());
+		return map;
+	}
+	@Override
+	public int countmyusers(long userid) throws Exception {
+		String sql="select count(id) from userinfo where finvateid="+userid+" and state=0";
+		List<Object> lst=databaseHelper.getResultListBySql(sql.toString());
+		return lst.get(0)==null?0:Integer.parseInt(lst.get(0).toString());
+	}
+	@Override
+	public List<Map<String, Object>> myusers(long userid, int start, int limit) throws Exception {
+		StringBuffer sql=new StringBuffer("select * FROM ");
+		sql.append("(select id, nickname,createtime from userinfo where finvateid="+userid+" and state=0 order by createtime) table1 ");
+		sql.append("LEFT JOIN ");
+		sql.append("(select fuserinfoid , COUNT(fuserinfoid) changenum from capitaldetail where type>= -3 and  type <=3 and state=0 GROUP BY fuserinfoid)table2 ");
+		sql.append("on table1.id=table2.fuserinfoid");
+		List<Object[]> lst1=databaseHelper.getResultListBySql(sql.toString()); 
+		List<Map<String, Object>> lstmap=new ArrayList<Map<String,Object>>();
+		for(Object[] o:lst1){
+			Map<String, Object> map =new HashMap<String, Object>();
+			map.put("id", o[0]);
+			map.put("nickname", o[1]);
+			map.put("changenum", o[4]);
+			map.put("createtime", o[2]);
+			lstmap.add(map);
+		}
+		return lstmap;
+	}
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void pcupdatemyinfo(long userid, String nickname, String name, String mobile, String email, String intro)
+			throws Exception {
+		StringBuffer sql=new StringBuffer("update userinfo set ");
+		if(!nickname.equals("")){
+			sql.append("nickname='"+nickname+"', ");
+		}
+		if(!name.equals("")){
+			sql.append("name='"+name+"', ");
+		}
+		if(!mobile.equals("")){
+			sql.append("mobile='"+mobile+"', ");
+		}
+		if(!email.equals("")){
+			sql.append("email='"+email+"', ");
+		}
+		
+		if(!intro.equals("")){
+			sql.append("intro='"+intro+"', ");
+		}
+		sql.append("id="+userid+" ");
+		sql.append("where id="+userid+"");
+		databaseHelper.executeNativeSql(sql.toString());	
+	}
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void updatemybank(long userid, String bankaccount, String bank, String cardno, String paparno)
+			throws Exception {
+		StringBuffer sql2=new StringBuffer("UPDATE userinfo  u set ");
+		sql2.append(" u.bankaccount='"+bankaccount+"',");
+		sql2.append(" u.bank='"+bank+"',");
+		sql2.append(" u.cardno='"+cardno+"',");
+		sql2.append(" u.paparno='"+paparno+"',");
+		sql2.append(" where u.id="+userid+" ");
+		databaseHelper.executeNativeSql(sql2.toString());
+		
+	}
+	
+}

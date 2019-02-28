@@ -1,0 +1,159 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<%@taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
+<style>
+	#tablebox tr td{border:0;!important}
+</style>
+<div class="page-header">
+	<h1>
+		牛人管理
+		<small>
+			<i class="ace-icon fa fa-angle-double-right"></i>
+			详情
+		</small>
+	</h1>
+</div><!-- /.page-header -->
+
+<ul class="nav nav-tabs" role="tablist">
+	<li id="panel_shares_state0" role="presentation" class="active"><a href="#tab_shares_state0" role="tab" data-toggle="tab">股票计划</a></li>
+	<li id="panel_shares_state1" role="presentation"><a href="#tab_shares_state1" role="tab" data-toggle="tab">外汇计划</a></li>
+	
+	<li style="position: relative;float: right;">
+		<button  class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="返回" id="returnbfbtn" onclick="returnbfbtn(this)">返回</button>
+  </li>
+</ul>
+<div class="tab-content row">
+	<div role="tabpanel" class="tab-pane active" id="tab_shares_state0">
+		<ul class="nav nav-tabs" role="tablist">
+			<li id="panel_plan_state0" role="presentation" class="active"><a href="#tab_panicbuying" role="tab" data-toggle="tab">抢购中</a></li>
+			<li id="panel_plan_state1" role="presentation"><a href="#tab_running" role="tab" data-toggle="tab">运行中</a></li>
+			<li id="panel_plan_state2" role="presentation"><a href="#tab_success" role="tab" data-toggle="tab">往期成功</a></li>
+		</ul>
+		计划总收益：15%          计划成功率：70%
+		<div class="tab-content row">
+			<div role="tabpanel" class="tab-pane active" id="tab_panicbuying">
+				<table id="pb_grid_table"></table>
+				<div id="pb_grid_pager"></div>
+			</div>
+			<div role="tabpanel" class="tab-pane active" id="tab_running"></div>
+			<div role="tabpanel" class="tab-pane active" id="tab_success"></div>
+		</div>
+		
+		
+	</div>
+	<div role="tabpanel" class="tab-pane active" id="tab_shares_state1"></div>
+</div>	
+
+<script>
+var id = <%=request.getParameter("id")%>;
+//返回到进入时的页码
+var page = <%=request.getParameter("page")%>;
+
+Q.grid_selector = "pb_grid_table";
+Q.pager_selector = "pb_grid_pager";
+
+var url = Q.url+"/example/panicBuying.action";
+
+var colModel = [
+                { label: 'ID', name: 'id',align :'center',hidden:true,sortable : false,key:true },
+                { label: '目标收益', name: 'targetprofit',align :'center', sortable : false },
+                { label: '计划详情', name: 'detail',align :'center', sortable : false ,formatter:function(value, grid, rows, state){
+                	var detail="<table id='tablebox' align='center' width='80%' border=0>";
+                	detail+="<tr><td><span>大盘同期：</span></td><td width='30%'>"+value.big+"</td><td><span>创建计划时间：</span></td><td>"+value.time+"</td>";
+                	detail+="<tr><td><span>止损线：</span></td><td>"+value.stopLine+"</td><td><span>计划开始时间：</span></td><td>"+value.startTime+"</td>";
+                	detail+="<tr><td><span>最长时限：</span></td><td>"+value.days+"</td><td><span>计划结束时间：</span></td><td>"+value.endTime+"</td>";
+                	detail+="</table>";
+                	return detail;
+                }},
+                { label: '购买人数', name: 'peopleCount',align :'center', sortable : false },
+                {
+                    name: '操作' ,align :'center', fixed: true, sortable: false, resize: false,  
+                    formatter: function (value, grid, rows, state) {
+                    	var btn = "";
+                    	if(rows.ischoiceness==0){
+                   			btn += "<button title=\"设为精选\" class=\"btn btn-success btn-xs\" style=\"color:#f60;margin-left:3px;\" onclick=\"select_pb_grid_table(" + rows.id + ")\">设为精选</button>";
+                    	}else{
+                    		btn += "-";
+                    	}
+                    	return  btn;
+                    }
+                }
+            	];
+
+var caption = "牛人详情";
+
+var postData ={"id":id,"type":0};
+
+/**
+ * Q.grid_selector  tableid
+ * Q.pager_selector 页码栏id
+ * url 请求地址
+ * postData 请求参数
+ * colModel 表头
+ * caption 表名 
+ */
+Q.ExtJqGrid({
+	"grid":Q.grid_selector,
+	"pager":Q.pager_selector,
+	"url":url,
+	"param":postData,
+	"model":colModel,
+	"caption":caption
+});
+
+
+function getcondition(){
+	var o = {};
+	o.keyword = $('#keyword').val();
+	return o;
+}
+
+function queryexbycondition(){
+	postData = getcondition();
+	$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+}
+
+//详情函数----命名规则  detail_tableid
+function select_pb_grid_table(id){
+	Q.confirm("设为精选，确定吗？",function(r){
+		if(r){
+			$._ajax({
+				url:Q.url+"/example/select.action",
+				data:{"id":id},
+			    success:function(data){
+			    	if(data.op=="success"){
+			    		Q.toastr("提示","已精选",'success');
+			    		$("#"+Q.grid_selector).setGridParam({postData:postData,page:$('#'+Q.grid_selector).getGridParam('page')}).trigger("reloadGrid"); 
+			    	}else{
+			    		Q.toastr("提示","操作失败",'warning');
+			    	}
+			    }
+			})
+		}
+	})
+}
+
+function returnbfbtn(){
+	var _url = "example/info.jsp?page="+page;
+	Q.viewJsp(Q.page_content,_url);
+}
+
+
+//查看外汇计划
+$('#panel_shares_state1').click(function(){
+	Q.viewJsp("#tab_shares_state1","");
+})
+
+
+//运行中
+$('#panel_plan_state1').click(function(){
+	Q.viewJsp("#tab_running","example/running.jsp");
+})
+
+
+//往期成功
+$('#panel_plan_state2').click(function(){
+	Q.viewJsp("#tab_success","example/success.jsp");
+})
+
+</script>
+<script src="js/jqgridresize.js"></script>

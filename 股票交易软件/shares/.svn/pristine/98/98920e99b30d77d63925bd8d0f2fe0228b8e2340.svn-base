@@ -1,0 +1,289 @@
+package com.hxy.isw.service.impl;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.hxy.isw.entity.AccountInfo;
+import com.hxy.isw.entity.AccountPermission;
+import com.hxy.isw.entity.MenuInfo;
+import com.hxy.isw.service.PermissionsService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+
+@Repository
+public class PermissionsServiceImpl implements PermissionsService {
+
+	@Autowired
+	private DatabaseHelper databaseHelper;
+
+	@Override
+	public Map<String, Object> findPermissionsInfo(AccountInfo ai, int start, int limit) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+
+		StringBuffer hql = new StringBuffer("SELECT ai FROM AccountInfo ai WHERE ai.role=0 OR ai.role=1");
+		StringBuffer sql = new StringBuffer("SELECT COUNT(*) FROM accountinfo ai WHERE ai.role=0 OR ai.role=1");
+
+		Integer count = databaseHelper.getSqlCount(sql.toString());
+
+		int pages = ConstantUtil.pages(count, limit);
+
+		List<Object> resultList = databaseHelper.getResultListByHql(hql.toString(), start, limit);
+
+		for (Object object : resultList) {
+			AccountInfo info = (AccountInfo) object;
+			Map<String, Object> map = new HashMap<String, Object>();
+
+			map.put("id", info.getId());
+			map.put("name", info.getName());
+			map.put("username", info.getUsername());
+			map.put("mobile", info.getMobile());
+			if (info.getState() == 0) {
+				map.put("state", "正常");
+			} else {
+				map.put("state", "封禁");
+			}
+			
+			map.put("self", ai.getId());
+			map.put("role", info.getRole());
+			map.put("createtime", info.getCreatetime());
+			map.put("defaultaccount", info.getDefaultaccount());
+			map.put("type", info.getType());
+			list.add(map);
+		}
+
+		resultMap.put("rows", list);
+		resultMap.put("records", count);
+		resultMap.put("total", pages);
+		return resultMap;
+	}
+
+	@Override
+	public void ban(AccountInfo ai, String id) {
+		
+		StringBuffer sql=new StringBuffer("UPDATE accountinfo ai SET ai.state=-1 WHERE ai.id=").append(id);
+		databaseHelper.executeNativeSql(sql.toString());
+
+	}
+
+	@Override
+	public void unban(AccountInfo ai, String id) {
+		StringBuffer sql=new StringBuffer("UPDATE accountinfo ai SET ai.state=0 WHERE ai.id=").append(id);
+		databaseHelper.executeNativeSql(sql.toString());
+	}
+
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public Map<String, Object> addPermissions(AccountInfo ai, String id, String username, String password,
+			String mobile, String name, String menu) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		if (StringUtils.isEmpty(id)) {
+
+			StringBuffer sql = new StringBuffer("SELECT COUNT(1) FROM accountinfo ai WHERE ai.username='")
+					.append(username).append("'");
+			Integer count = databaseHelper.getSqlCount(sql.toString());
+			if (count > 0) {
+				resultMap.put("op", "fail");
+				resultMap.put("msg", "该账户已存在");
+				return resultMap;
+			}
+
+			AccountInfo accountInfo = new AccountInfo();
+			accountInfo.setUsername(username);
+			accountInfo.setPassword(password);
+			accountInfo.setMobile(mobile);
+			accountInfo.setName(name);
+			accountInfo.setType(1);
+			accountInfo.setRole(1);
+			accountInfo.setCreatetime(new Date());
+			accountInfo.setState(0);
+			accountInfo.setDefaultaccount(1);
+			databaseHelper.persistObject(accountInfo);
+
+			if (!StringUtils.isEmpty(menu)) {
+				String[] ids = menu.split(",");
+				for (String menuid : ids) {
+					AccountPermission permission = new AccountPermission();
+					permission.setFaccountid(accountInfo.getId());
+					permission.setFmenuid(Long.parseLong(menuid));
+					permission.setState(0);
+					databaseHelper.persistObject(permission);
+				}
+			}
+			resultMap.put("op", "success");
+			resultMap.put("msg", "");
+		} else {
+			StringBuffer sql = new StringBuffer("SELECT COUNT(1) FROM accountinfo ai WHERE ai.username='")
+					.append(username).append("'").append(" AND ai.id !=").append(id);
+			Integer count = databaseHelper.getSqlCount(sql.toString());
+			if (count > 0) {
+				resultMap.put("op", "fail");
+				resultMap.put("msg", "该账户已存在");
+				return resultMap;
+			}
+
+			AccountInfo accountInfo = (AccountInfo) databaseHelper.getObjectById(AccountInfo.class, Long.parseLong(id));
+
+			if (!accountInfo.getUsername().equals(username)) {
+				accountInfo.setUsername(username);
+			}
+			if (!accountInfo.getPassword().equals(password)) {
+				accountInfo.setPassword(password);
+			}
+			if (!accountInfo.getMobile().equals(mobile)) {
+				accountInfo.setMobile(mobile);
+			}
+			if (!accountInfo.getName().equals(name)) {
+				accountInfo.setName(name);
+			}
+
+			databaseHelper.updateObject(accountInfo);
+
+			StringBuffer delmenu = new StringBuffer("UPDATE accountpermission ap SET ap.state=-1 WHERE ap.faccountid=")
+					.append(id);
+			databaseHelper.executeNativeSql(delmenu.toString());
+
+			if (!StringUtils.isEmpty(menu)) {
+				String[] ids = menu.split(",");
+				for (String menuid : ids) {
+					AccountPermission permission = new AccountPermission();
+					permission.setFaccountid(accountInfo.getId());
+					permission.setFmenuid(Long.parseLong(menuid));
+					permission.setState(0);
+					databaseHelper.persistObject(permission);
+				}
+			}
+			resultMap.put("op", "success");
+			resultMap.put("msg", "");
+
+		}
+		return resultMap;
+	}
+
+	@Override
+	public Map<String, Object> queryMenu(AccountInfo ai, String id) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		resultMap.put("op", "fail");
+		resultMap.put("msg", "权限错误");
+
+		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+		if (StringUtils.isEmpty(id)) {
+			// 平台管理员
+			if (ai.getType() == 1 && (ai.getRole() == 0 || ai.getRole() == 1)) {
+				StringBuffer hql = new StringBuffer("SELECT mi FROM MenuInfo mi WHERE mi.type=1 ORDER BY mi.order");
+				List resultList = databaseHelper.getResultListByHql(hql.toString());
+				for (Object object : resultList) {
+					MenuInfo info = (MenuInfo) object;
+					Map<String, Object> map = new HashMap<String, Object>();
+					map.put("id", info.getId());
+					map.put("name", info.getMenuname());
+					list.add(map);
+				}
+				resultMap.put("rows", list);
+				resultMap.put("op", "success");
+				resultMap.put("msg", "");
+
+				// 公司管理员
+			} else if (ai.getType() == 2 && (ai.getRole() == 2 || ai.getRole() == 3)) {
+				StringBuffer hql = new StringBuffer("SELECT mi FROM MenuInfo mi WHERE mi.type=2 ORDER BY mi.order");
+				List<Object> resultList = databaseHelper.getResultListByHql(hql.toString());
+				for (Object object : resultList) {
+					MenuInfo info = (MenuInfo) object;
+					Map<String, Object> map = new HashMap<String, Object>();
+					map.put("id", info.getId());
+					map.put("name", info.getMenuname());
+					list.add(map);
+				}
+				resultMap.put("rows", list);
+				resultMap.put("op", "success");
+				resultMap.put("msg", "");
+			}
+		} else {
+
+			// 平台管理员
+			if (ai.getType() == 1 && (ai.getRole() == 0 || ai.getRole() == 1)) {
+				AccountInfo accountInfo = (AccountInfo) databaseHelper.getObjectById(AccountInfo.class,
+						Long.parseLong(id));
+				StringBuffer hql = new StringBuffer("SELECT mi FROM MenuInfo mi WHERE mi.type=1 ORDER BY mi.order");
+				StringBuffer sql = new StringBuffer(
+						"SELECT GROUP_CONCAT(ap.fmenuid) FROM accountpermission ap WHERE ap.faccountid=").append(id)
+								.append(" AND ap.state=0");
+				List resultList = databaseHelper.getResultListByHql(hql.toString());
+				List<Object> menuids = databaseHelper.getResultListBySql(sql.toString());
+				List<String> asList = new ArrayList<String>();
+				if (menuids != null && menuids.size() > 0 && menuids.get(0) != null) {
+					String menuid = menuids.get(0).toString();
+					asList = Arrays.asList(menuid.split(","));
+				}
+				for (Object object : resultList) {
+					MenuInfo info = (MenuInfo) object;
+					Map<String, Object> map = new HashMap<String, Object>();
+					map.put("id", info.getId());
+					map.put("name", info.getMenuname());
+					if (asList.contains(info.getId().toString())) {
+						map.put("checked", "checked");
+					} else {
+						map.put("checked", "");
+					}
+					list.add(map);
+				}
+				resultMap.put("rows", list);
+				resultMap.put("op", "success");
+				resultMap.put("msg", "");
+				resultMap.put("username", accountInfo.getUsername());
+				resultMap.put("password", accountInfo.getPassword());
+				resultMap.put("mobile", accountInfo.getMobile());
+				resultMap.put("name", accountInfo.getName());
+
+				// 公司管理员
+			} else if (ai.getType() == 2 && (ai.getRole() == 2 || ai.getRole() == 3)) {
+				AccountInfo accountInfo = (AccountInfo) databaseHelper.getObjectById(AccountInfo.class,
+						Long.parseLong(id));
+				StringBuffer hql = new StringBuffer("SELECT mi FROM MenuInfo mi WHERE mi.type=2 ORDER BY mi.order");
+				StringBuffer sql = new StringBuffer(
+						"SELECT GROUP_CONCAT(ap.fmenuid) FROM accountpermission ap WHERE ap.faccountid=").append(id)
+								.append(" AND ap.state=0");
+				List<Object> resultList = databaseHelper.getResultListByHql(hql.toString());
+				List<Object> menuids = databaseHelper.getResultListBySql(sql.toString());
+				List<String> asList = new ArrayList<String>();
+
+				if (menuids != null && menuids.size() > 0) {
+					String menuid = menuids.get(0).toString();
+					asList = Arrays.asList(menuid.split(","));
+				}
+				for (Object object : resultList) {
+					MenuInfo info = (MenuInfo) object;
+					Map<String, Object> map = new HashMap<String, Object>();
+					map.put("id", info.getId());
+					map.put("name", info.getMenuname());
+					if (asList.contains(info.getId().toString())) {
+						map.put("checked", "checked");
+					} else {
+						map.put("checked", "");
+					}
+					list.add(map);
+				}
+				resultMap.put("rows", list);
+				resultMap.put("op", "success");
+				resultMap.put("msg", "");
+				resultMap.put("username", accountInfo.getUsername());
+				resultMap.put("password", accountInfo.getPassword());
+				resultMap.put("mobile", accountInfo.getMobile());
+				resultMap.put("name", accountInfo.getName());
+			}
+
+		}
+
+		return resultMap;
+	}
+}

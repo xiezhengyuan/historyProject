@@ -1,0 +1,116 @@
+package com.hxy.isw.entity;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+   /**
+    * documentary 实体类
+    * Fri Jul 14 17:20:34 CST 2017 lxq
+    */ 
+
+@Entity
+@Table(name = "documentary")
+public class Documentary{
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
+	private Long id;
+
+	@Column(name = "fuserinfoid")
+	private Long fuserinfoid;
+
+	@Column(name = "ffollowuserinfoid")
+	private Long ffollowuserinfoid;
+
+	@Column(name = "money")
+	private Integer money;
+	
+	@Column(name = "actualyamount")
+	private Double actualyamount;
+	
+	@Column(name = "diffamount")
+	private Double diffamount;//跟单多余的金额(除不尽)
+
+	@Column(name = "state")
+	private Integer state;
+
+	@Column(name = "createtime")
+	private Date createtime;
+
+	
+	@Column(name = "type")
+	private Integer type;
+	
+	@Column(name = "values")
+	private Double values;
+	
+	public void setId(Long id){
+	this.id=id;
+	}
+	public Long getId(){
+		return id;
+	}
+	public void setFuserinfoid(Long fuserinfoid){
+	this.fuserinfoid=fuserinfoid;
+	}
+	public Long getFuserinfoid(){
+		return fuserinfoid;
+	}
+	public void setFfollowuserinfoid(Long ffollowuserinfoid){
+	this.ffollowuserinfoid=ffollowuserinfoid;
+	}
+	public Long getFfollowuserinfoid(){
+		return ffollowuserinfoid;
+	}
+	public void setMoney(Integer money){
+	this.money=money;
+	}
+	public Integer getMoney(){
+		return money;
+	}
+	public Double getActualyamount() {
+		return actualyamount;
+	}
+	public void setActualyamount(Double actualyamount) {
+		this.actualyamount = actualyamount;
+	}
+	public void setState(Integer state){
+	this.state=state;
+	}
+	public Integer getState(){
+		return state;
+	}
+	public void setCreatetime(Date createtime){
+	this.createtime=createtime;
+	}
+	public Date getCreatetime(){
+		return createtime;
+	}
+	public Double getDiffamount() {
+		return diffamount;
+	}
+	public void setDiffamount(Double diffamount) {
+		this.diffamount = diffamount;
+	}
+	public Integer getType() {
+		return type;
+	}
+	public void setType(Integer type) {
+		this.type = type;
+	}
+	public Double getValues() {
+		return values;
+	}
+	public void setValues(Double values) {
+		this.values = values;
+	}
+	
+	
+}
+

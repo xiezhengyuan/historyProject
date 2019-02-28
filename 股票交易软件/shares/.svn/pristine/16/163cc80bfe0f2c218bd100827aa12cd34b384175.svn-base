@@ -1,0 +1,24 @@
+package com.hxy.isw.service;
+
+import java.util.Map;
+
+public interface AppServiceTradeService {
+
+	Map<String, Object> optionalSharesList(String userid, Integer start, Integer limit)  throws Exception;
+
+	void addOptionalShares(String userid, String code)  throws Exception;
+
+	void delOptionalShares(String userid, String code)  throws Exception;
+
+	void buyShares(String userid, String entrustType, String entrustPrice, String count, String sharesid,
+			String positions, String type,String isplan) throws Exception;
+	
+	void sellShares(String userid, String entrustType, String entrustPrice, String count, String sharesid,
+			String positions, String type,String isplan,String warehouseid) throws Exception;
+
+	void buyForeign(String userid, String entrustType, String entrustPrice, String count, String sharesid,
+			String positions,String isplan,String buytype) throws Exception;
+	
+	void sellForeign(String userid, String entrustType, String entrustPrice, String count, String sharesid,
+			String positions,String isplan,String warehouseid) throws Exception;
+}

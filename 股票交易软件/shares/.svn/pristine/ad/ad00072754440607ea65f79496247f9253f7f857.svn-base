@@ -1,0 +1,148 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+	<div class="row">
+		<div class="col-xs-12">
+			
+			<div class="modal-header">
+			
+			<table  style="float: left;margin-right: 5px;">
+			<tr>
+			<td><label for="salesman" class="control-label" >用户：</label></td><td><span id="salesman_user"></span></td>
+			
+			<td><label for="name" class="control-label" style="margin-left:5px;">姓名：</label></td><td><input type="text" id="username" /></td>
+			<td><label for="mobile" class="control-label" style="margin-left:5px;">手机：</label></td><td><input type="text" id="usermobile" /></td>
+			</tr>
+			</table>
+			
+			<button class="btn btn-info btn-sm" data-toggle="tooltip" data-placement="top" title="查询" onclick="querymemberbycondition()">
+			<span class="glyphicon glyphicon-search"></span>
+			</button>
+	
+
+</div>
+								<!-- jqgrid 用户列表-->
+							<table id="salesman_user_grid_table"></table>
+							<!-- jqgrid 页码栏-->
+							<div id="salesman_user_grid_pager"></div>
+
+							<!-- PAGE CONTENT ENDS -->
+						</div><!-- /.col -->
+					</div><!-- /.row -->
+					
+<!-- 业务员详情（Modal） -->
+<div id="div_salesmandetail" ></div>
+			
+<!-- 导入（Modal） -->
+<!-- <div id="div_import_emp" ></div> -->		
+<script>
+var accountinfoid = '<%=request.getParameter("accountinfoid")%>';
+
+Q.grid_selector = "salesman_user_grid_table";
+Q.pager_selector = "salesman_user_grid_pager";
+
+var url = Q.url+"/company/queryuserbysalesman.action";
+
+var colModel = [
+                { label: '序号', name: 'id',align :'center',hidden:true,sortable : false,key:true },
+                { label: '昵称', name: 'nickname',align :'center', sortable : false },
+                { label: '手机号', name: 'mobile',align :'center', sortable : false },
+                { label: '累计充值', name: 'totalrecharge',align :'center', sortable : false },
+                { label: '金币', name: 'golds',align :'center', sortable : false },
+                { label: '虚拟资金', name: 'virtualcapital',align :'center', sortable : false },
+                { label: '注册时间', name: 'time',align :'center',sortable : false }
+               /*  {  
+                    name: '操作' ,align :'center', fixed: true, sortable: false, resize: false,  
+                    //formatter:'actions',  
+                    formatter: function (value, grid, rows, state) { 
+                    	
+                    	var btn = "";
+                    	//btn += Q.gridbtn_modify(Q.grid_selector,rows.id) ;
+                    	//btn += Q.gridbtn_del(Q.grid_selector,rows.id) ;
+                    	btn += Q.gridbtn_detail(Q.grid_selector,rows.id,rows.role) ;
+                    	btn += Q.gridbtn_change(Q.grid_selector,rows.id,rows.state) ; 
+                    	return  btn;
+                    }  
+                } */
+            	];
+
+var caption = "业务员";
+
+var postData = {"accountinfoid":accountinfoid};
+
+/**
+ * Q.grid_selector  tableid
+ * Q.pager_selector 页码栏id
+ * url 请求地址
+ * postData 请求参数
+ * colModel 表头
+ * caption 表名 
+ */
+Q.extJqGrid(Q.grid_selector,Q.pager_selector,url,postData,colModel,caption,null,function(d){
+	 $('#salesman').html(d.records);
+	});
+
+//Q.pageNavbutton(grid_selector,pager_selector);
+function getcondition(){
+	var o = {};
+	o.accountinfoid = accountinfoid;
+	o.name = $('#username').val();
+	o.mobile = $('#usermobile').val();
+	return o;
+}
+
+
+function querymemberbycondition(){
+	postData = getcondition();
+	$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+	//Q.extJqGrid(grid_selector,pager_selector,url,postData,colModel,caption);
+}
+
+function getSelectedRows() {
+    var grid = $(Q.grid_selector);
+    var rowKey = grid.getGridParam("selrow");
+
+    if (!rowKey) {
+        alert("No rows are selected");
+    } else {
+        var selectedIDs = grid.getGridParam("selarrrow");
+        //var result = "";
+        //for (var i = 0; i < selectedIDs.length; i++) {
+        //    result += selectedIDs[i] + ",";
+        //}
+        var result = selectedIDs.join(",");
+        alert(result);
+    }
+}
+
+
+//详情函数----命名规则  detail_tableid
+function detail_member_user_grid_table(id,role){
+	var _url = 'company/managerdetail.jsp?accountinfoid='+id;
+	if(role==4){
+	 _url= 'company/managerdetail.jsp?accountinfoid='+id;}
+	
+	Q.viewJsp(Q.page_content,_url);
+}
+
+function change_member_user_grid_table(id,stated){
+	$._ajax({
+		url: Q.url+"/company/forbiddenmember.action",
+		data:{"accountinfoid":id,"state":stated},
+		success: function(data){
+			if( typeof(data) == 'object'){
+				if( data.op == 'success' ){
+					Q.toastr("提示","操作成功",'success');
+					//reloadgrid
+					$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+				}else if(data.op == 'fail')
+					Q.toastr("提示",data.msg,'error');
+				else
+					Q.toastr("提示","操作失败",'error');
+			}else {
+				Q.toastr("提示","操作失败",'error');
+			}
+		}
+	});
+}
+
+</script>

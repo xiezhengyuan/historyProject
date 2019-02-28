@@ -1,0 +1,15 @@
+package com.hxy.isw.service;
+
+import java.util.List;
+import java.util.Map;
+
+import com.google.gson.JsonArray;
+
+public interface ManagerService {
+	public int countquerAll(String type)throws Exception;
+	public List<Map<String, Object>> queryAll(Integer start,Integer limit,String type)throws Exception;
+	public Map<String, Object> queryAll2(Integer start,Integer limit,String type)throws Exception;
+	public void modifyState(String id)throws Exception;
+	public JsonArray queryPhoto(String id)throws Exception;
+	public void modifyPhoto(String imgarr,String flag,String id)throws Exception;
+}

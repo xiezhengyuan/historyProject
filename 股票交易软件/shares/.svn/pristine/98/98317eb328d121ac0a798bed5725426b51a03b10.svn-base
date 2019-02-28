@@ -1,0 +1,35 @@
+package com.hxy.isw.service;
+
+import java.text.ParseException;
+import java.util.Map;
+
+import com.hxy.isw.entity.UserInfo;
+
+public interface AppServiceSet {
+	public void addDocumentaryMoney(String userId,String money,String documentaryId)throws Exception;
+	public Map<String, Object> queryYield(String month,String userId);
+	public Map<String, Object> queryYieldthird(String userId) throws ParseException;
+	public Map<String, Object> queryYieldtwo(String day,String type,String userId);
+	public void cutDocumentaryMoney(String userId,String money,String documentaryId)throws Exception;
+	public void newaddDocumentaryMoney(String userId,String money,String ffollowuserinfoid)throws Exception;
+	public void cancelDocumentaryMoney(String userId,String documentaryId,String exampleapplyId);
+	public void cancelDocumentaryMoney1(String userId,String documentaryId,String exampleapplyId);
+	public Map<String, Object> querytrading(String userId,String type,Integer start,Integer limit);
+	public Map<String, Object> queryAmericantrading(String userId,String type,Integer start,Integer limit);
+	public Map<String, Object> queryforex(String userId,String type,Integer start,Integer limit);
+	public Map<String, Object> queryCoverMessage(String userId,String sharesId);
+	public void queryCover(String userId,String sharesId);
+	public void queryforexCover(String userId,String forexId);
+	public void revokeShare(String userId,String shareId);
+	public void revokeSharebuying(String userId,String shareId);
+	public void revokeForex(String userId,String foreignexId);
+	public void revokeforexbuying(String userId,String foreignexId);
+	public void addSharesCheck(String userId,String stoploss,String stopprofit,String fforeignid);
+	public void modifySharesCheck(String userId,String stoploss,String stopprofit,String fforeignid,String type);
+	public void addforexCheck(String userId,String stoploss,String stopprofit,String fforeignid);
+	public void modifyforexCheck(String userId,String stoploss,String stopprofit,String fforeignid,String type);
+	public void addshares(String userId,String fshareswarehouseid,String entrustprice,String entrustnums)throws Exception;
+	public void addsharesbuying(String userId,String sharesId,String entrustprice,String entrustnums)throws Exception;
+	public void addforex(String userId,String fforeignexchangeid,String entrustprice,String entrustnums)throws Exception;
+	public void addforexbuying(String userId,String sharesId,String entrustprice,String entrustnums)throws Exception;
+}

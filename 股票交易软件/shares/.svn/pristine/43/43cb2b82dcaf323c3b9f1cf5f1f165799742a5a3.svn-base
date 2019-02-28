@@ -1,0 +1,132 @@
+package com.hxy.isw.entity;
+import java.util.Date;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
+import javax.persistence.Id;
+import javax.persistence.Table;
+
+   /**
+    * sharesentrust 实体类
+    * Fri Jul 14 17:20:34 CST 2017 lxq
+    */ 
+
+@Entity
+@Table(name = "sharesentrust")
+public class SharesEntrust{
+
+	@Id
+	@GeneratedValue(strategy = GenerationType.IDENTITY)
+	@Column(name = "id")
+	private Long id;
+
+	@Column(name = "fuserinfoid")
+	private Long fuserinfoid;
+
+	@Column(name = "sharesname")
+	private String sharesname;
+
+	@Column(name = "code")
+	private String code;
+
+	@Column(name = "presentprice")
+	private Double presentprice;
+
+	@Column(name = "entrustprice")
+	private Double entrustprice;
+
+	@Column(name = "entrustnums")
+	private Integer entrustnums;
+
+	@Column(name = "frozenamount")
+	private Double frozenamount;
+
+	@Column(name = "time")
+	private Date time;
+
+	@Column(name = "state")
+	private Integer state;
+
+	@Column(name = "isplan")
+	private Integer isplan;
+	
+	@Column(name = "type")
+	private Integer type;
+
+	public void setId(Long id){
+	this.id=id;
+	}
+	public Long getId(){
+		return id;
+	}
+	public void setFuserinfoid(Long fuserinfoid){
+	this.fuserinfoid=fuserinfoid;
+	}
+	public Long getFuserinfoid(){
+		return fuserinfoid;
+	}
+	public void setSharesname(String sharesname){
+	this.sharesname=sharesname;
+	}
+	public String getSharesname(){
+		return sharesname;
+	}
+	public void setCode(String code){
+	this.code=code;
+	}
+	public String getCode(){
+		return code;
+	}
+	public void setPresentprice(Double presentprice){
+	this.presentprice=presentprice;
+	}
+	public Double getPresentprice(){
+		return presentprice;
+	}
+	public void setEntrustprice(Double entrustprice){
+	this.entrustprice=entrustprice;
+	}
+	public Double getEntrustprice(){
+		return entrustprice;
+	}
+	public void setEntrustnums(Integer entrustnums){
+	this.entrustnums=entrustnums;
+	}
+	public Integer getEntrustnums(){
+		return entrustnums;
+	}
+	public void setFrozenamount(Double frozenamount){
+	this.frozenamount=frozenamount;
+	}
+	public Double getFrozenamount(){
+		return frozenamount;
+	}
+	public void setTime(Date time){
+	this.time=time;
+	}
+	public Date getTime(){
+		return time;
+	}
+	public void setState(Integer state){
+	this.state=state;
+	}
+	public Integer getState(){
+		return state;
+	}
+	public void setIsplan(Integer isplan){
+	this.isplan=isplan;
+	}
+	public Integer getIsplan(){
+		return isplan;
+	}
+	public Integer getType() {
+		return type;
+	}
+	public void setType(Integer type) {
+		this.type = type;
+	}
+	
+}
+

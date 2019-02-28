@@ -1,0 +1,211 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+
+<div class="page-header">
+	<h1>
+		上下架
+		<small>
+			<i class="ace-icon fa fa-angle-double-right"></i>
+			列表
+		</small>
+	</h1>
+	
+</div><!-- /.page-header -->
+<div>
+<label>请选择类型：</label>
+ <select id="type"  class="select2" onchange="queryAll()">
+  				
+	         <option value="0">股票</option>
+	          <option value="1">美股</option>
+	           <option value="2">外汇</option>
+	         </select>
+</div>
+<ul class="nav nav-tabs" role="tablist">
+  <li role="presentation" class="active"><a href="#tab_orderinfo_state0" role="tab" data-toggle="tab">上下架</a></li>
+ 
+</ul>
+
+<div class="tab-content">
+<!-- panel1 start -->
+  <div role="tabpanel" class="tab-pane active" id="tab_orderinfo_state0">
+  		<!-- jqgrid 用户列表-->
+							<table id="order_grid_table"></table>
+							<!-- jqgrid 页码栏-->
+							<div id="order_grid_pager"></div>
+							<div>
+	
+	
+</div>
+  	</div>
+  	
+ 
+  <div id="imgg"></div>
+</div>		
+
+<script>
+
+
+//加载部门下拉框
+/* Q.getProxylevel("#proxylevel"); */
+
+Q.grid_selector = "order_grid_table";
+Q.pager_selector = "order_grid_pager";
+
+var url = Q.url+"/manager/querAll.action";
+
+var colModel = [
+                { label: 'ID', name: 'id',align :'center',hidden:true,sortable : false,key:true },
+                { label: '名称', name: 'sharesname',align :'center', sortable : false },
+                { label: '代码', name: 'code',align :'center', sortable : false },
+                { label: '最新价', name: 'price',align :'center', sortable : false },
+                { label: '涨跌', name: 'upanddown',align :'center', sortable : false },
+                { label: '跟新时间', name: 'createtime',align :'center', sortable : false },
+                { label: 'state', name: 'state',align :'center', sortable : false ,hidden:true},
+                { label: '图标', name: 'img',align :'center', sortable : false,  
+                    formatter: function (value, grid, rows, state) { 
+                    	var img = rows.img;
+                    	
+                     
+                     /* 	var c='<img src = "'+Q.url+img+'" width="20%">';  */
+                   var c='<img src = "'+Q.url+img+'" width="50" height="30"'+'onmouseout="NormalImg(this)" onmousemove="BigImg(this)" complete="complete">'; 
+                    		/* <img src="/images/m02.jpg" onclick="this.style.zoom='2'" onclick="javascript:window.open(this.src);" style="cursor:pointer;"/> */
+                    		/*  c+='<img src = "'+Q.url+url[i]+'" width="20%"'+'onclick="this.width+=100;this.height+=100" onclick="javascript:window.open(this.src);" style="cursor:pointer;"/>'; 
+                    		*/
+                    	 
+                   return c;
+                    }
+                  },
+                 {  
+                    name: '操作' ,align :'center', fixed: true, sortable: false, resize: false,  
+                    //formatter:'actions',  
+                    formatter: function (value, grid, rows, state) { 
+                    	
+                    	 var btn = "";
+                    	
+                    	if(rows.state==0){
+                    		
+                    		btn += Q.gridbtn_shang(Q.grid_selector,rows.id);
+                    	}else if(rows.state==-1){
+                    		btn += Q.gridbtn_xia(Q.grid_selector,rows.id);
+                    	}else{
+                    		
+                    	}
+                    	if(rows.img==null||rows.img==""){
+                    		btn += Q.gridbtn_tutu1(Q.grid_selector,rows.id);
+                    	}else{
+                    		btn += Q.gridbtn_tutu(Q.grid_selector,rows.id);
+                    	}
+                    	
+                    	return  btn; 
+                    }  
+                }
+            	];
+
+var caption = "区域一";
+
+var postData = {};
+postData = getcondition();
+/**
+ * Q.grid_selector  tableid
+ * Q.pager_selector 页码栏id
+ * url 请求地址
+ * postData 请求参数
+ * colModel 表头
+ * caption 表名 
+ */
+/*  Q.extJqGrid(Q.grid_selector,Q.pager_selector,url,postData,colModel,caption,null,function(d){
+	});  */
+	 
+Q.ExtJqGrid({
+	"grid":Q.grid_selector,
+	"pager":Q.pager_selector,
+	"url":url,
+	"param":postData,
+	"model":colModel,
+	"caption":caption
+});
+
+//Q.pageNavbutton(grid_selector,pager_selector);
+function getcondition(){
+	var o = {};
+	o.type= $('#type').val();
+	
+	return o;
+}
+
+function queryAll(){
+	postData = getcondition();
+	
+	$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+}
+
+//详情函数----命名规则  detail_tableid
+function shang_order_grid_table(id){
+	Q.confirm("确定更改下架吗，确定吗？",function(r){
+		if(r){
+	$._ajax({
+		url: Q.url+"/manager/modifyState.action",
+		data:{"id":id},
+		success: function(data){
+			if( typeof(data) == 'object'){
+				if( data.op == 'success' ){
+					Q.toastr("提示","操作成功",'success');
+					//reloadgrid
+					$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+				}else if(data.op == 'fail')
+					Q.toastr("提示",data.msg,'error');
+				else
+					Q.toastr("提示","操作失败",'error');
+			}else {
+				Q.toastr("提示","操作失败",'error');
+			}
+		}
+	});
+		}
+	})
+}
+function xia_order_grid_table(id){
+	Q.confirm("确定更改下架吗，确定吗？",function(r){
+		if(r){
+	$._ajax({
+		url: Q.url+"/manager/modifyState.action",
+		data:{"id":id},
+		success: function(data){
+			if( typeof(data) == 'object'){
+				if( data.op == 'success' ){
+					Q.toastr("提示","操作成功",'success');
+					//reloadgrid
+					$("#"+Q.grid_selector).setGridParam({postData:postData,page:1}).trigger("reloadGrid"); 
+				}else if(data.op == 'fail')
+					Q.toastr("提示",data.msg,'error');
+				else
+					Q.toastr("提示","操作失败",'error');
+			}else {
+				Q.toastr("提示","操作失败",'error');
+			}
+		}
+	});
+		}
+	})
+}
+function tutuorder_grid_table(id){
+	 var _url= 'manager/img.jsp?id='+id;
+	 Q.viewJsp(Q.page_content,_url);
+}
+function tutu1order_grid_table(id){
+	 var _url= 'manager/img.jsp?id='+id;
+	 Q.viewJsp(Q.page_content,_url);
+}
+
+//帖子详情
+$('#panel_state1').click(function(){
+	Q.viewJsp("#tab_orderinfo_state1","postings/topic.jsp");
+})
+
+
+//禁言用户
+$('#panel_state2').click(function(){
+	Q.viewJsp("#tab_orderinfo_state2","postings/postingsbanned.jsp");
+})
+
+
+</script>

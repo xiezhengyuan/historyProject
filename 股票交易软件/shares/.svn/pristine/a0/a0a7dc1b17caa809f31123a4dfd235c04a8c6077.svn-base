@@ -1,0 +1,13 @@
+package com.hxy.isw.service;
+
+public interface AppServiceSocial {
+ public String getpostingslist(String userid,String exampleid,Integer start,Integer limit,String type) throws Exception;
+ public String postingsdetail(String userid,String postingid) throws Exception;
+ public String postingscomments(String userid,String postingid,Integer start,Integer limit) throws Exception;
+ public String praise(String userid,String postingid) throws Exception;
+ public String comment(String userid,String postingid,String comment,String commentid) throws Exception;
+ public String reward(String userid,String postingid,String position) throws Exception;
+ public String shareposting(String userid,String postingid) throws Exception;
+ public String sendpost(String userid,String postingscontent,String photos) throws Exception;
+ public String getrewardposition(String userid)throws Exception;
+}

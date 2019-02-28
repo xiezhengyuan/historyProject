@@ -1,0 +1,578 @@
+package com.hxy.isw.control;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Controller;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
+
+import com.hxy.isw.entity.ExamplePlan;
+import com.hxy.isw.service.AppServiceExample;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.JsonUtil;
+
+/**
+* @author lcc
+* @date 2017年7月27日 上午11:09:59
+* @describe 行情   牛人
+*/
+
+@Controller
+@RequestMapping("/appServiceExample")
+public class AppServiceExampleControl {
+	@Autowired
+	AppServiceExample appServiceExample;
+	
+	/**
+	 * 沪深/美股/外汇指数
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/index4shares")
+	public void index4shares(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String type = request.getParameter("type");//hs 沪深   、 us 美股  、 wh  外汇
+		
+		try{
+			String json = appServiceExample.index4shares(userid,type);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	
+	
+	
+	/**
+	 * 行情列表（沪深）
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/quotation4hs")
+	public void quotation4hs(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String type = request.getParameter("type");//1涨幅  -1跌幅
+		int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+		int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+		
+		
+		try{
+			String json = appServiceExample.quotation4hs(userid,type,start,limit);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 搜索股票/外汇/美股
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/queryshareslist")
+	public void queryshareslist(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		//String type = request.getParameter("type");//0沪深  1美股  2外汇
+		String condition = request.getParameter("condition");//名称或代码
+		int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+		int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+		
+		
+		try{
+			String json = appServiceExample.queryshareslist(userid,condition,start,limit);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * 沪深股票详情
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/sharesdetail")
+	public void sharesdetail(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String shareid = request.getParameter("shareid");
+		String code = request.getParameter("code");
+		String type = request.getParameter("type");//hs 沪深   、 us 美股  、 wh  外汇
+		
+		try{
+			String json = appServiceExample.sharesdetail(userid,shareid,code,type);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * 沪深股票K线图
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/sharesKline")
+	public void sharesKline(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String shareid = request.getParameter("shareid");
+		String code = request.getParameter("code");
+		String type = request.getParameter("type");//分时mh  5 = 5分k线(默认) ，30 = 30分k线，60 = 60分k线，day = 日k线，week = 周k线，month = 月k线
+		
+		try{
+			String json = appServiceExample.sharesKline(userid,shareid,code,type);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * 搜索牛人
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/queryexamplelist")
+	public void queryexamplelist(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		//String type = request.getParameter("type");//0沪深  1美股  2外汇
+		String condition = request.getParameter("condition");//牛人名称
+		int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+		int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+		
+		
+		try{
+			String json = appServiceExample.queryexamplelist(userid,condition,start,limit);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 收益榜
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/profitrankinglist")
+	public void profitrankinglist(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String type = request.getParameter("type");//-1所有  0沪深  1美股  2外汇
+		int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+		int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+		
+		
+		try{
+			String json = appServiceExample.profitrankinglist(userid,type,start,limit);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * 人气榜
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/popularityrankinglist")
+	public void popularityrankinglist(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+		int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+		
+		
+		try{
+			String json = appServiceExample.popularityrankinglist(userid,start,limit);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * 计划榜
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/planrankinglist")
+	public void planrankinglist(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String type = request.getParameter("type");//-1所有  0沪深  1美股  2外汇
+		int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+		int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+		
+		
+		try{
+			String json = appServiceExample.planrankinglist(userid,type,start,limit);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * 牛人详情
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/exampledetail")
+	public void exampledetail(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String exampleid = request.getParameter("exampleid");
+		
+		try{
+			String json = appServiceExample.exampledetail(userid,exampleid);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * 牛人计划列表
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@RequestMapping(method = RequestMethod.POST, value = "/planlist")
+	public void planlist(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String exampleid = request.getParameter("exampleid");//牛人id。为空，则是查所有计划
+		String self = request.getParameter("self"); //是否为我的计划 0否 1是
+		String type = request.getParameter("type");//-1所有  0沪深  1美股  2外汇
+		String tag = request.getParameter("tag");//3精选计划  0抢购中  1运行中  2往期成功
+		int start = request.getParameter("page")==null?1:Integer.parseInt(request.getParameter("page"));
+		int limit = request.getParameter("rows")==null?ConstantUtil.LIMIT:Integer.parseInt(request.getParameter("rows"));
+		
+		
+		try{
+			String json = appServiceExample.planlist(userid,exampleid,self,type,tag,start,limit);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * 关注/取消关注
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	@RequestMapping(method = RequestMethod.POST, value = "/follow")
+	public void follow(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String exampleid = request.getParameter("exampleid");
+		
+		try{
+			String json = appServiceExample.follow(userid,exampleid);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 订阅/取消订阅
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	@RequestMapping(method = RequestMethod.POST, value = "/subscription")
+	public void subscription(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String exampleid = request.getParameter("exampleid");
+		String month = request.getParameter("month");
+		String amount = request.getParameter("amount");
+		
+		try{
+			String json = appServiceExample.subscription(userid,exampleid,month,amount);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 跟随
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	@RequestMapping(method = RequestMethod.POST, value = "/documentary")
+	public void documentary(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String exampleid = request.getParameter("exampleid");
+		String type = request.getParameter("type");//1金额 2手数 3比例
+		String value = request.getParameter("value");
+		try{
+			String json = appServiceExample.documentary(userid,exampleid,type,value);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 计划详情(基本数据)
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	@RequestMapping(method = RequestMethod.POST, value = "/plandetail")
+	public void plandetail(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String exampleid = request.getParameter("exampleid");
+		String planid = request.getParameter("planid");
+		
+		try{
+			String json = appServiceExample.plandetail(userid,exampleid,planid);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 计划详情(当前持仓)
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	@RequestMapping(method = RequestMethod.POST, value = "/planwarehouse")
+	public void planwarehouse(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String exampleid = request.getParameter("exampleid");
+		String planid = request.getParameter("planid");
+		int rows = request.getParameter("rows")==null?4:Integer.parseInt(request.getParameter("rows"));
+		
+		try{
+			String json = appServiceExample.planwarehouse(userid,exampleid,planid,rows);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 计划详情(最新交易)
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	@RequestMapping(method = RequestMethod.POST, value = "/planofnew")
+	public void planofnew(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String exampleid = request.getParameter("exampleid");
+		String planid = request.getParameter("planid");
+		int tag = request.getParameter("tag")==null?0:Integer.parseInt(request.getParameter("tag"));//0买入-1卖出
+		int rows = request.getParameter("rows")==null?4:Integer.parseInt(request.getParameter("rows"));
+		
+		try{
+			String json = appServiceExample.planofnew(userid,exampleid,planid,tag,rows);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 观摩
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	@RequestMapping(method = RequestMethod.POST, value = "/watchplan")
+	public void watchplan(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String exampleid = request.getParameter("exampleid");
+		String planid = request.getParameter("planid");
+		String amount = request.getParameter("amount");//观摩计划所需金币
+		
+		try{
+			String json = appServiceExample.watchplan(userid,exampleid,planid,amount);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 抢购
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	@RequestMapping(method = RequestMethod.POST, value = "/panicbuying")
+	public void panicbuying(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String exampleid = request.getParameter("exampleid");
+		String planid = request.getParameter("planid");
+		String amount = request.getParameter("amount");//抢购计划所需金币
+		
+		try{
+			String json = appServiceExample.panicbuying(userid,exampleid,planid,amount);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * 发布计划
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	@RequestMapping(method = RequestMethod.POST, value = "/publishplan")
+	public void publishplan(HttpServletRequest request,HttpServletResponse response,HttpSession session,ExamplePlan ep){
+		String userid = request.getParameter("userid");
+		String starttime = request.getParameter("starttime");
+		String endtime = request.getParameter("endtime");
+		
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+		
+		ep.setFuserinfoid(Long.parseLong(userid));
+		try {
+			ep.setStarttime(sdf.parse(starttime));
+			ep.setEndtime(sdf.parse(endtime));
+		} catch (ParseException e1) {
+			// TODO Auto-generated catch block
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\"时间格式错误\"}");
+			e1.printStackTrace();
+		}
+		
+		
+		try{
+			String json = appServiceExample.publishplan(ep);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	
+	/**
+	 * 收益率走势统计图
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	@RequestMapping(method = RequestMethod.POST, value = "/profitstatistic")
+	public void profitstatistic(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String exampleid = request.getParameter("exampleid");
+		int tag = request.getParameter("tag")==null?0:Integer.parseInt(request.getParameter("tag"));//0：全部    1 ：30天   2：6个月     3: 1年 
+		
+		try{
+			String json = appServiceExample.profitstatistic(userid,exampleid,tag);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * 交易产品
+	 * @param request
+	 * @param response
+	 * @param session
+	 */
+	@Transactional(propagation=Propagation.REQUIRED,rollbackFor=Exception.class)
+	@RequestMapping(method = RequestMethod.POST, value = "/tradestatistic")
+	public void tradestatistic(HttpServletRequest request,HttpServletResponse response,HttpSession session){
+		String userid = request.getParameter("userid");
+		String exampleid = request.getParameter("exampleid");
+		int tag = request.getParameter("tag")==null?0:Integer.parseInt(request.getParameter("tag"));//0：全部    1 ：1日   2：1周     
+		int type = request.getParameter("type")==null?0:Integer.parseInt(request.getParameter("type"));//0：沪深    1 ：美股   2：外汇     
+		
+		try{
+			String json = appServiceExample.tradestatistic(userid,exampleid,tag,type);
+			JsonUtil.success2client(response, json);
+		}catch(Exception e){
+			String mess = e.getMessage();
+			JsonUtil.success2client(response, "{\"msg\":\"fail\",\"info\":\""+mess+"\"}");
+			e.printStackTrace();
+		}
+	}
+}

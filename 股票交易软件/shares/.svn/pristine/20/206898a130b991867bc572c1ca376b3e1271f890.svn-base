@@ -1,0 +1,273 @@
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
+<style type="text/css">
+
+ .select2{
+   background: transparent;
+   width: 180px;
+   padding:0px;
+   font-size: 16px;
+   border: 1px solid #ccc;
+   height: 34px;
+   -webkit-appearance: none;
+}
+</style>
+	<div class="row">
+			<table  style="float: left;margin-right: 5px;">
+			<tr id="tabletd">
+			     <td>
+			      <select id="selectcompany2" class="select2"  onchange="queryuserbycompany2()">
+	              <option value="0">选择推广公司</option>
+	              </select>
+	              </td>
+	              <td>
+	              <select id="selectjl2"  class="select2" onchange="queryuserbyjl2()">
+	              <option value="0">选择推广经理</option>
+	              </select>
+	              </td>
+	              <td>
+	              <select id="selectywy2"  class="select2" onchange="queryuserbyywy2()">
+	              <option value="0">选择推广业务员</option>
+	              </select>
+			      </td>
+
+			   <td style="width: 150px;"></td>
+			   
+			   <td >
+			     <input style="width:150px" class="form_date" placeholder="起始日期" type="text" value=""  id="gstarttime">
+			     </td>
+			     <td>
+					<span style="width:40px height:50px; display:inline" class="input-group-addon " ><span class="glyphicon glyphicon-calendar"></span></span>
+					</td>
+					<td>
+					<input style="width:150px" class="form_date" placeholder="结束日期" type="text" value=""  id="gendtime">
+					</td>
+					<td>
+					<span style="width:40px;display:inline" class="input-group-addon "><span class="glyphicon glyphicon-calendar"></span></span>
+			      
+			    </td>
+			     <td style="width: 160px"> <input id="querybyuserinfo" value="" type="text" placeholder="用户姓名/手机号" />
+			   
+			    </td>
+	
+	          <td style="width: 60px; text-align: center; ">
+	          <button id="addtoyinfobtn" class="btn btn-purple btn-sm" onclick="querybycondition()" data-placement="top" title="查询" data-toggle="modal" data-target="#queryuserinfo">查询
+	          </button> 
+	         </td> 
+			
+			</tr>
+			</table>
+			
+			<button class="btn btn-info btn-sm" style="opacity:0;pointer-events:none" data-toggle="tooltip" data-placement="top" title="查询" >
+	<span class="glyphicon glyphicon-search"></span>
+	</button >
+	<div style="float:right; margin-top:16px; ">
+	
+	<button id="importempbtn" class="btn btn-danger btn-sm" onclick="$('input[id=importemp_excel]').click();" data-placement="top" title="导出">
+	导出<span class="glyphicon glyphicon-import"></span>
+	</button>
+	</div>
+
+</div>
+                            
+								<!-- jqgrid 用户列表-->
+							<table id="ti_grid_table1"></table>
+							<!-- jqgrid 页码栏-->
+							<div id="ti_grid_pager1"></div>
+
+							<!-- PAGE CONTENT ENDS -->
+						</div><!-- /.col -->
+					</div><!-- /.row -->
+					
+<!-- 新增人员（Modal） -->
+<div id="div_addtoy" ></div>
+			
+<!-- 导入（Modal） -->
+<div id="div_import_emp" ></div>		
+<script>
+
+function querycompany2(){
+	$._ajax({
+		url: Q.url+"/ChangeUser/querycompany.action",
+		data:{"companyname":$("#companyname1").val()},
+		type:"post",
+		dataType: "json",
+		success: function(company){	
+			var opts='<option value="0">选择推广公司</option>';
+			for(var i=0;i<company.rows.length;i++){
+				opts+='<option value="'+company.rows[i].id+'">'+company.rows[i].company+'</option>';
+			}
+			
+			$("#selectcompany2").html(opts);
+		
+		}
+	});	
+}
+ querycompany2();
+
+ function queryuserbycompany2(){
+	 $._ajax({
+			url: Q.url+"/ChangeUser/queryjl.action",
+			data:{"companyid":$("#selectcompany1").val()},
+			type:"post",
+			dataType: "json",
+			success: function(jingli){	
+				var opts='<option value="0">选择推广经理</option>';
+				for(var i=0;i<jingli.rows.length;i++){
+					opts+='<option value="'+jingli.rows[i].id+'">'+jingli.rows[i].name+'</option>';
+				}
+				
+				$("#selectjl2").html(opts);	
+				querybycondition();
+			}
+		});
+ }
+
+ 
+  function queryuserbyjl2(){
+	 $._ajax({
+			url: Q.url+"/ChangeUser/queryywy.action",
+			data:{"jlid":$("#selectjl1").val()},
+			type:"post",
+			dataType: "json",
+			success: function(yewuyuan){	
+				var opts='<option value="0">选择推广业务员</option>';
+				for(i=0;i<yewuyuan.rows.length;i++){
+					opts+='<option value="'+yewuyuan.rows[i].id+'">'+yewuyuan.rows[i].name+'</option>';
+				}
+				
+				$("#selectywy2").html(opts);
+				querybycondition();
+					
+			}
+		});
+ }
+  
+ function queryuserbyywy1(){
+	 querybycondition();
+ }
+  
+  
+  $(".form_date").datetimepicker({
+		language:  'zh-CN',
+	    format: 'yyyy-MM-dd',
+	    autoclose: true,
+	    todayBtn: false,
+	    pickerPosition: "bottom-left",
+	    weekStart: 0,
+	    todayBtn:  1,
+		autoclose: 1,
+		todayHighlight: 1,
+		startView: 2,
+		minView :2,
+		forceParse: 0
+	}); 
+
+$._ajax({
+	url:Q.url+"/manageuserinfo/"+"ptquerynewlod.action",
+	dataType:'json',
+	type:'post',
+	success:function(data){
+		$('#olduser').html(data.olduser);
+		$('#todayuser').html(data.todayuser);
+	}
+})
+
+Q.grid_selector = "ti_grid_table1";
+Q.pager_selector = "ti_grid_pager1";
+
+var url = Q.url+"/manageuserinfo/ptqueryuserinfo.action";
+
+var colModel=[];
+
+colModel=getcolModel();
+
+function getcolModel(){
+	var mycolModel = [
+                { label: '编号', name: 'id',align :'center',sortable : false,key:true },
+                { label: whatwho(), name: 'whatwho',align :'center', sortable : false },
+                { label: '入金总额', name: 'totalmoney',align :'center', sortable : false }
+            	];
+	
+	return mycolModel;
+}            	
+function  whatwho(){
+	var company=$("#selectcompany1").val();
+	var gengral=$("#selectjl1").val();
+	var salesman=$("#selectywy1").val();
+	if(company == '0'){
+		return '公司';
+		return;
+	} else if(gengral == '0'){
+		return '经理';
+		return;
+	}else if(salesman == '0'){
+		return '业务员';
+		return;
+	}else{
+		return '用户';
+	}
+}          	
+var caption = "入金报表";
+
+var postData ={};
+postData = getcondition();
+/**
+ * Q.grid_selector  tableid
+ * Q.pager_selector 页码栏id 
+ * url 请求地址
+ * postData 请求参数
+ * colModel 表头
+ * caption 表名 
+ */
+Q.ExtJqGrid({
+	"grid":Q.grid_selector,
+	"pager":Q.pager_selector,
+	"url":url,
+	"param":postData,
+	"model":colModel,
+	"caption":caption
+});
+
+//Q.pageNavbutton(grid_selector,pager_selector);
+function getcondition(){
+	var o = {};
+	o.querybyaccountinfo = $('#querybyaccountinfo').val();
+	o.querybyuserinfo = $('#querybyuserinfo').val();
+	o.selecttype=$("#selecttype").val();
+	return o;
+}
+
+
+function querybycondition(){
+	postData = getcondition();
+	colModel=getcolModel();
+	$("#"+Q.grid_selector).GridUnload();
+	Q.ExtJqGrid({
+		"grid":Q.grid_selector,
+		"pager":Q.pager_selector,
+		"url":url,
+		"param":postData,
+		"model":colModel,
+		"caption":caption
+	})	 
+}
+
+function changetype(){
+	$("#querybyaccountinfo").val("");
+	$("#querybyuserinfo").val("");
+}
+
+
+//详情函数----命名规则  detail_tableid
+//查看详情
+function detail_ti_grid_table(id){
+	var _url= 'usermanage/userinfodetil.jsp?userid='+id;
+	
+	Q.viewJsp(Q.page_content,_url);
+}
+
+
+
+
+</script>
+<script src="js/jqgridresize.js"></script>

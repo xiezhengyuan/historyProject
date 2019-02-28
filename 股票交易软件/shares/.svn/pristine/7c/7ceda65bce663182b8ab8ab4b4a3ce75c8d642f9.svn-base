@@ -1,0 +1,306 @@
+package com.hxy.isw.service.impl;
+
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.lang.StringUtils;
+import org.omg.CORBA.DATA_CONVERSION;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.hxy.isw.entity.AccountInfo;
+import com.hxy.isw.entity.ExampleApply;
+import com.hxy.isw.entity.ExamplePlan;
+import com.hxy.isw.entity.UserInfo;
+import com.hxy.isw.service.ExampleService;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+
+@Repository
+public class ExampleServiceImpl implements ExampleService {
+
+	@Autowired
+	private DatabaseHelper databaseHelper;
+
+	@Override
+	public Map<String, Object> findExampleList(AccountInfo ai, String keyword, int start, int limit) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+
+		StringBuffer sql = new StringBuffer("SELECT COUNT(*) FROM userinfo ui WHERE ui.isexample=1 AND ui.state!=-2");
+		if (!StringUtils.isEmpty(keyword)) {
+			sql.append(" AND (ui.nickname LIKE '%").append(keyword).append("%'").append(" OR ui.mobile LIKE '%")
+					.append(keyword).append("%')");
+		}
+
+		StringBuffer hql = new StringBuffer("SELECT ui FROM UserInfo ui WHERE ui.isexample=1 AND ui.state!=-2 ");
+		if (!StringUtils.isEmpty(keyword)) {
+			hql.append(" AND (ui.nickname LIKE '%").append(keyword).append("%'").append(" OR ui.mobile LIKE '%")
+					.append(keyword).append("%')");
+		}
+
+		Integer count = databaseHelper.getSqlCount(sql.toString());
+
+		int pages = ConstantUtil.pages(count, limit);
+
+		List resultList = databaseHelper.getResultListByHql(hql.toString(), start, limit);
+
+		for (Object object : resultList) {
+			UserInfo ui = (UserInfo) object;
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("id", ui.getId());
+			map.put("nickname", ui.getNickname());
+			map.put("mobile", ui.getMobile());
+			map.put("golds", ui.getGolds());
+			map.put("virtualcapital", ui.getVirtualcapital());
+			map.put("time", ui.getCreatetime());
+			if (ui.getState() == 0) {
+				map.put("state", "正常");
+			} else {
+				map.put("state", "封禁");
+			}
+			list.add(map);
+		}
+		resultMap.put("op", "success");
+		resultMap.put("msg", "");
+		resultMap.put("rows", list);
+		resultMap.put("total", pages);
+		resultMap.put("records", count);
+		return resultMap;
+	}
+
+	@Override
+	public Map<String, Object> findAuthstrList(AccountInfo ai, String keyword, int start, int limit) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+
+		StringBuffer sqlCount = new StringBuffer(
+				"SELECT COUNT(*) FROM userinfo ui RIGHT JOIN exampleapply ea ON ui.id=ea.fuserinfoid WHERE ea.state=0");
+
+		StringBuffer sql = new StringBuffer(
+				"SELECT ui.id,ui.nickname,ui.mobile,ui.golds,ui.virtualcapital,ea.time,ui.state FROM userinfo ui RIGHT JOIN exampleapply ea ON ui.id=ea.fuserinfoid WHERE ea.state=0");
+
+		if (!StringUtils.isEmpty(keyword)) {
+			sqlCount.append(" AND (ui.nickname LIKE '%").append(keyword).append("%'").append(" OR ui.mobile LIKE '%")
+					.append(keyword).append("%')");
+
+			sql.append(" AND (ui.nickname LIKE '%").append(keyword).append("%'").append(" OR ui.mobile LIKE '%")
+					.append(keyword).append("%')");
+		}
+
+		Integer count = databaseHelper.getSqlCount(sqlCount.toString());
+		int pages = ConstantUtil.pages(count, limit);
+
+		List<Object[]> resultList = databaseHelper.getResultListBySql(sql.toString(), start, limit);
+
+		for (Object[] objects : resultList) {
+			Map<String, Object> map = new HashMap<String, Object>();
+			map.put("id", objects[0].toString());
+			map.put("nickname", objects[1].toString());
+			map.put("mobile", objects[2].toString());
+			map.put("golds", objects[3].toString());
+			map.put("virtualcapital", objects[4].toString());
+			map.put("time", objects[5].toString());
+			if (objects[6].toString().equals("0")) {
+				map.put("state", "正常");
+			} else {
+				map.put("state", "封禁");
+			}
+			// String id = objects[0].toString();
+			// String nickname = objects[1].toString();
+			// String mobile = objects[2].toString();
+			// String golds = objects[3].toString();
+			// String virtualcapital = objects[4].toString();
+			// String time = objects[5].toString();
+			// String state = objects[6].toString();
+			list.add(map);
+		}
+
+		resultMap.put("op", "success");
+		resultMap.put("msg", "");
+		resultMap.put("rows", list);
+		resultMap.put("total", pages);
+		resultMap.put("records", count);
+
+		return resultMap;
+	}
+
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public Map<String, Object> addExample(AccountInfo ai, UserInfo ui) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		StringBuffer sql = new StringBuffer("SELECT COUNT(*) FROM userinfo ui WHERE ui.username=")
+				.append(ui.getUsername());
+		Integer count = databaseHelper.getSqlCount(sql.toString());
+		if (count > 0) {
+			resultMap.put("op", "fail");
+			resultMap.put("msg", "该账户已存在");
+			return resultMap;
+		}
+		UserInfo info = new UserInfo();
+		info.setUsername(ui.getUsername());
+		info.setPassword(ui.getPassword());
+		info.setMobile(ui.getMobile());
+		info.setNickname(ui.getNickname());
+		info.setName(ui.getName());
+		info.setGolds(ui.getGolds());
+		info.setVirtualcapital(0D);
+		info.setTotalrecharge(0D);
+		info.setBank(ui.getBank());
+		info.setCardno(ui.getCardno());
+		info.setPaparno(ui.getPaparno());
+		info.setCreatetime(new Date());
+		info.setState(0);
+		info.setSpeech(0);
+		info.setIsexample(1);
+		databaseHelper.persistObject(info);
+		resultMap.put("op", "success");
+		resultMap.put("msg", "");
+		return resultMap;
+	}
+
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void ban(AccountInfo ai, String id) {
+		StringBuffer sql = new StringBuffer("UPDATE userinfo ui SET ui.state=-1 WHERE ui.id=").append(id);
+		databaseHelper.executeNativeSql(sql.toString());
+
+	}
+
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void unban(AccountInfo ai, String id) {
+		StringBuffer sql = new StringBuffer("UPDATE userinfo ui SET ui.state=0 WHERE ui.id=").append(id);
+		databaseHelper.executeNativeSql(sql.toString());
+	}
+
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void pass(AccountInfo ai, String id) {
+		StringBuffer hql = new StringBuffer("SELECT ea FROM ExampleApply ea WHERE ea.state=0 AND ea.fuserinfoid=")
+				.append(id);
+		List resultList = databaseHelper.getResultListByHql(hql.toString());
+		ExampleApply exampleApply = (ExampleApply) resultList.get(0);
+
+		StringBuffer sql1 = new StringBuffer("UPDATE exampleapply ea SET ea.state=1 WHERE ea.fuserinfoid=").append(id)
+				.append(" AND ea.id=").append(exampleApply.getId());
+		databaseHelper.executeNativeSql(sql1.toString());
+
+		StringBuffer sql2 = new StringBuffer("UPDATE userinfo ui SET ui.isexample=1 WHERE ui.id=").append(id);
+		databaseHelper.executeNativeSql(sql2.toString());
+
+	}
+
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void notpass(AccountInfo ai, String id) {
+		StringBuffer sql = new StringBuffer("UPDATE exampleapply ea SET ea.state=-1 WHERE ea.fuserinfoid=").append(id);
+		databaseHelper.executeNativeSql(sql.toString());
+	}
+
+	@Override
+	public Map<String, Object> panicBuying(AccountInfo ai, String id, String type, int start, int limit) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		List<Map<String, Object>> list = new ArrayList<Map<String, Object>>();
+
+		StringBuffer sql = new StringBuffer("SELECT COUNT(1) FROM exampleplan ep WHERE ep.state=0 AND ep.fuserinfoid=").append(id)
+				.append(" AND ep.type=").append(type);
+		int count = databaseHelper.getSqlCount(sql.toString());
+		int pages = ConstantUtil.pages(count, limit);
+
+		StringBuffer hql = new StringBuffer("SELECT ep FROM ExamplePlan ep WHERE ep.state=0 AND ep.fuserinfoid=").append(id)
+				.append(" AND ep.type=").append(type);
+		List<Object> resultList = databaseHelper.getResultListByHql(hql.toString(), start, limit);
+		for (Object object : resultList) {
+			ExamplePlan ep = (ExamplePlan) object;
+			Map<String, Object> map1 = new HashMap<String, Object>();
+			Map<String, Object> map2 = new HashMap<String, Object>();
+			map1.put("id", ep.getId());
+			map1.put("targetprofit", ep.getTargetprofit());
+
+			map2.put("startTime", ep.getStarttime());
+			map2.put("endTime", ep.getEndtime());
+			map2.put("time", ep.getCreatetime());
+			map2.put("stopLine", ep.getStopline());
+			long diff = ep.getEndtime().getTime() - ep.getStarttime().getTime();
+			long days = diff / (1000 * 60 * 60 * 24);
+			map2.put("days", days + "天");
+			map2.put("big", "");
+
+			map1.put("detail", map2);
+
+			StringBuffer sqlCount = new StringBuffer(
+					"SELECT COUNT(*) FROM panicbuying pb WHERE pb.state=0 AND pb.fexampleplanid=").append(ep.getId());
+			Integer count2 = databaseHelper.getSqlCount(sqlCount.toString());
+			map1.put("peopleCount", count2);
+			map1.put("state", ep.getState());
+			map1.put("ischoiceness", ep.getIschoiceness());
+			list.add(map1);
+		}
+		resultMap.put("rows", list);
+		resultMap.put("total", count);
+		resultMap.put("records", pages);
+		resultMap.put("op", "success");
+		resultMap.put("msg", "");
+		return resultMap;
+	}
+
+	@Override
+	public Map<String, Object> planRunning(AccountInfo ai, String id,String type) {
+		Map<String, Object> resultMap = new HashMap<String, Object>();
+		StringBuffer hql = new StringBuffer("SELECT ep FROM ExamplePlan ep WHERE ep.state=1 AND ep.fuserinfoid=").append(id)
+				.append(" AND ep.type=").append(type).append(" ORDER BY ep.createtime DESC");
+		
+		List resultList = databaseHelper.getResultListByHql(hql.toString());
+		if(resultList!=null && resultList.size()!=0){
+			
+			ExamplePlan plan=(ExamplePlan) resultList.get(0);
+			
+			resultMap.put("id", plan.getId());
+			resultMap.put("targetprofit", plan.getTargetprofit());
+			resultMap.put("stopline", plan.getStopline());
+			resultMap.put("starttime", plan.getStarttime());
+			resultMap.put("endtime", plan.getEndtime());
+			
+			long diff = plan.getEndtime().getTime() - plan.getStarttime().getTime();
+			long days = diff / (1000 * 60 * 60 * 24);
+			resultMap.put("days", days );
+			
+			long before=(new Date().getTime()-plan.getStarttime().getTime())/(1000 * 60 * 60 * 24);//已运行天数
+			resultMap.put("before", before );
+			long after=(plan.getEndtime().getTime()-new Date().getTime())/(1000 * 60 * 60 * 24);//剩余天数
+			resultMap.put("after", after );
+			
+			resultMap.put("time", plan.getCreatetime());
+			resultMap.put("state", plan.getState());
+			resultMap.put("ischoiceness", plan.getIschoiceness());
+			resultMap.put("state", plan.getState());
+			
+			resultMap.put("op", "success");
+			resultMap.put("msg", "");
+		}else{
+			resultMap.put("op", "empty");
+			resultMap.put("msg", "暂无运行中计划");
+		}
+		return resultMap;
+	}
+
+	@Override
+	public Map<String, Object> pastSuccess(AccountInfo ai) {
+
+		return null;
+	}
+
+	@Override
+	@Transactional(propagation = Propagation.REQUIRED, rollbackFor = Exception.class)
+	public void select(AccountInfo ai, String id) {
+		StringBuffer sql = new StringBuffer("UPDATE exampleplan ep SET ep.ischoiceness=1 WHERE ep.fuserinfoid=").append(id);
+		databaseHelper.executeNativeSql(sql.toString());
+	}
+
+}

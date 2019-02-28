@@ -1,0 +1,767 @@
+package com.hxy.isw.service.impl;
+
+import java.math.BigDecimal;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Repository;
+
+import com.google.gson.Gson;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+import com.hxy.isw.entity.ExamplePlan;
+import com.hxy.isw.entity.Follow;
+import com.hxy.isw.entity.ForeignExchange;
+import com.hxy.isw.entity.Shares;
+import com.hxy.isw.entity.SharesCollect;
+import com.hxy.isw.entity.SharesWareHouse;
+import com.hxy.isw.entity.UserInfo;
+import com.hxy.isw.entity.UserProfitStatistic;
+import com.hxy.isw.service.AppServiceExample;
+import com.hxy.isw.util.ConstantUtil;
+import com.hxy.isw.util.DatabaseHelper;
+import com.hxy.isw.util.JsonUtil;
+
+/**
+* @author lcc
+* @date 2017年7月20日 下午3:13:41
+* @describe
+*/
+
+@Repository
+public class AppServiceExampleImpl implements AppServiceExample {
+
+	@Autowired
+	DatabaseHelper databaseHelper;
+
+	@Override
+	public String quotation4hs(String userid,String type, int start, int limit) throws Exception {
+		// TODO Auto-generated method stub
+		if(type==null||type.length()==0)throw new Exception("参数type不能为空");
+		
+		int int_type = Integer.parseInt(type);
+		
+		String upanddown = int_type==1?"涨":"跌";
+		
+		int count = countquotation4hs(userid,upanddown);
+		int pages = ConstantUtil.pages(count, limit);
+		
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		if(count>0){
+			StringBuffer query = new StringBuffer("select s from Shares s where s.type = 0 and s.state = 0 and s.upanddown = '").append(upanddown).append("'")
+					.append(" order by s.diffmoney desc");
+			List<Object> lst = databaseHelper.getResultListByHql(query.toString(), start, limit);
+			
+			for (Object object : lst) {
+				Shares s = (Shares)object;
+				
+				Map<String,Object> map = new HashMap<String,Object>();
+				
+				map.put("shareid", s.getId());
+				map.put("sharename", s.getSharesname());
+				map.put("code", s.getCode());
+				map.put("market", s.getMarket());
+				map.put("price", s.getPrice());
+				map.put("diffmoney", s.getDiffmoney());
+				map.put("diffrate", s.getDiffrate());
+				map.put("lastupdate", new Date().toString());
+				map.put("type",s.getType());//0沪深 1美股 2外汇
+				
+				lstMap.add(map);
+			}
+		}
+		
+		String json = new Gson().toJson(lstMap);
+		JsonArray arr = (JsonArray) new JsonParser().parse(json);
+		JsonObject obj = new JsonObject();
+		obj.addProperty("total",count);
+		obj.addProperty("pages",pages);
+		obj.add("rows", arr);
+		
+		return obj.toString();
+	}
+
+	public int countquotation4hs(String userid,String upanddown){
+		StringBuffer count = new StringBuffer("select count(s.id) from Shares s where s.type = 0 and s.state = 0 and s.upanddown = '").append(upanddown).append("'");
+		List lst = databaseHelper.getResultListByHql(count.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+	
+	@Override
+	public String index4shares(String userid,String type) throws Exception {
+		// TODO Auto-generated method stub
+		if(type==null||type.length()==0)throw new Exception("参数type不能为空");
+		
+		String json = "";
+		
+		if("hs".equals(type)) json = new Gson().toJson(ConstantUtil.lm_index_hs);
+		else if("us".equals(type))json = new Gson().toJson(ConstantUtil.lm_index_us);
+		else if("wh".equals(type))json = new Gson().toJson(ConstantUtil.lm_index_wh);
+		else json = new Gson().toJson(ConstantUtil.lm_index_hs);
+		
+		
+		JsonArray arr = (JsonArray) new JsonParser().parse(json);
+		JsonObject obj = new JsonObject();
+		obj.addProperty("total",arr.size());
+		obj.add("rows", arr);
+		return obj.toString();
+	}
+
+	@Override
+	public String queryshareslist(String userid, String condition, int start, int limit) throws Exception {
+		// TODO Auto-generated method stub
+		if(userid==null||userid.length()==0)throw new Exception("用户id不能为空");
+		
+		int count = countshares(userid,condition);
+		int pages = ConstantUtil.pages(count, limit);
+		
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		if(count>0){
+			StringBuffer query = new StringBuffer("select s from Shares s where s.state = 0 ");
+			
+			if(condition!=null&&condition.length()>0){
+				query = query.append("and (s.sharesname like '%").append(condition).append("%'")
+					.append(" or s.code like '%").append(condition).append("%')");
+			}
+			
+			List<Object> lst = databaseHelper.getResultListByHql(query.toString(), start, limit);
+			
+			for (Object object : lst) {
+				Shares s = (Shares)object;
+				
+				Map<String,Object> map = new HashMap<String,Object>();
+				
+				map.put("shareid", s.getId());
+				map.put("sharename", s.getSharesname());
+				map.put("code", s.getCode());
+				map.put("market", s.getMarket());
+				map.put("price", s.getPrice());
+				map.put("diffmoney", s.getDiffmoney());
+				map.put("diffrate", s.getDiffrate());
+				map.put("lastupdate", new Date().toString());
+				map.put("type",s.getType());//0沪深 1美股 2外汇
+				//检查此股票是否被此用户添加为自选股（收藏）
+				query = new StringBuffer("select sc from SharesCollect sc where sc.foruserinfoid = ").append(Long.parseLong(userid)).append(" and sc.code = '")
+						.append(s.getCode()).append("'");
+				
+				List<Object> clst = databaseHelper.getResultListByHql(query.toString());
+				
+				if(clst.size()==0)map.put("collected", 0);
+				else{
+					SharesCollect sc = (SharesCollect)clst.get(0);
+					
+					if(sc.getState()==0){
+						map.put("collected", 1);
+						map.put("fcollectid", sc.getId());
+					}else{
+						map.put("collected", 0);
+					}
+				}
+				
+				lstMap.add(map);
+			}
+		}
+		
+		String json = new Gson().toJson(lstMap);
+		JsonArray arr = (JsonArray) new JsonParser().parse(json);
+		JsonObject obj = new JsonObject();
+		obj.addProperty("total",count);
+		obj.addProperty("pages",pages);
+		obj.add("rows", arr);
+		
+		return obj.toString();
+	}
+
+	
+	public int countshares(String userid,String condition){
+		StringBuffer count = new StringBuffer("select count(s.id) from Shares s where s.state = 0 and (s.sharesname like '%").append(condition).append("%'")
+				.append(" or s.code like '%").append(condition).append("%')");
+		
+		if(condition!=null&&condition.length()>0){
+			count = count.append("and (s.sharesname like '%").append(condition).append("%'")
+				.append(" or s.code like '%").append(condition).append("%')");
+		}
+		
+		List lst = databaseHelper.getResultListByHql(count.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+
+	@Override
+	public String sharesdetail(String userid, String shareid, String code, String type) throws Exception {
+		// TODO Auto-generated method stub
+		if(userid==null||userid.length()==0)throw new Exception("userid不能为空");
+		
+		if(shareid==null||shareid.length()==0)throw new Exception("shareid不能为空");
+		
+		Shares s = (Shares)databaseHelper.getObjectById(Shares.class, Long.parseLong(shareid));
+		
+		String quotation = s.getQuotation();
+		
+		JsonObject json = (JsonObject) new JsonParser().parse(quotation);
+		
+		//检查此用户是否对此股票有持仓
+		StringBuffer check = new StringBuffer("select swh from SharesWareHouse swh where swh.state = 0 and swh.warehousenums > 0")
+				.append(" and swh.fuserinfoid = ").append(Long.parseLong(userid)).append(" and swh.fsharesid = ").append(Long.parseLong(shareid))
+				.append(" and swh.isplan = 0");
+		
+		List<Object> lst = databaseHelper.getResultListByHql(check.toString());
+		
+		if(lst.size()==0)json.addProperty("hasthisshare", 0);
+		else json.addProperty("hasthisshare", 1);
+		
+		return json.toString();
+	}
+
+	@Override
+	public String sharesKline(String userid, String shareid, String code, String type) throws Exception {
+		// TODO Auto-generated method stub
+		
+		
+		if(type==null||type.length()==0)throw new Exception("参数type不能为空");
+		
+		if("mh".equals(type)){
+			//分时线
+			
+			
+			
+		}
+		
+		return null;
+	}
+
+	@Override
+	public String queryexamplelist(String userid, String condition, int start, int limit) throws Exception {
+		// TODO Auto-generated method stub
+		int count = countshares(userid,condition);
+		int pages = ConstantUtil.pages(count, limit);
+		
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		if(count>0){
+			StringBuffer query = new StringBuffer("select u from UserInfo u where u.state = 0 and u.isexample = 1 ");
+			
+			if(condition!=null&&condition.length()>0){
+				query = query.append(" and  u.name like '%").append(condition).append("%'")
+						.append(" or u.nickname like '%").append(condition).append("%')");
+			}
+			
+			List<Object> lst = databaseHelper.getResultListByHql(query.toString(),start,limit);
+			
+			for (Object object : lst) {
+				UserInfo u = (UserInfo)object;
+				
+				Map<String, Object> map = new HashMap<String, Object>();
+				
+				map.put("name", u.getName());
+				map.put("nickname", u.getNickname());
+				map.put("headimg", u.getHeadimg()==null?"":u.getHeadimg());
+				map.put("exampleid", u.getId());
+
+				lstMap.add(map);
+			}
+		}
+		
+		String json = new Gson().toJson(lstMap);
+		JsonArray arr = (JsonArray) new JsonParser().parse(json);
+		JsonObject obj = new JsonObject();
+		obj.addProperty("total",count);
+		obj.addProperty("pages",pages);
+		obj.add("rows", arr);
+		
+		return obj.toString();
+	}
+	
+	
+	public int countexample(String userid,String condition){
+		StringBuffer count = new StringBuffer("select count(u.id) from UserInfo u where u.state = 0 and u.isexample = 1 ");
+		
+		if(condition!=null&&condition.length()>0){
+			count = count.append(" and  u.name like '%").append(condition).append("%'")
+					.append(" or u.nickname like '%").append(condition).append("%')");
+		}
+		
+		List lst = databaseHelper.getResultListByHql(count.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+
+	@Override
+	public String profitrankinglist(String userid, String type, int start, int limit) throws Exception {
+		// TODO Auto-generated method stub
+		if(type==null||type.length()==0)throw new Exception("参数type不能为空");
+		if(userid==null||userid.length()==0)throw new Exception("userid不能为空");
+		
+		int int_type = Integer.parseInt(type);
+		
+		int count = countprofitranking(userid,int_type);
+		int pages = ConstantUtil.pages(count, limit);
+		
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		StringBuffer check = null;
+		if(count>0){
+			StringBuffer query = new StringBuffer("select u,ups from UserInfo u,UserProfitStatistic ups where u.state = 0 and u.isexample = 1 and ups.fuserinfoid = u.id ");
+			
+				
+				
+				if(int_type==-1)query = query.append(" order by ups.totalrate desc");
+				else if(int_type==0)query = query.append(" order by ups.rateofhs desc");
+				else if(int_type==1)query = query.append(" order by ups.rateofus desc");
+				else if(int_type==2)query = query.append(" order by ups.rateofwh desc");
+			
+			List<Object[]> lst = databaseHelper.getResultListByHql(query.toString(),start,limit);
+			
+			for (Object[] objects : lst) {
+				UserInfo u = (UserInfo)objects[0];
+				UserProfitStatistic ups = (UserProfitStatistic)objects[1];
+				
+				Map<String, Object> map = new HashMap<String, Object>();
+				
+				map.put("name", u.getName());
+				map.put("nickname", u.getNickname());
+				map.put("headimg", u.getHeadimg()==null?"":u.getHeadimg());
+				map.put("exampleid", u.getId());
+				
+				if(int_type==-1)map.put("profitrate", ups.getTotalrate());
+				else if(int_type==0)map.put("profitrate", ups.getRateofhs());
+				else if(int_type==1)map.put("profitrate", ups.getRateofus());
+				else if(int_type==2)map.put("profitrate", ups.getRateofwh());
+				
+				map.put("fans", ups.getFans());
+				
+				//检查当前用户是否关注此人
+				check = new StringBuffer("select f from Follow f where f.state = 0 and f.fuserinfoid = ").append(Long.parseLong(userid)).append(" and f.ffollowedid =").append(u.getId());
+				List<Object> clst = databaseHelper.getResultListByHql(check.toString());
+				if(clst.size()==0){
+					map.put("followed", 0);
+				}else{
+					Follow f = (Follow)clst.get(0);
+					map.put("followed", 1);
+					map.put("followid", f.getId());
+				}
+				
+				lstMap.add(map);
+			}
+		}
+		
+		String json = new Gson().toJson(lstMap);
+		JsonArray arr = (JsonArray) new JsonParser().parse(json);
+		JsonObject obj = new JsonObject();
+		obj.addProperty("total",count);
+		obj.addProperty("pages",pages);
+		obj.add("rows", arr);
+		
+		return obj.toString();
+	}
+	
+	
+	public int countprofitranking(String userid,int int_type){
+		StringBuffer count = new StringBuffer("select count(ups.id) from UserInfo u,UserProfitStatistic ups where u.state = 0 and u.isexample = 1 and ups.fuserinfoid = u.id ");
+		
+		List lst = databaseHelper.getResultListByHql(count.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+
+	@Override
+	public String popularityrankinglist(String userid, int start, int limit) throws Exception {
+		// TODO Auto-generated method stub
+		if(userid==null||userid.length()==0)throw new Exception("userid不能为空");
+		
+		
+		int count = countprofitranking(userid,-1);
+		int pages = ConstantUtil.pages(count, limit);
+		
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		StringBuffer check = null;
+		if(count>0){
+			StringBuffer query = new StringBuffer("select u,ups from UserInfo u,UserProfitStatistic ups where u.state = 0 and u.isexample = 1 and ups.fuserinfoid = u.id ")
+					.append(" order by ups.fans desc");
+			
+			
+			
+			List<Object[]> lst = databaseHelper.getResultListByHql(query.toString(),start,limit);
+			
+			for (Object[] objects : lst) {
+				UserInfo u = (UserInfo)objects[0];
+				UserProfitStatistic ups = (UserProfitStatistic)objects[1];
+				
+				Map<String, Object> map = new HashMap<String, Object>();
+				
+				map.put("name", u.getName());
+				map.put("nickname", u.getNickname());
+				map.put("headimg", u.getHeadimg()==null?"":u.getHeadimg());
+				map.put("exampleid", u.getId());
+		
+				
+				map.put("fans", ups.getFans());
+				map.put("rewordnums", ups.getRewordnums());
+				
+				//检查当前用户是否关注此人
+				check = new StringBuffer("select f from Follow f where f.state = 0 and f.fuserinfoid = ").append(Long.parseLong(userid)).append(" and f.ffollowedid =").append(u.getId());
+				List<Object> clst = databaseHelper.getResultListByHql(check.toString());
+				if(clst.size()==0){
+					map.put("followed", 0);
+				}else{
+					Follow f = (Follow)clst.get(0);
+					map.put("followed", 1);
+					map.put("followid", f.getId());
+				}
+				
+				lstMap.add(map);
+			}
+		}
+		
+		String json = new Gson().toJson(lstMap);
+		JsonArray arr = (JsonArray) new JsonParser().parse(json);
+		JsonObject obj = new JsonObject();
+		obj.addProperty("total",count);
+		obj.addProperty("pages",pages);
+		obj.add("rows", arr);
+		
+		return obj.toString();
+	}
+
+	@Override
+	public String planrankinglist(String userid, String type, int start, int limit) throws Exception {
+		// TODO Auto-generated method stub
+		if(type==null||type.length()==0)throw new Exception("参数type不能为空");
+		if(userid==null||userid.length()==0)throw new Exception("userid不能为空");
+		
+		int int_type = Integer.parseInt(type);
+		
+		int count = countprofitranking(userid,int_type);
+		int pages = ConstantUtil.pages(count, limit);
+		
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		StringBuffer check = null;
+		if(count>0){
+			StringBuffer query = new StringBuffer("select u,ups from UserInfo u,UserProfitStatistic ups where u.state = 0 and u.isexample = 1 and ups.fuserinfoid = u.id ");
+			
+				
+				
+				if(int_type==-1)query = query.append(" order by ups.totalplansuccess desc,ups.totalplanfrofit desc");
+				else if(int_type==0)query = query.append(" order by ups.hsplansuccess desc,ups.hsplanfrofit desc");
+				else if(int_type==1)query = query.append(" order by ups.usplansuccess desc,ups.usplanfrofit desc");
+				else if(int_type==2)query = query.append(" order by ups.whplansuccess desc,ups.whplanfrofit desc");
+			
+			List<Object[]> lst = databaseHelper.getResultListByHql(query.toString(),start,limit);
+			
+			for (Object[] objects : lst) {
+				UserInfo u = (UserInfo)objects[0];
+				UserProfitStatistic ups = (UserProfitStatistic)objects[1];
+				
+				Map<String, Object> map = new HashMap<String, Object>();
+				
+				map.put("name", u.getName());
+				map.put("nickname", u.getNickname());
+				map.put("headimg", u.getHeadimg()==null?"":u.getHeadimg());
+				map.put("exampleid", u.getId());
+				
+				if(int_type==-1){
+					map.put("planfrofit", ups.getTotalplanfrofit());
+					map.put("successrate", ups.getTotalplansuccess());
+				}else if(int_type==0){
+					map.put("planfrofit", ups.getHsplanfrofit());
+					map.put("successrate", ups.getHsplansuccess());
+				}else if(int_type==1){
+					map.put("planfrofit", ups.getUsplanfrofit());
+					map.put("successrate", ups.getUsplansuccess());
+				}else if(int_type==2){
+					map.put("planfrofit", ups.getWhplanfrofit());
+					map.put("successrate", ups.getWhplansuccess());
+				}
+				
+				
+				//检查当前用户是否关注此人
+				check = new StringBuffer("select f from Follow f where f.state = 0 and f.fuserinfoid = ").append(Long.parseLong(userid)).append(" and f.ffollowedid =").append(u.getId());
+				List<Object> clst = databaseHelper.getResultListByHql(check.toString());
+				if(clst.size()==0){
+					map.put("followed", 0);
+				}else{
+					Follow f = (Follow)clst.get(0);
+					map.put("followed", 1);
+					map.put("followid", f.getId());
+				}
+				
+				lstMap.add(map);
+			}
+		}
+		
+		String json = new Gson().toJson(lstMap);
+		JsonArray arr = (JsonArray) new JsonParser().parse(json);
+		JsonObject obj = new JsonObject();
+		obj.addProperty("total",count);
+		obj.addProperty("pages",pages);
+		obj.add("rows", arr);
+		
+		return obj.toString();
+	}
+
+	@Override
+	public String exampledetail(String userid, String exampleid) throws Exception {
+		// TODO Auto-generated method stub
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		Date now = new Date();
+		int year = Integer.parseInt(sdf.format(now).split("-")[0]);
+		int month = Integer.parseInt(sdf.format(now).split("-")[1]);
+		
+		if(userid==null||userid.length()==0)throw new Exception("参数userid不能为空");
+		if(exampleid==null||exampleid.length()==0)throw new Exception("参数exampleid不能为空");
+		
+		UserInfo example = (UserInfo)databaseHelper.getObjectById(UserInfo.class, Long.parseLong(exampleid));
+		
+		Map<String, Object> map = new HashMap<String, Object>();
+		map.put("name",example.getName());
+		map.put("nickname",example.getNickname());
+		map.put("headimg",example.getHeadimg());
+		
+		//查看牛人的粉丝数
+		StringBuffer query = new StringBuffer("select count(f.id) from Follow f where f.state = 0 and f.ffollowedid = ").append(example.getId());
+		List lst = databaseHelper.getResultListByHql(query.toString());
+		int fans = Integer.parseInt(lst.get(0).toString());
+		map.put("fans",fans);
+		
+		//查看牛人的关注数
+		query = new StringBuffer("select count(f.id) from Follow f where f.state = 0 and f.fuserinfoid = ").append(example.getId());
+		lst = databaseHelper.getResultListByHql(query.toString());
+		int follows = Integer.parseInt(lst.get(0).toString());
+		map.put("follows",follows);
+		
+		//累计收益--持仓
+		query = new StringBuffer("select sum(userp.diffprofitoflasttime) 'a' from userprofit userp where userp.tags = 1 and userp.fuserinfoid = ").append(example.getId());
+		lst = databaseHelper.getResultListBySql(query.toString());
+		
+		Double profit0 = lst==null?0d:lst.size()==0?0d:lst.get(0)==null?0d:Double.parseDouble(lst.get(0).toString());
+		//累计收益--卖出
+		query = new StringBuffer("select sum(userp.profit) 'a' from userprofit userp where userp.tags = 0 and userp.fuserinfoid = ").append(example.getId());
+		lst = databaseHelper.getResultListBySql(query.toString());
+		
+		Double profit1 = lst==null?0d:lst.size()==0?0d:lst.get(0)==null?0d:Double.parseDouble(lst.get(0).toString());
+		map.put("totalprofit",profit0+profit1);
+		
+		
+		//年收益--持仓
+		query = new StringBuffer("select sum(userp.diffprofitoflasttime) 'a' from userprofit userp where year(userp.time)=").append(year).append(" and userp.tags = 1 and userp.fuserinfoid = ").append(example.getId());
+		lst = databaseHelper.getResultListBySql(query.toString());
+		
+		Double year_profit0 = lst==null?0d:lst.size()==0?0d:lst.get(0)==null?0d:Double.parseDouble(lst.get(0).toString());
+		//年收益--卖出
+		query = new StringBuffer("select sum(userp.profit) 'a' from userprofit userp where year(userp.time)=").append(year).append(" and userp.tags = 0 and userp.fuserinfoid = ").append(example.getId());
+		lst = databaseHelper.getResultListBySql(query.toString());
+		
+		Double year_profit1 = lst==null?0d:lst.size()==0?0d:lst.get(0)==null?0d:Double.parseDouble(lst.get(0).toString());
+		map.put("yearprofit",year_profit0+year_profit1);
+		
+		
+		//月收益--持仓
+		query = new StringBuffer("select sum(userp.diffprofitoflasttime) 'a' from userprofit userp where year(userp.time)=").append(year).append(" and month(userp.time) = ").append(month).append(" and userp.tags = 1 and userp.fuserinfoid = ").append(example.getId());
+		lst = databaseHelper.getResultListBySql(query.toString());
+		
+		Double month_profit0 = lst==null?0d:lst.size()==0?0d:lst.get(0)==null?0d:Double.parseDouble(lst.get(0).toString());
+		//月收益--卖出
+		query = new StringBuffer("select sum(userp.profit) 'a' from userprofit userp where year(userp.time)=").append(year).append(" and month(userp.time) = ").append(month).append(" and userp.tags = 0 and userp.fuserinfoid = ").append(example.getId());
+		lst = databaseHelper.getResultListBySql(query.toString());
+		
+		Double month_profit1 = lst==null?0d:lst.size()==0?0d:lst.get(0)==null?0d:Double.parseDouble(lst.get(0).toString());
+		map.put("monthprofit",month_profit0+month_profit1);
+		
+		
+		//检查用户是否关注此牛人
+		StringBuffer check = new StringBuffer("select f from Follow f where f.state = 0 and f.fuserinfoid = ").append(Long.parseLong(userid)).append(" and f.ffollowedid =").append(example.getId());
+		List<Object> clst = databaseHelper.getResultListByHql(check.toString());
+		if(clst.size()==0){
+			map.put("followed", 0);
+		}else{
+			Follow f = (Follow)clst.get(0);
+			map.put("followed", 1);
+			map.put("followid", f.getId());
+		}
+		
+		
+		//检查用户是否订阅此牛人
+		check = new StringBuffer("select s from Subscription s where s.state = 0 and s.fuserinfoid = ").append(Long.parseLong(userid)).append(" and s.fsubscribedid =").append(example.getId());
+		clst = databaseHelper.getResultListByHql(check.toString());
+		if(clst.size()==0){
+			map.put("subscribed", 0);
+		}else{
+			Follow f = (Follow)clst.get(0);
+			map.put("subscribed", 1);
+			map.put("subscribid", f.getId());
+		}
+		
+		
+		//检查用户是否跟随此牛人
+		check = new StringBuffer("select d from Documentary d where d.state = 0 and d.fuserinfoid = ").append(Long.parseLong(userid)).append(" and d.ffollowuserinfoid =").append(example.getId());
+		clst = databaseHelper.getResultListByHql(check.toString());
+		if(clst.size()==0){
+			map.put("aftered", 0);
+		}else{
+			Follow f = (Follow)clst.get(0);
+			map.put("aftered", 1);
+			map.put("afterid", f.getId());
+		}
+		
+		String json = JsonUtil.getGson().toJson(map);
+		return json;
+	}
+
+
+	@Override
+	public String planlist(String userid, String exampleid, String self, String type, String tag, int start, int limit)
+			throws Exception {
+		// TODO Auto-generated method stub
+		String result = "";
+		
+		if(exampleid!=null&&exampleid.length()>0){
+			//查看牛人计划列表
+			result = queryexampleplanlst(userid, exampleid, start, limit);
+		}else{
+			if(self!=null&&Integer.parseInt(self)==0){
+				//查看我的计划列表
+				
+			}else{
+				//查看所有计划列表
+			}
+			
+		}
+		
+		return result;
+	}
+	
+	//查看牛人计划列表
+	private String queryexampleplanlst(String userid, String exampleid,  int start, int limit){
+		
+		int count = countexampleplan(userid, exampleid);
+		Map<String, Object> m = statisticexampleplan(userid, exampleid);
+		
+		int pages = ConstantUtil.pages(count, limit);
+		
+		List<Map<String,Object>> lstMap = new ArrayList<Map<String,Object>>();
+		
+		if(count>0){
+			StringBuffer query = new StringBuffer("select ep from ExamplePlan ep where ep.fuserinfoid = ").append(Long.parseLong(exampleid));
+			
+			List<Object> lst = databaseHelper.getResultListByHql(query.toString(), start, limit);
+			
+			for (Object object : lst) {
+				ExamplePlan ep = (ExamplePlan)object;
+				
+				Map<String, Object> map = new HashMap<String, Object>();
+				
+				map.put("planname",ep.getPlanname());
+				map.put("targetprofit",ep.getTargetprofit());
+				map.put("stopline",ep.getStopline());
+				map.put("actualprofit",ep.getActualprofit());
+				
+				int diffday = ConstantUtil.differentDays(ep.getStarttime(), new Date());
+				map.put("runday", diffday<0?0:diffday);
+				map.put("state", ep.getState());
+				map.put("type", ConstantUtil.type[ep.getType()]);
+				map.put("planstate", ConstantUtil.planstate[ep.getState()]);//0抢购 1运行中 2已结束
+				
+				
+				//查看计划中最新的持仓记录
+				int type = ep.getType();
+				if(type<2){
+					//股票
+					StringBuffer find = new StringBuffer("select swh from SharesWareHouse swh where swh.fexampleplanid = ").append(ep.getId()).append(" order by time desc");
+					
+					List<Object> findlst = databaseHelper.getResultListByHql(find.toString());
+					
+					if(findlst.size()==0){
+						map.put("newplaytime","");
+						map.put("warehouse","");
+					}else{
+						SharesWareHouse swh = (SharesWareHouse)findlst.get(0);
+						int couldusenums = 0;
+						for (Object object2 : findlst) {
+							SharesWareHouse s = (SharesWareHouse)object2;
+							couldusenums += s.getCouldusenums();
+						}
+						
+						map.put("newplaytime",swh.getTime());
+						
+						double warehouse = new BigDecimal((float)swh.getCouldusenums()/couldusenums*100).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();  
+						
+						map.put("warehouse",warehouse+"%");
+					}
+				}else{
+					//外汇
+					StringBuffer find = new StringBuffer("select fe from ForeignExchange fe where fe.fexampleplanid = ").append(ep.getId()).append(" order by time desc");
+					
+					List<Object> findlst = databaseHelper.getResultListByHql(find.toString());
+					
+					if(findlst.size()==0){
+						map.put("newplaytime","");
+						map.put("warehouse","");
+					}else{
+						ForeignExchange fe = (ForeignExchange)findlst.get(0);
+						int couldusenums = 0;
+						for (Object object2 : findlst) {
+							ForeignExchange f = (ForeignExchange)object2;
+							couldusenums += f.getCouldusenums();
+						}
+						
+						map.put("newplaytime",fe.getTime());
+						
+						double warehouse = new BigDecimal((float)fe.getCouldusenums()/couldusenums*100).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();  
+						
+						map.put("warehouse",warehouse+"%");
+					}
+				}
+				
+				lstMap.add(map);
+			}
+			
+		}
+		
+		String json = new Gson().toJson(lstMap);
+		JsonArray arr = (JsonArray) new JsonParser().parse(json);
+		JsonObject obj = new JsonObject();
+		obj.addProperty("total",count);
+		obj.addProperty("pages",pages);
+		obj.addProperty("profitrate",m.get("profitrate").toString());
+		obj.addProperty("successnums",m.get("successnums").toString());
+		obj.add("rows", arr);
+		
+		return obj.toString();
+		
+	}
+	
+	public int countexampleplan(String userid, String exampleid){
+		StringBuffer count = new StringBuffer("select count(ep.id) from ExamplePlan ep where ep.fuserinfoid = ").append(Long.parseLong(exampleid));
+		
+		List lst = databaseHelper.getResultListByHql(count.toString());
+		return Integer.parseInt(lst.get(0).toString());
+	}
+	
+	
+	public Map<String, Object> statisticexampleplan(String userid, String exampleid){
+		Map<String, Object> map = new HashMap<String, Object>();
+		
+		StringBuffer query = new StringBuffer("select ep from ExamplePlan ep where ep.fuserinfoid = ").append(Long.parseLong(exampleid));
+		
+		List<Object> lst = databaseHelper.getResultListByHql(query.toString());
+		
+		Double total = 0d;
+		int success = 0;
+		for (Object object : lst) {
+			ExamplePlan ep = (ExamplePlan)object;
+			total += ep.getActualprofit();
+			if(ep.getSuccessed()==1)success++;
+		}
+		
+		double profitrate = new BigDecimal(total/lst.size()*100).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue();  
+		
+		map.put("profitrate", profitrate);
+		map.put("successnums", success);
+		
+		return map;
+	}
+}
