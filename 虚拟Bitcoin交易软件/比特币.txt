@@ -1,0 +1,206 @@
+<mxGraphModel>
+  <root>
+    <mxCell id="0"/>
+    <mxCell id="1" parent="0"/>
+    <mxCell id="9" style="table" parent="1" vertex="1" connectable="0">
+      <Table name="accountinfo" label="后台账户表" as="value"/>
+      <mxGeometry x="30" y="120" width="200" height="210" as="geometry">
+        <mxRectangle width="200" height="28" as="alternateBounds"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="10" parent="9" vertex="1">
+      <Column name="id" label="id" type="INTEGER" primaryKey="1" autoIncrement="1" notNull="1" as="value"/>
+      <mxGeometry y="28" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="11" parent="9" vertex="1">
+      <Column name="username" label="帐号" type="varchar(16)" as="value"/>
+      <mxGeometry y="54" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="12" parent="9" vertex="1">
+      <Column name="password" label="密码" type="varchar(64)" as="value"/>
+      <mxGeometry y="80" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="13" parent="9" vertex="1">
+      <Column name="mobile" label="手机" type="varchar(16)" as="value"/>
+      <mxGeometry y="106" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="14" parent="9" vertex="1">
+      <Column name="name" label="名称" type="varchar(16)" as="value"/>
+      <mxGeometry y="132" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="15" parent="9" vertex="1">
+      <Column name="createtime" label="时间" type="datetime" as="value"/>
+      <mxGeometry y="158" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="16" parent="9" vertex="1">
+      <Column name="state" label="状态" memo="帐户状态 0正常 -1异常" type="int" as="value"/>
+      <mxGeometry y="184" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="17" style="table" parent="1" vertex="1" connectable="0">
+      <Table name="userinfo" label="用户表" as="value"/>
+      <mxGeometry x="800" y="260" width="200" height="522" as="geometry">
+        <mxRectangle x="800" y="260" width="200" height="28" as="alternateBounds"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="18" parent="17" vertex="1">
+      <Column name="id" label="id" type="bigint" primaryKey="1" autoIncrement="1" notNull="1" as="value"/>
+      <mxGeometry y="28" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="19" parent="17" vertex="1">
+      <Column name="username" label="帐号" type="varchar(16)" as="value"/>
+      <mxGeometry y="54" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="20" parent="17" vertex="1">
+      <Column name="password" label="密码" type="varchar(64)" as="value"/>
+      <mxGeometry y="80" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="21" parent="17" vertex="1">
+      <Column name="mobile" label="手机" type="varchar(16)" as="value"/>
+      <mxGeometry y="106" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="22" parent="17" vertex="1">
+      <Column name="nickname" label="昵称" type="varchar(16)" as="value"/>
+      <mxGeometry y="132" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="23" parent="17" vertex="1">
+      <Column name="name" label="姓名" type="varchar(16)" as="value"/>
+      <mxGeometry y="158" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="24" parent="17" vertex="1">
+      <Column name="intro" label="简介" type="varchar(255)" as="value"/>
+      <mxGeometry y="184" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="25" parent="17" vertex="1">
+      <Column name="wxid" label="微信号" type="varchar(16)" as="value"/>
+      <mxGeometry y="210" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="26" parent="17" vertex="1">
+      <Column name="allgolds" label="总资产" type="double" as="value"/>
+      <mxGeometry y="236" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="27" parent="17" vertex="1">
+      <Column name="ugolds" label="可用资产" type="double" as="value"/>
+      <mxGeometry y="262" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="28" parent="17" vertex="1">
+      <Column name="bgolds" label="冻结资金" type="double" as="value"/>
+      <mxGeometry y="288" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="29" parent="17" vertex="1">
+      <Column name="amount" label="比特币数量BTC" type="double" as="value"/>
+      <mxGeometry y="314" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="30" parent="17" vertex="1">
+      <Column name="email" label="邮箱" type="varchar(32)" as="value"/>
+      <mxGeometry y="340" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="31" parent="17" vertex="1">
+      <Column name="bank" label="开户支行" type="varchar(32)" as="value"/>
+      <mxGeometry y="366" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="32" parent="17" vertex="1">
+      <Column name="bankaccount" label="银行账户" type="varchar(8)" as="value"/>
+      <mxGeometry y="392" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="33" parent="17" vertex="1">
+      <Column name="cardno" label="卡号" type="varchar(32)" as="value"/>
+      <mxGeometry y="418" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="34" parent="17" vertex="1">
+      <Column name="paparno" label="身份证" type="varchar(32)" as="value"/>
+      <mxGeometry y="444" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="35" parent="17" vertex="1">
+      <Column name="createtime" label="注册时间" type="datetime" as="value"/>
+      <mxGeometry y="470" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="36" parent="17" vertex="1">
+      <Column name="state" label="用户状态" memo="用户状态0正常 -1封禁" type="int" as="value"/>
+      <mxGeometry y="496" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="37" style="table" vertex="1" connectable="0" parent="1">
+      <Table name="trust" label="用户信任表" as="value"/>
+      <mxGeometry x="500" y="40" width="200" height="158" as="geometry">
+        <mxRectangle width="200" height="28" as="alternateBounds"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="38" vertex="1" parent="37">
+      <Column name="id" label="id" type="bigint" primaryKey="1" autoIncrement="1" notNull="1" as="value"/>
+      <mxGeometry y="28" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="39" vertex="1" parent="37">
+      <Column name="fuserinfoid" label="用户id" type="bigint" as="value"/>
+      <mxGeometry y="54" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="40" vertex="1" parent="37">
+      <Column name="trustid" label="信任或者屏蔽用户的id" type="bigint" as="value"/>
+      <mxGeometry y="80" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="41" vertex="1" parent="37">
+      <Column name="createtime" label="时间" type="datetime" as="value"/>
+      <mxGeometry y="106" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="42" vertex="1" parent="37">
+      <Column name="state" label="状态" memo="0:信任的用户；1：屏蔽的用户" type="int" as="value"/>
+      <mxGeometry y="132" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="43" edge="1" parent="1" source="39" target="18">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="44" style="table" vertex="1" connectable="0" parent="1">
+      <Table name="photo" label="图片表（用户图像）" as="value"/>
+      <mxGeometry x="900" y="40" width="200" height="158" as="geometry">
+        <mxRectangle width="200" height="28" as="alternateBounds"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="45" vertex="1" parent="44">
+      <Column name="id" label="id" type="bigint" primaryKey="1" autoIncrement="1" notNull="1" as="value"/>
+      <mxGeometry y="28" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="46" vertex="1" parent="44">
+      <Column name="fuserinfoid" label="关联用户的id" type="bigint" as="value"/>
+      <mxGeometry y="54" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="47" vertex="1" parent="44">
+      <Column name="photourl" label="图片地址" type="varchar(64)" as="value"/>
+      <mxGeometry y="80" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="48" vertex="1" parent="44">
+      <Column name="createtime" label="时间" type="datetime" as="value"/>
+      <mxGeometry y="106" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="49" vertex="1" parent="44">
+      <Column name="state" label="状态" memo="0正常 -1失效" type="int" as="value"/>
+      <mxGeometry y="132" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="50" edge="1" parent="1" source="46" target="18">
+      <mxGeometry relative="1" as="geometry"/>
+    </mxCell>
+    <mxCell id="51" style="table" vertex="1" connectable="0" parent="1">
+      <Table name="orderinfo" label="用户订单表" as="value"/>
+      <mxGeometry x="1180" y="310" width="200" height="158" as="geometry">
+        <mxRectangle width="200" height="28" as="alternateBounds"/>
+      </mxGeometry>
+    </mxCell>
+    <mxCell id="52" vertex="1" parent="51">
+      <Column name="id" label="id" type="bigint" primaryKey="1" autoIncrement="1" notNull="1" as="value"/>
+      <mxGeometry y="28" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="53" vertex="1" parent="51">
+      <Column name="fuserinfoid" label="用户id" type="bigint" as="value"/>
+      <mxGeometry y="54" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="57" vertex="1" parent="51">
+      <Column name="minprice" label="最低价" type="double" as="value"/>
+      <mxGeometry y="80" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="58" vertex="1" parent="51">
+      <Column name="mincost" label="最低限额" type="double" as="value"/>
+      <mxGeometry y="106" width="200" height="26" as="geometry"/>
+    </mxCell>
+    <mxCell id="59" vertex="1" parent="51">
+      <Column name="maxcost" label="最大限额" type="double" as="value"/>
+      <mxGeometry y="132" width="200" height="26" as="geometry"/>
+    </mxCell>
+  </root>
+</mxGraphModel>
